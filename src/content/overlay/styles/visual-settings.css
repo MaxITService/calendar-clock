@@ -1,0 +1,381 @@
+    #calendar-clock-root .cc-divider-color-dot,
+    #calendar-clock-root .cc-event-labels-color-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
+      transition: background-color 0.2s ease;
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-divider-color-dot,
+    #calendar-clock-root.cc-menu-theme-dark .cc-event-labels-color-dot {
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25);
+    }
+
+    /* Visuals Grid */
+    #calendar-clock-root .cc-visuals-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #calendar-clock-root .cc-toggle-with-settings {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    #calendar-clock-root .cc-divider-settings-btn {
+      flex-shrink: 0;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      padding: 0;
+      margin: 0;
+      width: 18px;
+      height: 18px;
+      line-height: 18px;
+      border-radius: 4px;
+      transition: background-color 0.2s ease, transform 0.1s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #calendar-clock-root .cc-divider-settings-btn:hover {
+      background-color: rgba(184, 141, 90, 0.15);
+      transform: scale(1.15);
+    }
+
+    #calendar-clock-root .cc-divider-settings-btn:active {
+      transform: scale(0.95);
+    }
+
+    #calendar-clock-root .cc-divider-help {
+      color: rgba(61, 47, 36, 0.66);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-divider-help {
+      color: rgba(244, 237, 227, 0.6);
+    }
+
+    /* Long / all-day toggle card */
+    #calendar-clock-root .cc-long-duration-group {
+      background: rgba(184, 141, 90, 0.06);
+      border: 1px solid rgba(184, 141, 90, 0.25);
+      border-radius: 8px;
+      padding: 8px 10px;
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-long-duration-group {
+      background: rgba(215, 167, 87, 0.06);
+      border-color: rgba(215, 167, 87, 0.2);
+    }
+
+    #calendar-clock-root .cc-divider-settings-panel {
+      background: rgba(255, 255, 255, 0.35);
+      border: 0 solid transparent;
+      border-radius: 8px;
+      padding: 0 10px;
+      margin-top: -8px;
+      margin-bottom: 0;
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: none;
+      transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                  opacity 0.2s ease,
+                  padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                  margin 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                  border-color 0.3s ease,
+                  border-width 0.3s ease;
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-divider-settings-panel {
+      background: rgba(255, 255, 255, 0.05);
+      border-width: 0;
+      border-color: transparent;
+      box-shadow: none;
+    }
+
+    #calendar-clock-root .cc-divider-settings-panel.expanded {
+      border: 1px solid rgba(184, 141, 90, 0.4);
+      padding: 10px;
+      margin-top: 4px;
+      margin-bottom: 4px;
+      max-height: 430px;
+      opacity: 1;
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-divider-settings-panel.expanded {
+      border: 1px solid rgba(215, 167, 87, 0.3);
+    }
+
+    #calendar-clock-root .cc-divider-settings-panel.expanded {
+      animation: cc-settings-glow-breath 3s infinite ease-in-out;
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-divider-settings-panel.expanded {
+      animation: cc-settings-glow-breath-dark 3s infinite ease-in-out;
+    }
+
+    #calendar-clock-root .cc-event-labels-settings-panel {
+      background: rgba(255, 255, 255, 0.35);
+      border: 0 solid transparent;
+      border-radius: 8px;
+      padding: 0 10px;
+      margin-top: -8px;
+      margin-bottom: 0;
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: none;
+      transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                  opacity 0.2s ease,
+                  padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                  margin 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                  border-color 0.3s ease,
+                  border-width 0.3s ease;
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-event-labels-settings-panel {
+      background: rgba(255, 255, 255, 0.05);
+      border-width: 0;
+      border-color: transparent;
+      box-shadow: none;
+    }
+
+    #calendar-clock-root .cc-event-labels-settings-panel.expanded {
+      border: 1px solid rgba(184, 141, 90, 0.4);
+      padding: 10px;
+      margin-top: 4px;
+      margin-bottom: 4px;
+      max-height: 200px;
+      opacity: 1;
+      animation: cc-settings-glow-breath 3s infinite ease-in-out;
+    }
+
+    #calendar-clock-root .cc-arc-settings-panel.expanded,
+    #calendar-clock-root .cc-nested-event-labels-settings-panel.expanded {
+      max-height: none;
+    }
+
+    #calendar-clock-root .cc-magnifier-settings-panel.expanded {
+      max-height: 500px;
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-event-labels-settings-panel.expanded {
+      border: 1px solid rgba(215, 167, 87, 0.3);
+      animation: cc-settings-glow-breath-dark 3s infinite ease-in-out;
+    }
+
+    @keyframes cc-settings-glow-breath {
+      0% {
+        box-shadow: 0 0 8px rgba(184, 141, 90, 0.3), inset 0 0 4px rgba(184, 141, 90, 0.1);
+        border-color: rgba(184, 141, 90, 0.4);
+      }
+      50% {
+        box-shadow: 0 0 16px rgba(184, 141, 90, 0.75), inset 0 0 6px rgba(184, 141, 90, 0.2);
+        border-color: rgba(184, 141, 90, 0.8);
+      }
+      100% {
+        box-shadow: 0 0 8px rgba(184, 141, 90, 0.3), inset 0 0 4px rgba(184, 141, 90, 0.1);
+        border-color: rgba(184, 141, 90, 0.4);
+      }
+    }
+
+    @keyframes cc-settings-glow-breath-dark {
+      0% {
+        box-shadow: 0 0 8px rgba(215, 167, 87, 0.2), inset 0 0 4px rgba(215, 167, 87, 0.05);
+        border-color: rgba(215, 167, 87, 0.3);
+      }
+      50% {
+        box-shadow: 0 0 16px rgba(215, 167, 87, 0.65), inset 0 0 6px rgba(215, 167, 87, 0.15);
+        border-color: rgba(215, 167, 87, 0.7);
+      }
+      100% {
+        box-shadow: 0 0 8px rgba(215, 167, 87, 0.2), inset 0 0 4px rgba(215, 167, 87, 0.05);
+        border-color: rgba(215, 167, 87, 0.3);
+      }
+    }
+
+    #calendar-clock-root .cc-divider-settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    #calendar-clock-root .cc-divider-row-collapsible {
+      max-height: 34px;
+      opacity: 1;
+      overflow: hidden;
+      transform: translateY(0);
+      transition: max-height 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+                  opacity 0.18s ease,
+                  transform 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+                  margin 0.24s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    #calendar-clock-root .cc-divider-row-collapsible.is-collapsed {
+      max-height: 0;
+      margin-top: -8px;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-4px);
+    }
+
+    #calendar-clock-root .cc-divider-settings-row input[type="color"] {
+      border: none;
+      background: transparent;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    #calendar-clock-root .cc-divider-settings-row > select {
+      min-width: 132px;
+    }
+
+    #calendar-clock-root .cc-divider-labels-row {
+      justify-content: flex-start;
+    }
+
+    #calendar-clock-root .cc-divider-emoji-input {
+      box-sizing: border-box;
+      width: 132px;
+      padding: 0 8px;
+      font-size: 15px;
+      text-align: center;
+    }
+
+    #calendar-clock-root .cc-density-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    #calendar-clock-root .cc-density-row .cc-row-label {
+      line-height: 1.25;
+      min-width: 0;
+    }
+
+    #calendar-clock-root .cc-density-row > select {
+      min-width: 144px;
+    }
+
+    #calendar-clock-root .cc-row-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: #3d2f24;
+    }
+
+    #calendar-clock-root .cc-slider-control {
+      display: grid;
+      grid-template-columns: minmax(86px, 1fr) 28px;
+      align-items: center;
+      gap: 8px;
+      min-width: 144px;
+    }
+
+    #calendar-clock-root .cc-magnifier-slider-control {
+      grid-template-columns: minmax(72px, 1fr) 42px;
+    }
+
+    #calendar-clock-root .cc-slider-control--label-anchor {
+      grid-template-columns: minmax(86px, 1fr) 52px;
+      min-width: 168px;
+    }
+
+    #calendar-clock-root .cc-font-control {
+      display: grid;
+      grid-template-columns: minmax(130px, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+      min-width: 210px;
+    }
+
+    #calendar-clock-root .cc-font-control input[type="text"] {
+      min-width: 0;
+      height: 24px;
+      padding: 0 7px;
+      font-size: 11px;
+    }
+
+    #calendar-clock-root .cc-font-reset-btn {
+      height: 24px;
+      padding-inline: 8px;
+    }
+
+    #calendar-clock-root .cc-magnifier-trigger-row {
+      display: grid;
+      grid-template-columns: minmax(112px, 1fr) auto auto;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #calendar-clock-root .cc-magnifier-subtoggle {
+      white-space: nowrap;
+    }
+
+    #calendar-clock-root .cc-number-control {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      min-width: 96px;
+      color: rgba(110, 85, 61, 0.72);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    #calendar-clock-root .cc-number-control input[type="number"] {
+      width: 72px;
+      padding: 0 6px;
+      text-align: right;
+    }
+
+    #calendar-clock-root .cc-magnifier-launch-btn {
+      width: 100%;
+      height: 28px;
+    }
+
+    #calendar-clock-root .cc-slider-control input[type="range"] {
+      width: 100%;
+      height: 18px;
+      padding: 0;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      box-shadow: none;
+      accent-color: #b88d5a;
+    }
+
+    #calendar-clock-root .cc-slider-control input[type="range"]:focus {
+      box-shadow: none;
+    }
+
+    #calendar-clock-root .cc-slider-control output {
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(110, 85, 61, 0.72);
+      text-align: right;
+    }

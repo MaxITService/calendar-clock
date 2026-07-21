@@ -1,0 +1,486 @@
+<div class="cc-clock-surface">
+      <iframe data-cc-clock-frame title="Calendar Clock face. You will see Google Calendar events drawn as arcs around the dial."></iframe>
+      <div class="cc-mini-drag-handle" title="Drag here to move the mini clock. You will see the compact clock follow your pointer and stay where you drop it." aria-label="Move mini clock"></div>
+      <div class="cc-mini-window-actions" aria-label="Mini clock window controls">
+        <button type="button" class="cc-mini-action-btn" data-cc-mini-action="maximize"
+          title="Switch Calendar Clock to Full mode. You will see the large clock face and event arcs."
+          aria-label="Switch Calendar Clock to Full mode">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="10" height="10" rx="1.5"/></svg>
+        </button>
+        <button type="button" class="cc-mini-action-btn" data-cc-mini-action="close"
+          title="Hide the clock overlay. You can reopen it from the extension icon."
+          aria-label="Hide clock overlay">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3.5" y1="3.5" x2="10.5" y2="10.5"/><line x1="10.5" y1="3.5" x2="3.5" y2="10.5"/></svg>
+        </button>
+      </div>
+      <div class="cc-version-note" data-cc-version-note aria-hidden="true"></div>
+    </div>
+
+    <!-- PANEL 1: VIEW CONTROLS -->
+    <div class="cc-panel cc-panel-view" role="dialog" aria-label="Calendar Clock view controls">
+      <div class="cc-panel-header cc-panel-view-header">
+        <span class="cc-logo" title="Calendar Clock controls. These buttons change how the clock appears over Google Calendar.">⏰</span>
+        <div class="cc-view-buttons">
+          <button type="button" data-cc-mode="full" title="Show Calendar Clock in Full mode. You will see the large clock face and event arcs.">Full</button>
+          <button type="button" data-cc-mode="mini" title="Show the clock as a floating compact widget. You will see the same event arcs inside a smaller 520x520 clock that can be moved around.">Mini</button>
+          <button type="button" data-cc-mode="hidden" title="Hide the clock overlay from the page. You will see Google Calendar without the clock until you open the extension again.">Hide</button>
+        </div>
+        <button type="button" class="cc-btn-time" data-cc-action="time-panel-toggle" title="Open or close Settings. You will see the separate settings flyover appear beside the clock controls." aria-label="Open or close Calendar Clock settings">Settings</button>
+        <button type="button" class="cc-btn-refresh" data-cc-action="refresh" title="Clear cached events, reload this Google Calendar tab, and rebuild the clock from fresh Calendar data.">Refresh</button>
+      </div>
+    </div>
+
+    <!-- PANEL 2: TIME CONTROLS -->
+    <div class="cc-panel cc-panel-time" role="dialog" aria-label="Calendar Clock settings">
+      <div class="cc-settings-page">
+        <div class="cc-panel-header cc-panel-time-header">
+          <span class="cc-drag-indicator">⋮⋮</span>
+          <span class="cc-panel-title">Time Window Settings <span class="cc-panel-version" data-cc-extension-version></span></span>
+          <div class="cc-header-actions">
+            <button type="button" class="cc-btn-secondary" data-cc-action="whats-new" title="Open update notes. You will see a short list of recent Calendar Clock changes inside this panel.">What's new</button>
+            <button type="button" class="cc-btn-secondary" data-cc-action="help" title="Open help. You will see concise notes about controls, events, tasks, refresh, and debug.">Help</button>
+            <button type="button" class="cc-btn-secondary" data-cc-action="debug" title="Open diagnostics. You will see captured event data, window state, and visibility counts for troubleshooting.">Debug</button>
+            <button type="button" class="cc-btn-icon" data-cc-action="time-panel-collapse" title="Collapse or expand this settings flyover. You will see only the header when collapsed and all controls when expanded." aria-label="Collapse time settings">_</button>
+            <button type="button" class="cc-btn-icon" data-cc-action="time-panel-close" title="Close this settings flyover. You can reopen it from the Settings button in the compact controls." aria-label="Close time settings">x</button>
+          </div>
+        </div>
+
+        <div class="cc-settings-body">
+          <div class="cc-panel-section cc-panel-section-clock-range">
+            <div class="cc-section-title">What time should the clock show?</div>
+            <div class="cc-window-follow-row">
+              <div class="cc-toggle-row">
+                <label class="cc-toggle" data-cc-follow-label title="Keep the visible clock range moving with the current time. You will see Window Start stay the configured number of hours behind the current hour hand.">
+                  <input data-cc-follow-now type="checkbox">
+                  <span class="cc-toggle-slider"></span>
+                  <span class="cc-toggle-label">Follow Now</span>
+                </label>
+                <div class="cc-follow-hours-group">
+                  <input data-cc-follow-radius type="number" min="-23.5" max="0" step="0.5" value="-3" title="Set where Window Start sits inside the moving clock window. Negative values show that many past hours before now; 0 starts at now.">
+                  <span>hrs</span>
+                </div>
+              </div>
+              <div class="cc-follow-help" data-cc-follow-help>Clock keeps 12 hours visible, showing the last 3 hours before now and the next 9 hours after now.</div>
+            </div>
+            <div class="cc-window-row">
+              <label class="cc-field-label" for="cc-window-preset" title="This chooses which 12 hours are drawn around the dial. You will see events inside that time range as arcs on the clock.">Show events from</label>
+              <select id="cc-window-preset" data-cc-window-preset title="Choose the time range mapped around the clock. You will see only events that overlap that range drawn as arcs on the dial. Follow Now disables this manual selector.">
+                <option value="08:00-20:00" title="Show daytime hours from 08:00 to 20:00. Events in that range appear around the dial, while events outside it are counted as outside.">Day (08:00-20:00)</option>
+                <option value="20:00-08:00" title="Show overnight hours from 20:00 to 08:00 the next day. Evening and early morning events appear around the dial.">Night (20:00-08:00)</option>
+                <option value="00:00-12:00" title="Show the first half of the day from midnight to noon. You will see morning events mapped across the clock face.">Morning half (00:00-12:00)</option>
+                <option value="12:00-00:00" title="Show the second half of the day from noon to midnight. You will see afternoon and evening events mapped across the clock face.">Afternoon half (12:00-00:00)</option>
+                <option value="custom" title="Choose any divider hour for a custom 12-hour window. You will see the clock show the 12 hours after that divider.">Custom</option>
+                <option value="generated" title="Show the current automatic range. You will see this when Follow Now, Try to fit now, or Jump chooses a range that is not one of the fixed presets." hidden>Automatic range</option>
+              </select>
+            </div>
+            <div class="cc-custom-window-row" data-cc-custom-window-row hidden>
+              <label class="cc-field-label" for="cc-custom-divider-time" title="Set the divider hour that starts the manual 12-hour window. You will see the selected hour become the left edge of the shown timeframe.">Custom divider</label>
+              <div class="cc-custom-divider-grid">
+                <input id="cc-custom-divider-time" data-cc-custom-divider-time type="time" step="1800" value="08:00" title="Type the divider time. You will see a fixed 12-hour window starting at this time.">
+                <div class="cc-slider-control cc-custom-divider-slider">
+                  <input data-cc-custom-divider-slider type="range" min="0" max="23.5" step="0.5" value="8" title="Slide the divider hour around the day. You will see the custom 12-hour window move in half-hour steps.">
+                  <output data-cc-custom-divider-output>08:00</output>
+                </div>
+              </div>
+            </div>
+            <div class="cc-window-summary" data-cc-window-summary title="Shows the exact date and hour boundaries currently drawn on the clock. Use this to confirm whether Follow Now, Try to fit now, Jump, or Custom selected the range you expected.">Showing window</div>
+            <div class="cc-window-action-buttons">
+              <button type="button" class="cc-btn-action" data-cc-action="fit" title="Try to choose a one-time 12-hour range that fits the events currently available to Calendar Clock. This is best effort: events outside the current capture may not be considered. It will not keep following time afterward.">Try to fit now</button>
+              <button type="button" class="cc-btn-action" data-cc-action="jump" title="Move to the first captured event outside the current range. Example: if the clock shows 07:30-19:30 and an event starts at 20:30, Jump moves the window toward that event and highlights it in Calendar.">Jump</button>
+            </div>
+          </div>
+
+          <div class="cc-panel-section cc-panel-section-visuals">
+            <div class="cc-section-title">Visuals</div>
+            <div class="cc-visuals-grid">
+              <div class="cc-divider-settings-row">
+                <label class="cc-row-label" for="cc-clock-face-design" title="Choose the clock face design used by the overlay and mini clock.">Clock Design</label>
+                <select id="cc-clock-face-design" data-cc-clock-face title="Choose the clock face design." disabled>
+                  <option value="">Loading clock designs…</option>
+                </select>
+              </div>
+
+              <div class="cc-toggle-with-settings">
+                <label class="cc-toggle" title="Mark the start of the clock window. Example: if the range is 08:00-20:00, this marks 08:00 and events before it are outside the current view.">
+                  <input data-cc-window-start-marker type="checkbox" checked>
+                  <span class="cc-toggle-slider"></span>
+                  <span class="cc-toggle-label">Window Start</span>
+                  <span class="cc-divider-color-dot" data-cc-divider-color-dot></span>
+                </label>
+                <button type="button" class="cc-divider-settings-btn" data-cc-action="divider-settings-toggle" title="Customize Window Start style, shape, width, marker count, emoji, color, and opacity">⚙️</button>
+              </div>
+
+              <div class="cc-divider-settings-panel" data-cc-divider-settings-panel>
+                <div class="cc-divider-help" data-cc-divider-help>Marks the start of the clock window.</div>
+                <div class="cc-divider-settings-row cc-divider-labels-row">
+                  <label class="cc-toggle" title="Show Past and Future labels around Window Start on the clock face.">
+                    <input data-cc-divider-labels type="checkbox">
+                    <span class="cc-toggle-slider"></span>
+                    <span class="cc-toggle-label">Past / Future labels</span>
+                  </label>
+                </div>
+                <div class="cc-divider-settings-row">
+                  <label class="cc-toggle" title="Play one soft pulse after Window Start moves.">
+                    <input data-cc-window-start-marker-pulse type="checkbox" checked>
+                    <span class="cc-toggle-slider"></span>
+                    <span class="cc-toggle-label">Start pulse</span>
+                  </label>
+                </div>
+                <div class="cc-divider-settings-row">
+                  <label class="cc-row-label" for="cc-divider-style">Style Preset</label>
+                  <select id="cc-divider-style" data-cc-divider-style title="Choose a starter style for Window Start. Example: Line makes a continuous marker; Dotted keeps separated dots.">
+                    <option value="subtle">Subtle</option>
+                    <option value="dots">Dotted</option>
+                    <option value="line">Solid Line</option>
+                    <option value="strong">Strong</option>
+                    <option value="glow">Glow</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                </div>
+                <div class="cc-divider-settings-row">
+                  <label class="cc-row-label" for="cc-divider-shape">Shape</label>
+                  <select id="cc-divider-shape" data-cc-divider-shape title="Choose whether Window Start is drawn as separate dots, one continuous line, or repeated emoji markers.">
+                    <option value="dots">Dots</option>
+                    <option value="line">Line</option>
+                    <option value="emoji">Emoji</option>
+                  </select>
+                </div>
+                <div class="cc-divider-settings-row cc-divider-emoji-row cc-divider-row-collapsible is-collapsed" data-cc-divider-emoji-row aria-hidden="true">
+                  <label class="cc-row-label" for="cc-divider-emoji">Emoji</label>
+                  <input id="cc-divider-emoji" class="cc-divider-emoji-input" data-cc-divider-emoji type="text" value="⭐" title="Choose the emoji repeated along Window Start when Shape is Emoji.">
+                </div>
+                <div class="cc-divider-settings-row">
+                  <label class="cc-row-label" for="cc-divider-color">Marker Color</label>
+                  <input id="cc-divider-color" data-cc-divider-color type="color" value="#3a1860" title="Choose Window Start color">
+                </div>
+                <div class="cc-divider-settings-row">
+                  <label class="cc-row-label" for="cc-divider-width">Line Width</label>
+                  <div class="cc-slider-control">
+                    <input id="cc-divider-width" data-cc-divider-width type="range" min="1" max="12" step="1" value="3" title="Set Window Start stroke width. Example: 2px is subtle, 5px is prominent.">
+                    <output data-cc-divider-width-output>3px</output>
+                  </div>
+                </div>
+                <div class="cc-divider-settings-row" data-cc-divider-dots-row>
+                  <label class="cc-row-label" for="cc-divider-dots" data-cc-divider-dots-label>Marker Count</label>
+                  <div class="cc-slider-control">
+                    <input id="cc-divider-dots" data-cc-divider-dots type="range" min="1" max="50" step="1" value="14" title="Set how many dots or emoji markers appear along Window Start.">
+                    <output data-cc-divider-dots-output>14</output>
+                  </div>
+                </div>
+                <div class="cc-divider-settings-row">
+                  <label class="cc-row-label" for="cc-divider-transparency">Marker Opacity</label>
+                  <div class="cc-slider-control">
+                    <input id="cc-divider-transparency" data-cc-divider-transparency type="range" min="0" max="100" step="1" value="8" title="Set how transparent Window Start is. Example: 0% is fully visible, 60% is subtle.">
+                    <output data-cc-divider-transparency-output>92%</output>
+                  </div>
+                </div>
+              </div>
+
+              <label class="cc-toggle" title="Map 24 hours around the dial. With Follow Now on, the configured offset shows past hours and the remaining hours look forward.">
+                <input data-cc-24-hour-radial type="checkbox">
+                <span class="cc-toggle-slider"></span>
+                <span class="cc-toggle-label">24h radial (minute arrow works as before).</span>
+              </label>
+
+              <div class="cc-toggle-with-settings">
+                <label class="cc-toggle" title="Enable the clock magnifier and event reminders. Open settings to choose when the lens appears, glows, or plays a sound.">
+                  <input data-cc-magnifier type="checkbox">
+                  <span class="cc-toggle-slider"></span>
+                  <span class="cc-toggle-label">Magnifier &amp; Event Reminders</span>
+                </label>
+                <button type="button" class="cc-divider-settings-btn" data-cc-action="magnifier-settings-toggle" title="Set up magnifier behavior and event reminders">⚙️</button>
+              </div>
+
+              <div class="cc-divider-settings-panel cc-magnifier-settings-panel" data-cc-magnifier-settings-panel>
+                <div class="cc-divider-settings-row">
+                  <label class="cc-row-label" for="cc-magnifier-lens-size">Lens size</label>
+                  <div class="cc-slider-control cc-magnifier-slider-control">
+                    <input id="cc-magnifier-lens-size" data-cc-magnifier-lens-size type="range" min="140" max="1100" step="10" value="550" title="Change the diameter of the magnifier">
+                    <output data-cc-magnifier-lens-size-output>550px</output>
+                  </div>
+                </div>
+                <div class="cc-divider-settings-row">
+                  <label class="cc-toggle" title="Show the magnifier while the mouse pointer is over the clock.">
+                    <input data-cc-magnifier-hover type="checkbox">
+                    <span class="cc-toggle-slider"></span>
+                    <span class="cc-toggle-label">Show on mouse hover</span>
+                  </label>
+                </div>
+                <div class="cc-divider-settings-row">
+                  <label class="cc-toggle" title="Show a small cross at the exact center of the magnifier.">
+                    <input data-cc-magnifier-center-cursor type="checkbox">
+                    <span class="cc-toggle-slider"></span>
+                    <span class="cc-toggle-label">Show center crosshair</span>
+                  </label>
+                </div>
+                <div class="cc-divider-settings-row">
+                  <label class="cc-toggle" title="Enable the automatic magnifier actions selected below.">
+                    <input data-cc-magnifier-auto type="checkbox">
+                    <span class="cc-toggle-slider"></span>
+                    <span class="cc-toggle-label">Automatic actions</span>
+                  </label>
+                </div>
+                <div class="cc-divider-help">Choose when the magnifier should appear. Sound reminders below work independently.</div>
+                <div class="cc-divider-settings-row cc-magnifier-trigger-row">
+                  <label class="cc-toggle" title="When a visible event starts, move the magnifier to that event on the clock.">
+                    <input data-cc-magnifier-auto-event-start type="checkbox">
+                    <span class="cc-toggle-slider"></span>
+                    <span class="cc-toggle-label">At event start</span>
+                  </label>
+                  <label class="cc-toggle cc-magnifier-subtoggle" title="Also make the magnifier glow more brightly when the event starts.">
+                    <input data-cc-magnifier-auto-event-start-attention type="checkbox">
+                    <span class="cc-toggle-slider"></span>
+                    <span class="cc-toggle-label">Attention glow</span>
+                  </label>
+                </div>
+                <div class="cc-divider-settings-row cc-sound-reminder-row">
+                  <label class="cc-toggle" title="Play a sound before a timed event begins.">
+                    <input data-cc-event-reminder-start type="checkbox" disabled>
+                    <span class="cc-toggle-slider"></span>
+                    <span class="cc-toggle-label">Play</span>
+                  </label>
+                  <button type="button" class="cc-sound-link" data-cc-event-reminder-sound disabled>Sound</button>
+                  <input class="cc-sound-lead" data-cc-event-reminder-start-lead type="number" min="0" max="86400" step="1" value="30" aria-label="Seconds before event begins" disabled>
+                  <span>seconds before event begins</span>
+                </div>
+                <div class="cc-divider-settings-row cc-magnifier-trigger-row">
+                  <label class="cc-toggle" title="When a visible event ends, move the magnifier to that event on the clock.">
+                    <input data-cc-magnifier-auto-event-end type="checkbox">
+                    <span class="cc-toggle-slider"></span>
+                    <span class="cc-toggle-label">At event end</span>
+                  </label>
+                  <label class="cc-toggle cc-magnifier-subtoggle" title="Also make the magnifier glow more brightly when the event ends.">
+                    <input data-cc-magnifier-auto-event-end-attention type="checkbox">
+                    <span class="cc-toggle-slider"></span>
+                    <span class="cc-toggle-label">Attention glow</span>
+                  </label>
+                </div>
+                <div class="cc-divider-settings-row cc-sound-reminder-row">
+                  <label class="cc-toggle" title="Play a sound before a timed event ends. Point events have no end reminder.">
+                    <input data-cc-event-reminder-end type="checkbox" disabled>
+                    <span class="cc-toggle-slider"></span>
+                    <span class="cc-toggle-label">Play</span>
+                  </label>
+                  <button type="button" class="cc-sound-link" data-cc-event-reminder-sound disabled>Sound</button>
+                  <input class="cc-sound-lead" data-cc-event-reminder-end-lead type="number" min="0" max="86400" step="1" value="30" aria-label="Seconds before event ends" disabled>
+                  <span>seconds before event ends</span>
+                </div>
+                <div class="cc-divider-settings-row">
+                  <label class="cc-toggle" title="Periodically move the magnifier to the current minute hand.">
+                    <input data-cc-magnifier-auto-minute-hand type="checkbox">
+                    <span class="cc-toggle-slider"></span>
+                    <span class="cc-toggle-label">Check current time periodically</span>
+                  </label>
+                  <div class="cc-number-control">
+                    <input id="cc-magnifier-auto-interval" data-cc-magnifier-auto-interval type="number" min="5" max="3600" step="5" value="600" title="How often to show the current time, in seconds">
+                    <span>seconds</span>
+                  </div>
+                </div>
+                <button type="button" class="cc-btn-action cc-magnifier-launch-btn" data-cc-action="magnifier-launch-auto" title="Run one automatic magnifier animation now. No reminder sound will play.">Preview automatic magnifier</button>
+              </div>
+
+              <div class="cc-toggle-with-settings">
+                <label class="cc-toggle" title="Draw captured calendar events as colored arcs on the clock face. Turn this off for a clean clock without event rings.">
+                  <input data-cc-arcs-visible type="checkbox" checked>
+                  <span class="cc-toggle-slider"></span>
+                  <span class="cc-toggle-label">Event Arcs</span>
+                </label>
+                <button type="button" class="cc-divider-settings-btn" data-cc-action="arc-settings-toggle" title="Arc settings: customize event arc distance, thickness, and lane gap">⚙️</button>
+              </div>
+
+              <div class="cc-event-labels-settings-panel cc-arc-settings-panel" data-cc-arc-settings-panel>
+                <div class="cc-density-row">
+                  <label class="cc-row-label" for="cc-density-level" title="Controls how far event arcs sit from the clock center and how much radial space event lanes can use.">How far arcs are from center</label>
+                  <div class="cc-slider-control">
+                    <input id="cc-density-level" data-cc-density-level type="range" min="0" max="100" step="5" value="50" title="Move this slider to choose how compact the event lanes are. You will see more breathing room on the left side and more packed arcs on the right side.">
+                    <output data-cc-density-output>50</output>
+                  </div>
+                </div>
+
+                <div class="cc-density-row">
+                  <label class="cc-row-label" for="cc-arc-thickness-level" title="Arc thickness controls the stroke width of event arcs. You will see thinner arcs on the left and bolder arcs on the right.">Arc thickness</label>
+                  <div class="cc-slider-control">
+                    <input id="cc-arc-thickness-level" data-cc-arc-thickness-level type="range" min="0" max="100" step="5" value="50" title="Move this slider to choose how thick event arcs are.">
+                    <output data-cc-arc-thickness-output>50</output>
+                  </div>
+                </div>
+
+                <div class="cc-density-row">
+                  <label class="cc-row-label" for="cc-arc-gap-level" title="Arc gap controls the visible empty space between neighboring event arcs. You will see thicker arcs with small gaps or thinner arcs with larger gaps.">Arc Gap</label>
+                  <div class="cc-slider-control">
+                    <input id="cc-arc-gap-level" data-cc-arc-gap-level type="range" min="0" max="100" step="5" value="0" title="Move this slider to choose the gap between arc lanes. You will see neighboring arcs separate more as the value increases.">
+                    <output data-cc-arc-gap-output>0</output>
+                  </div>
+                </div>
+
+                <div class="cc-divider-settings-row">
+                  <label class="cc-row-label" for="cc-capture-limit" title="The maximum number of Calendar and Tasks items kept for the active clock window. Higher limits can make very dense calendars slower to render.">Captured items</label>
+                  <select id="cc-capture-limit" data-cc-capture-limit>
+                    <option value="50">50 (default)</option>
+                    <option value="100">100</option>
+                    <option value="200">200</option>
+                  </select>
+                </div>
+                <div class="cc-divider-help">Increase this only when the capture-limit warning says items were omitted.</div>
+
+                <div class="cc-divider-settings-row">
+                  <label class="cc-toggle" title="Non-overlapping and exactly adjacent events always share one arc level. Enable this only to keep events on that level when captured times overlap by no more than 1 minute.">
+                    <input data-cc-arc-same-level-non-overlapping type="checkbox">
+                    <span class="cc-toggle-slider"></span>
+                    <span class="cc-toggle-label">Allow 1-minute overlap tolerance</span>
+                  </label>
+                </div>
+
+                <div class="cc-toggle-with-settings">
+                  <label class="cc-toggle" title="Draw event titles directly over visible arcs. You will see compact curved labels that resize with the arc and hide when the arc is too short to read.">
+                    <input data-cc-event-labels type="checkbox">
+                    <span class="cc-toggle-slider"></span>
+                    <span class="cc-toggle-label">Event Labels</span>
+                    <span class="cc-event-labels-color-dot" data-cc-event-labels-color-dot></span>
+                  </label>
+                  <button type="button" class="cc-divider-settings-btn" data-cc-action="event-labels-settings-toggle" title="Customize label style, size, auto-hide, and transparency">⚙️</button>
+                </div>
+
+                <div class="cc-event-labels-settings-panel cc-nested-event-labels-settings-panel" data-cc-event-labels-settings-panel>
+                  <div class="cc-divider-settings-row">
+                    <label class="cc-row-label" for="cc-event-label-style" title="Choose how event titles are drawn on top of arcs. You will see the same curved labels with a different contrast and glow treatment.">Style</label>
+                    <select id="cc-event-label-style" data-cc-event-label-style title="Choose the visual treatment for event labels. Ink is dark and readable, Glass is soft and bright, Glow is luminous, Color uses the event color, and Custom uses your choice.">
+                      <option value="ink">Ink</option>
+                      <option value="glass">Glass</option>
+                      <option value="glow">Glow</option>
+                      <option value="color">Color</option>
+                      <option value="custom">Custom</option>
+                    </select>
+                  </div>
+                  <div class="cc-divider-settings-row" data-cc-event-label-custom-color-row>
+                    <label class="cc-row-label" for="cc-event-label-custom-color">Color</label>
+                    <input id="cc-event-label-custom-color" data-cc-event-label-custom-color type="color" value="#ffffff" title="Choose custom event label color">
+                  </div>
+                  <div class="cc-divider-settings-row">
+                    <label class="cc-row-label" for="cc-event-label-font-family" title="Choose a system font stack for event labels. You can type a font name or choose a common installed font.">Font</label>
+                    <div class="cc-font-control">
+                      <input id="cc-event-label-font-family" data-cc-event-label-font-family type="text" list="cc-event-label-font-options" value="Inter, Segoe UI, Arial, sans-serif" title="Type a system font stack for event labels">
+                      <datalist id="cc-event-label-font-options">
+                        <option value="Inter, Segoe UI, Arial, sans-serif"></option>
+                        <option value="Segoe UI, Arial, sans-serif"></option>
+                        <option value="Arial, Helvetica, sans-serif"></option>
+                        <option value="Verdana, Geneva, sans-serif"></option>
+                        <option value="Tahoma, Geneva, sans-serif"></option>
+                        <option value="Georgia, Times New Roman, serif"></option>
+                        <option value="Trebuchet MS, Arial, sans-serif"></option>
+                        <option value="Century Gothic, Arial, sans-serif"></option>
+                      </datalist>
+                      <button type="button" class="cc-btn-secondary cc-font-reset-btn" data-cc-action="event-label-font-reset" title="Reset event label font family and both Full and Mini sizes">Reset</button>
+                    </div>
+                  </div>
+                  <div class="cc-divider-settings-row">
+                    <label class="cc-row-label" for="cc-event-label-font-size-full" title="Full is the large Calendar Clock opened with the Full button. It is not the browser's full-screen mode. This setting changes event-title text only on that large clock.">Full clock label size</label>
+                    <div class="cc-slider-control">
+                      <input id="cc-event-label-font-size-full" data-cc-event-label-font-size-full type="range" min="8" max="36" step="1" value="22" aria-label="Large Full clock event label size" aria-description="Full is the large Calendar Clock opened with the Full button, not the browser's full-screen mode. Mini has its own separate size." title="Full = the large clock opened with the Full button, not browser full screen. Mini has its own label size.">
+                      <output data-cc-event-label-font-size-full-output title="Current label size on the large Full clock">22px</output>
+                    </div>
+                  </div>
+                  <div class="cc-divider-settings-row">
+                    <label class="cc-row-label" for="cc-event-label-font-size-mini" title="Mini is the small floating Calendar Clock opened with the Mini button. This setting changes event-title text only on that small clock.">Mini clock label size</label>
+                    <div class="cc-slider-control">
+                      <input id="cc-event-label-font-size-mini" data-cc-event-label-font-size-mini type="range" min="8" max="36" step="1" value="18" aria-label="Small Mini clock event label size" aria-description="Mini is the small floating Calendar Clock opened with the Mini button. Full has its own separate size." title="Mini = the small floating clock opened with the Mini button. Full has its own label size.">
+                      <output data-cc-event-label-font-size-mini-output title="Current label size on the small Mini clock">18px</output>
+                    </div>
+                  </div>
+                  <div class="cc-divider-help"><strong>Full</strong> is the large clock; <strong>Mini</strong> is the small floating clock. Their label sizes are independent.</div>
+                  <div class="cc-divider-settings-row">
+                    <label class="cc-toggle" title="Use the Full or Mini size selected above as that view's maximum. Active events and events starting within the next 3 hours keep the maximum size and show the full title. Completed and farther future labels gradually become smaller.">
+                      <input data-cc-event-label-proximity-priority type="checkbox">
+                      <span class="cc-toggle-slider"></span>
+                      <span class="cc-toggle-label">Prioritize nearby events</span>
+                    </label>
+                  </div>
+                  <div class="cc-divider-help">The selected size for each view is its maximum. Active and next 3h keep 100%; other labels get smaller.</div>
+                  <div class="cc-divider-settings-row">
+                    <label class="cc-row-label" for="cc-event-label-min-length" title="Hide labels when the event arc can display fewer than this many symbols. Lower values show labels on shorter events.">Hide labels if cannot display more than</label>
+                    <div class="cc-slider-control">
+                      <input id="cc-event-label-min-length" data-cc-event-label-min-length type="range" min="3" max="20" step="1" value="5" title="Hide labels when the event arc can display fewer than this many symbols. Lower values show labels on shorter events.">
+                      <output data-cc-event-label-min-length-output>5 symbols</output>
+                    </div>
+                  </div>
+                  <div class="cc-divider-settings-row">
+                    <label class="cc-row-label" for="cc-event-label-shorten-threshold" title="Choose how long a title may grow before it ends with an ellipsis. 100% means the title may be as long as its event arc. 250% means up to 2.5 times the arc length. Never keeps the complete title.">Title length before shortening</label>
+                    <div class="cc-slider-control">
+                      <input id="cc-event-label-shorten-threshold" data-cc-event-label-shorten-threshold type="range" min="50" max="305" step="5" value="250" aria-label="Maximum event-title length before shortening" aria-description="100 percent allows a title as long as its event arc. 250 percent allows 2.5 times the arc length. The final Never position disables shortening." title="100% = up to the arc length. 250% = up to 2.5 times the arc length. Never = keep the complete title. Shortening always keeps the beginning and adds an ellipsis at the end.">
+                      <output data-cc-event-label-shorten-threshold-output title="Current title-length allowance compared with the event arc">250%</output>
+                    </div>
+                  </div>
+                  <div class="cc-divider-help">At 250%, a title can be 2.5× longer than its arc. Longer titles keep their beginning and end with “…”.</div>
+                  <div class="cc-divider-settings-row">
+                    <label class="cc-row-label" for="cc-event-label-anchor" title="Choose where each event title sits on its colored arc. Center keeps the middle of the text at the middle of the arc. Start fixes the first character at the start of the arc, so the text grows toward the end. End fixes the last visible character at the end of the arc. Shortening always keeps the beginning of the event title and adds an ellipsis at the end.">Label anchor</label>
+                    <div class="cc-slider-control cc-slider-control--label-anchor">
+                      <input id="cc-event-label-anchor" data-cc-event-label-anchor type="range" min="0" max="2" step="1" value="0" aria-label="Event label anchor" aria-valuetext="Center" aria-description="Center places the label in the middle of its event arc. Start fixes the first character to the arc start. End fixes the last visible character to the arc end. Shortening always preserves the beginning of the event title." title="Drag to choose where labels attach. Center: the label is centered on the event arc. Start: the first character is fixed to the arc start and text grows toward the arc end. End: the last visible character is fixed to the arc end. Shortening never removes the beginning of the event title.">
+                      <output data-cc-event-label-anchor-output>Center</output>
+                    </div>
+                  </div>
+                  <div class="cc-divider-settings-row">
+                    <label class="cc-row-label" for="cc-event-label-opacity">Opacity</label>
+                    <div class="cc-slider-control">
+                      <input id="cc-event-label-opacity" data-cc-event-label-opacity type="range" min="10" max="100" step="5" value="100" title="Adjust transparency of event labels">
+                      <output data-cc-event-label-opacity-output>100%</output>
+                    </div>
+                  </div>
+                  <div class="cc-divider-settings-row">
+                    <label class="cc-row-label" for="cc-event-label-arc-distance" title="Move curved event titles radially away from their colored arcs without changing the arc lanes.">Distance from arc</label>
+                    <div class="cc-slider-control">
+                      <input id="cc-event-label-arc-distance" data-cc-event-label-arc-distance type="range" min="0" max="24" step="1" value="12" title="Choose the radial distance between curved event titles and their colored arcs.">
+                      <output data-cc-event-label-arc-distance-output>12px</output>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="cc-long-duration-group">
+                  <div class="cc-divider-settings-row">
+                    <label class="cc-toggle" title="Show all-day and very long events as wide arcs. Turn this off when an all-day or multi-day event covers too much of the clock; the event remains captured and visible in diagnostics.">
+                      <input data-cc-long-duration-arcs-visible type="checkbox" checked>
+                      <span class="cc-toggle-slider"></span>
+                      <span class="cc-toggle-label">Show long / all-day event arcs</span>
+                    </label>
+                  </div>
+                  <div class="cc-divider-help">All-day and 12h+ events can fill most of the visible clock window. This switch controls only those large arcs.</div>
+                </div>
+              </div>
+
+              <label class="cc-toggle" title="Use dark colors for Calendar Clock menus only. The full-screen clock face keeps its current appearance.">
+                <input data-cc-menu-dark-theme type="checkbox">
+                <span class="cc-toggle-slider"></span>
+                <span class="cc-toggle-label">Dark theme for menus</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="cc-panel-footer">
+            <div class="cc-parser-warning" data-cc-parser-warning hidden></div>
+            <div class="cc-stats" data-cc-stats title="Shows how many captured events are currently visible on the clock. You will see outside events counted here when they fall beyond the current time range.">0 captured</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cc-whats-new-page" aria-label="Calendar Clock whats new">
+        <div class="cc-panel-header cc-panel-whats-new-header">
+          <span class="cc-drag-indicator">⋮⋮</span>
+          <span class="cc-panel-title">What's new</span>
+          <button type="button" class="cc-btn-secondary" data-cc-action="whats-new-back" title="Return to settings. You will see the Time Window Settings panel again.">Back</button>
+        </div>
+        <div class="cc-whats-new-body">
+          <div class="cc-section-title">Latest update</div>
+          <p>We added "What's new".</p>
+        </div>
+      </div>
+      <div class="cc-time-panel-resize cc-resize-n" data-cc-time-resize="n" aria-hidden="true"></div>
+      <div class="cc-time-panel-resize cc-resize-e" data-cc-time-resize="e" aria-hidden="true"></div>
+      <div class="cc-time-panel-resize cc-resize-s" data-cc-time-resize="s" aria-hidden="true"></div>
+      <div class="cc-time-panel-resize cc-resize-w" data-cc-time-resize="w" aria-hidden="true"></div>
+      <div class="cc-time-panel-resize cc-resize-ne" data-cc-time-resize="ne" aria-hidden="true"></div>
+      <div class="cc-time-panel-resize cc-resize-se" data-cc-time-resize="se" title="Drag to resize settings" aria-hidden="true"></div>
+      <div class="cc-time-panel-resize cc-resize-sw" data-cc-time-resize="sw" aria-hidden="true"></div>
+      <div class="cc-time-panel-resize cc-resize-nw" data-cc-time-resize="nw" aria-hidden="true"></div>
+    </div>
+    <div class="cc-panel cc-panel-debug cc-debug" aria-label="Calendar Clock debug panel"></div>
+    <div class="cc-panel cc-panel-help cc-help" aria-label="Calendar Clock help panel"></div>
+    <div class="cc-arc-tooltip" data-cc-arc-tooltip aria-hidden="true"></div>

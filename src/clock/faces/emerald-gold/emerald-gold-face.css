@@ -1,0 +1,466 @@
+/* Visual styling for the Emerald Gold luxury face, rim, ticks, numbers, hands, and arcs. */
+.clock {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    position: relative;
+    overflow: hidden;
+    background:
+        linear-gradient(140deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.02) 42%, rgba(212, 175, 55, 0.15)) padding-box,
+        var(--face-texture) padding-box,
+        var(--face-grain) padding-box,
+        radial-gradient(circle at 50% 50%, #0c5640 0%, #063124 64%, #021a13 100%) padding-box,
+        conic-gradient(from 315deg,
+            #ffe082 0deg,
+            #d4af37 60deg,
+            #aa7c11 150deg,
+            #5a4004 220deg,
+            #d4af37 300deg,
+            #ffe082 360deg) border-box;
+    border: var(--rim-width) solid transparent;
+    box-shadow:
+        inset 0 0 0 clamp(3px, .8vmin, 8px) rgba(255, 243, 200, 0.45),
+        inset 0 0 6vmin rgba(2, 26, 19, 0.75),
+        0 0 0 1px rgba(255, 243, 200, 0.35),
+        0 4vmin 9vmin rgba(0, 0, 0, 0.65);
+}
+
+.clock::before {
+    content: "";
+    position: absolute;
+    inset: 8.4%;
+    border-radius: 50%;
+    border: 1px solid rgba(212, 175, 55, 0.28);
+    box-shadow:
+        inset 0 0 2vmin rgba(212, 175, 55, 0.08),
+        0 0 1.4vmin rgba(212, 175, 55, 0.04);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.clock::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.35) 0 24%, transparent 24% 100%);
+    pointer-events: none;
+    z-index: 6;
+    mix-blend-mode: screen;
+}
+
+.ticks,
+.dot-rings,
+.hands,
+.numbers {
+    position: absolute;
+    inset: 0;
+}
+
+.ticks,
+.tick,
+.dot-rings,
+.center-shadow-ring,
+.minute-dot,
+.numbers,
+.number,
+.hands,
+.hand,
+.center {
+    pointer-events: none;
+}
+
+.ticks {
+    z-index: 1;
+}
+
+.dot-rings {
+    z-index: 1;
+}
+
+.numbers {
+    z-index: 3;
+}
+
+.minute-dot {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    border-radius: 50%;
+    background: rgba(212, 175, 55, 0.35);
+    box-shadow: 0 0 .24vmin rgba(212, 175, 55, 0.15);
+}
+
+.center-shadow-ring {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    border-radius: 50%;
+    border: 1px solid rgba(212, 175, 55, 0.22);
+    box-shadow:
+        inset 0 0 1.8vmin rgba(2, 26, 19, 0.45),
+        0 0 1.4vmin rgba(212, 175, 55, 0.15);
+    transform: translate(-50%, -50%);
+}
+
+.hands {
+    z-index: 4;
+}
+
+.time-arcs {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.time-arc {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: .88;
+    filter:
+        drop-shadow(0 .18vmin .18vmin rgba(0, 0, 0, 0.34)) drop-shadow(0 0 .28vmin currentColor);
+    pointer-events: stroke;
+    cursor: help;
+}
+
+.time-point {
+    opacity: .92;
+    stroke-width: max(2px, .34vmin);
+    filter:
+        drop-shadow(0 .18vmin .18vmin rgba(0, 0, 0, 0.34)) drop-shadow(0 0 .28vmin currentColor);
+    pointer-events: visiblePainted;
+    cursor: help;
+}
+
+.time-arc-separator {
+    display: none;
+    pointer-events: none;
+    opacity: .98;
+    filter:
+        drop-shadow(0 .16vmin .18vmin rgba(2, 26, 19, .72)) drop-shadow(0 0 .26vmin rgba(255, 255, 255, .52));
+}
+
+.time-arc-separator-shadow,
+.time-arc-separator-cut {
+    fill: none;
+    stroke-linecap: butt;
+}
+
+.time-arc-separator-shadow {
+    stroke: rgba(2, 26, 19, .94);
+}
+
+.time-arc-separator-cut {
+    stroke: rgba(255, 255, 255, .98);
+}
+
+.time-point-callout {
+    pointer-events: none;
+    opacity: .94;
+    color: currentColor;
+}
+
+.time-point-callout-line {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: max(1px, .18vmin);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: .72;
+    filter: drop-shadow(0 .08vmin .10vmin rgba(0, 0, 0, .26));
+}
+
+.time-point-callout-dot {
+    fill: currentColor;
+    stroke: rgba(255, 255, 255, .92);
+    stroke-width: max(.8px, .12vmin);
+    opacity: .88;
+    filter: drop-shadow(0 0 .22vmin currentColor);
+}
+
+.time-point-callout-label {
+    font-size: 12px;
+}
+
+.time-arc:hover,
+.time-arc.is-arc-hovered,
+.time-point:hover,
+.time-point.is-arc-hovered {
+    opacity: 1;
+    filter:
+        drop-shadow(0 .22vmin .20vmin rgba(0, 0, 0, .45)) drop-shadow(0 0 1.2vmin currentColor);
+}
+
+.time-arc-label {
+    pointer-events: none;
+    text-anchor: middle;
+    dominant-baseline: central;
+    font-family: Outfit, Inter, "Segoe UI", Arial, sans-serif;
+    font-weight: 850;
+    letter-spacing: 0.5px;
+    opacity: .96;
+    user-select: none;
+}
+
+.time-arc-label textPath {
+    text-anchor: middle;
+}
+
+.time-arc-label--glass {
+    fill: rgba(255, 255, 255, .96);
+    stroke: rgba(2, 26, 19, .65);
+    stroke-width: 1px;
+    paint-order: stroke;
+    filter:
+        drop-shadow(0 .08vmin .10vmin rgba(0, 0, 0, .36))
+        drop-shadow(0 0 .24vmin rgba(255, 255, 255, .45));
+}
+
+.time-arc-label--ink {
+    fill: rgba(2, 26, 19, .98);
+    stroke: rgba(255, 243, 200, .9);
+    stroke-width: 1.5px;
+    paint-order: stroke;
+    filter: drop-shadow(0 .08vmin .10vmin rgba(255, 255, 255, .25));
+}
+
+.time-arc-label--glow {
+    fill: #fffdf5;
+    stroke: rgba(90, 64, 4, .7);
+    stroke-width: 1px;
+    paint-order: stroke;
+    filter:
+        drop-shadow(0 0 .28vmin currentColor)
+        drop-shadow(0 .10vmin .14vmin rgba(0, 0, 0, .45));
+}
+
+.time-arc-label--color {
+    fill: var(--event-color);
+    stroke: rgba(255, 255, 255, .9);
+    stroke-width: 1.4px;
+    paint-order: stroke;
+    filter: drop-shadow(0 .10vmin .12vmin rgba(0, 0, 0, .3));
+}
+
+.time-arc-label--custom {
+    fill: var(--custom-label-color);
+    stroke: rgba(2, 26, 19, 0.8);
+    stroke-width: 1.2px;
+    paint-order: stroke;
+    filter: drop-shadow(0 0 .18vmin rgba(255, 255, 255, 0.55));
+}
+
+.window-start-marker {
+    stroke: var(--window-start-marker-color, #d4af37);
+    stroke-width: var(--window-start-marker-width, max(3px, .55vmin));
+    stroke-linecap: round;
+    stroke-dasharray: var(--window-start-marker-dasharray, .01 12);
+    filter:
+        drop-shadow(0 0 .24vmin rgba(255, 255, 255, .78))
+        drop-shadow(0 0 var(--window-start-marker-glow, .26vmin) var(--window-start-marker-color, rgba(212, 175, 55, .45)));
+    pointer-events: none;
+    opacity: var(--window-start-marker-opacity, 1);
+}
+
+.window-start-marker-pulse-group {
+    color: var(--window-start-marker-pulse-color, #d4af37);
+    opacity: 0;
+    pointer-events: none;
+    mix-blend-mode: screen;
+}
+
+.window-start-marker-pulse-radial,
+.window-start-marker-pulse-orbit {
+    stroke: var(--window-start-marker-pulse-color, currentColor);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+    filter:
+        drop-shadow(0 0 .24vmin rgba(255, 255, 255, .72))
+        drop-shadow(0 0 .46vmin var(--window-start-marker-pulse-color, currentColor));
+}
+
+.window-start-marker-pulse-radial {
+    opacity: 0;
+}
+
+.window-start-marker-pulse-orbit {
+    opacity: 0;
+    stroke-dasharray: .44 .56;
+    stroke-dashoffset: .2;
+}
+
+.window-start-marker-pulse-group.is-pulsing {
+    animation: window-start-marker-pulse-shell 560ms ease-out both;
+}
+
+.window-start-marker-pulse-group.is-pulsing .window-start-marker-pulse-radial {
+    animation: window-start-marker-pulse-radial 560ms ease-out both;
+}
+
+.window-start-marker-pulse-group.is-pulsing .window-start-marker-pulse-orbit {
+    animation: window-start-marker-pulse-orbit 560ms cubic-bezier(.2, .72, .25, 1) both;
+}
+
+@keyframes window-start-marker-pulse-shell {
+    0% { opacity: 0; }
+    18% { opacity: var(--window-start-marker-pulse-opacity, .24); }
+    100% { opacity: 0; }
+}
+
+@keyframes window-start-marker-pulse-radial {
+    0% { opacity: 0; }
+    20% { opacity: .22; }
+    100% { opacity: 0; }
+}
+
+@keyframes window-start-marker-pulse-orbit {
+    0% {
+        opacity: 0;
+        stroke-dashoffset: .26;
+    }
+    24% {
+        opacity: .34;
+    }
+    100% {
+        opacity: 0;
+        stroke-dashoffset: -.02;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .window-start-marker-pulse-group.is-pulsing,
+    .window-start-marker-pulse-group.is-pulsing .window-start-marker-pulse-radial,
+    .window-start-marker-pulse-group.is-pulsing .window-start-marker-pulse-orbit {
+        animation-duration: 180ms;
+    }
+
+    .window-start-marker-pulse-group.is-pulsing .window-start-marker-pulse-orbit {
+        stroke-dashoffset: 0;
+    }
+}
+
+.window-start-marker-emoji {
+    fill: var(--window-start-marker-color, #d4af37);
+    stroke: rgba(2, 26, 19, 0.86);
+    stroke-width: 2px;
+    paint-order: stroke;
+    dominant-baseline: middle;
+    text-anchor: middle;
+    filter:
+        drop-shadow(0 0 .42vmin rgba(255, 255, 255, .9))
+        drop-shadow(0 0 var(--window-start-marker-glow, .32vmin) var(--window-start-marker-color, rgba(212, 175, 55, .45)));
+    pointer-events: none;
+    opacity: var(--window-start-marker-opacity, 1);
+    user-select: none;
+}
+
+.window-start-marker-boundary-label {
+    fill: var(--window-start-marker-color, #d4af37);
+    stroke: rgba(2, 26, 19, 0.88);
+    stroke-width: 2px;
+    paint-order: stroke;
+    dominant-baseline: middle;
+    text-anchor: middle;
+    font-size: clamp(.62rem, 1.9vmin, 1.05rem);
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    filter:
+        drop-shadow(0 0 .36vmin rgba(255, 255, 255, .88))
+        drop-shadow(0 0 var(--window-start-marker-glow, .32vmin) var(--window-start-marker-color, rgba(212, 175, 55, .45)));
+    pointer-events: none;
+    opacity: var(--window-start-marker-opacity, 1);
+    user-select: none;
+}
+
+.tick {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform-origin: center center;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #ffe082 0%, #d4af37 100%) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.number {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 2.448em;
+    height: 2.448em;
+    display: grid;
+    place-items: center;
+    color: #ffe082;
+    font-family: "Georgia", serif;
+    font-weight: bold;
+    font-size: clamp(2.1528rem, 8.0496vmin, 6.4584rem);
+    line-height: 1;
+    text-align: center;
+    transform-origin: center center;
+    text-shadow:
+        0 2px 4px rgba(0, 0, 0, 0.6),
+        0 0 1px #aa7c11,
+        0 1px 0 rgba(255, 255, 255, 0.25);
+    user-select: none;
+}
+
+.clock.is-24-hour .number {
+    color: #ffe082;
+    font-size: clamp(1.28rem, 4.5vmin, 3.45rem);
+}
+
+.clock.is-24-hour .number-24:nth-child(2n) {
+    font-weight: bold;
+    color: #fffdf0;
+}
+
+.hand {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform-origin: center bottom;
+    border-radius: 999px 999px 4px 4px;
+    filter: drop-shadow(.32vmin .42vmin .40vmin rgba(2, 26, 19, 0.55));
+    clip-path: polygon(50% 0%, 78% 11%, 66% 100%, 34% 100%, 22% 11%);
+}
+
+.hour-hand,
+.minute-hand {
+    background: linear-gradient(90deg, #ffe89e 0%, #d4af37 40%, #aa7c11 50%, #d4af37 60%, #ffe89e 100%);
+}
+
+.second-hand {
+    background: linear-gradient(180deg, #ff5a52 0%, #d5312f 48%, #a91516 100%);
+}
+
+.center {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: #d4af37;
+    z-index: 5;
+    box-shadow:
+        -.32vmin -.32vmin .66vmin rgba(255, 255, 255, 0.25),
+        .34vmin .38vmin .72vmin rgba(2, 26, 19, .48),
+        inset 0 0 0 1px rgba(255, 255, 255, .38);
+}
+
+/* Base page background overrides when Emerald Gold is active */
+:root {
+    --page-bg: #091f17;
+    --face: #063124;
+    --rim-width: clamp(6px, 1.7vmin, 16px);
+}
+
+body {
+    background: #091f17;
+    background-image: radial-gradient(circle at center, #0c2b20 0%, #05140f 100%);
+}

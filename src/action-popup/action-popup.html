@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calendar Clock Snapshot</title>
+    <link rel="stylesheet" href="action-popup.css" />
+</head>
+<body>
+    <main class="popup-shell" aria-label="Calendar Clock stored snapshot">
+        <header class="popup-header">
+            <div>
+                <h1>Calendar Clock</h1>
+                <p id="snapshotStatus">Stored snapshot</p>
+            </div>
+            <span class="snapshot-pill" id="snapshotCount">0 items</span>
+        </header>
+
+        <section class="clock-preview" aria-label="Miniature stored clock">
+            <iframe
+                title="Miniature Calendar Clock snapshot"
+                src="../clock/popup.html?embedded=1&amp;actionPopup=1"
+            ></iframe>
+        </section>
+
+        <section class="snapshot-warning" aria-live="polite">
+            This popup uses the last stored Calendar and Tasks snapshot. If Google Calendar or Tasks has not been opened recently, these items may be outdated.
+        </section>
+
+        <section class="snapshot-meta" aria-label="Snapshot details">
+            <div>
+                <span>Last capture</span>
+                <strong id="lastUpdated">Never</strong>
+            </div>
+            <div>
+                <span>Calendar</span>
+                <strong id="calendarCount">0</strong>
+            </div>
+            <div>
+                <span>Tasks</span>
+                <strong id="taskCount">0</strong>
+            </div>
+        </section>
+
+        <section class="task-section" aria-label="Stored tasks and events">
+            <div class="section-title">Stored tasks and events</div>
+            <div class="task-list" id="taskList"></div>
+        </section>
+
+        <footer class="popup-footer">
+            <button type="button" id="openCalendarButton">Open Google Calendar</button>
+        </footer>
+    </main>
+    <script src="action-popup.js"></script>
+</body>
+</html>

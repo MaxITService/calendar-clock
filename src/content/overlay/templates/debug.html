@@ -1,0 +1,52 @@
+<div class="cc-panel-header cc-panel-debug-header">
+  <span class="cc-drag-indicator">⋮⋮</span>
+  <span class="cc-panel-title">Calendar Clock Debug</span>
+  <div class="cc-header-actions">
+    <button type="button" class="cc-btn-icon" data-cc-action="debug-panel-collapse" title="Collapse or expand this debug panel. You will see only the header when collapsed and all diagnostics when expanded." aria-label="Collapse debug panel">_</button>
+    <button type="button" class="cc-btn-icon" data-cc-action="close-debug" aria-label="Close debug panel">x</button>
+  </div>
+</div>
+<div class="cc-debug-body" data-cc-debug-body>
+  <div class="cc-debug-actions">
+    <label class="cc-toggle cc-debug-console-toggle" title="Write Calendar Clock diagnostics to DevTools with the [calen.clock.ext] prefix. Turn this off when you want a quiet console.">
+      <input data-cc-console-logs type="checkbox">
+      <span class="cc-toggle-slider"></span>
+      <span class="cc-toggle-label">Console Logs</span>
+    </label>
+    <button type="button" data-cc-action="play-debug-sound" aria-pressed="false" title="Play the selected reminder sound and trim. Press again to stop.">Play sound</button>
+    <button type="button" data-cc-action="copy-debug" title="Copies privacy-safe technical diagnostics. It excludes event and task titles, calendar names, event dates and times, identifiers, raw text, and page URLs.">Copy safe diagnostics</button>
+    <button type="button" data-cc-action="copy-debug-summary" title="Copies a privacy-safe text summary with technical state and event aggregates only.">Copy safe text</button>
+    <button type="button" data-cc-action="copy-full-debug" title="Private: copies full diagnostics, including event and task titles, calendar names, event dates and times, identifiers, raw text, and the page URL.">Copy full diagnostics (private)</button>
+    <button type="button" data-cc-action="wipe-settings" title="Wipe saved Calendar Clock app settings and return controls to defaults">Wipe app settings to default</button>
+  </div>
+  <label class="cc-toggle cc-debug-sync-toggle" title="Recommended. Watches structured Calendar sync data already loaded by this page; it does not make an extra Google request. Uses visible event text only when structured data is unavailable.">
+    <input data-cc-page-owned-info type="checkbox">
+    <span class="cc-toggle-slider"></span>
+    <span class="cc-toggle-label">Use Calendar sync data</span>
+    <span class="cc-sync-watcher-badge">Recommended</span>
+  </label>
+  <div data-cc-debug-source></div>
+  <div class="cc-debug-copy-status" data-cc-debug-copy-status></div>
+  <div data-cc-debug-mode></div>
+  <div data-cc-debug-window></div>
+  <div data-cc-debug-follow></div>
+  <div data-cc-debug-events-summary></div>
+  <div data-cc-debug-capture-limit hidden></div>
+  <div data-cc-debug-events></div>
+</div>
+
+<template data-cc-debug-event-template>
+  <div class="cc-debug-event">
+    <strong data-cc-debug-event-title></strong>
+    <span data-cc-debug-event-meta></span>
+    <span data-cc-debug-event-date-parse-status hidden></span>
+    <span data-cc-debug-event-date-parse-context hidden></span>
+    <span data-cc-debug-event-id></span>
+    <span data-cc-debug-event-color></span>
+    <span data-cc-debug-event-raw></span>
+  </div>
+</template>
+
+<template data-cc-debug-empty-template>
+  <div>No captured events.</div>
+</template>

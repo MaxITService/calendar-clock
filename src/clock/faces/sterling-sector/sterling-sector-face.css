@@ -1,0 +1,488 @@
+/* Sterling Sector: polished steel dress-watch dial with muted blue seconds. */
+.clock {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    position: relative;
+    overflow: hidden;
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.30), rgba(83, 92, 102, 0.06) 42%, rgba(255, 255, 255, 0.14)) padding-box,
+        repeating-conic-gradient(from 1deg, #f8fafc 0deg 1.6deg, #aeb8c2 1.6deg 3.2deg, #eef2f5 3.2deg 5deg) border-box;
+    border: var(--rim-width, clamp(6px, 1.65vmin, 15px)) solid transparent;
+    box-shadow:
+        inset 0 0 0 clamp(2px, .58vmin, 7px) rgba(255, 255, 255, 0.56),
+        inset 0 0 6vmin rgba(47, 54, 61, 0.18),
+        0 0 0 1px rgba(255, 255, 255, 0.60),
+        0 4vmin 9vmin rgba(25, 34, 45, 0.30);
+}
+
+.clock::before {
+    content: "";
+    position: absolute;
+    inset: 7.4%;
+    z-index: 1;
+    border: 1px solid rgba(67, 76, 86, 0.22);
+    border-radius: 50%;
+    box-shadow:
+        inset 0 0 2.1vmin rgba(255, 255, 255, 0.54),
+        0 0 1.4vmin rgba(67, 76, 86, 0.12);
+    pointer-events: none;
+}
+
+.clock::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+    border-radius: 50%;
+    background: linear-gradient(136deg, rgba(255, 255, 255, 0.46) 0 18%, transparent 18% 100%);
+    mix-blend-mode: screen;
+    pointer-events: none;
+}
+
+.ss-sunburst,
+.ss-sector,
+.ss-rehaut,
+.ss-fluting,
+.ss-dot-rings,
+.ss-ticks,
+.ss-time-arcs,
+.ss-numbers,
+.ss-hands {
+    position: absolute;
+    inset: 0;
+}
+
+.ss-sunburst,
+.ss-sector,
+.ss-rehaut,
+.ss-fluting,
+.ss-dot-rings,
+.ss-center-shadow-ring,
+.ss-minute-dot,
+.ss-ticks,
+.ss-tick,
+.ss-numbers,
+.ss-number,
+.ss-hands,
+.ss-hand,
+.ss-center {
+    pointer-events: none;
+}
+
+.ss-sunburst {
+    z-index: 0;
+    background:
+        radial-gradient(circle at 47% 43%, #f8fafc 0%, #d9dee3 42%, #b3bdc8 72%, #7b8794 100%),
+        repeating-conic-gradient(from 2deg, rgba(255, 255, 255, 0.30) 0deg 2deg, rgba(57, 66, 75, 0.08) 2deg 4deg);
+    background-blend-mode: screen, normal;
+}
+
+.ss-sector {
+    z-index: 0;
+    background:
+        radial-gradient(circle, transparent 0 50%, rgba(47, 54, 61, 0.16) 50.4% 51.2%, transparent 51.6% 100%),
+        linear-gradient(90deg, transparent 0 calc(50% - .5px), rgba(67, 76, 86, 0.18) calc(50% - .5px) calc(50% + .5px), transparent calc(50% + .5px)),
+        linear-gradient(0deg, transparent 0 calc(50% - .5px), rgba(67, 76, 86, 0.18) calc(50% - .5px) calc(50% + .5px), transparent calc(50% + .5px));
+    opacity: 0.54;
+}
+
+.ss-rehaut {
+    z-index: 0;
+    background: radial-gradient(circle, transparent 0 76%, rgba(248, 250, 252, 0.32) 77%, rgba(60, 70, 82, 0.22) 86%, transparent 87%);
+}
+
+.ss-fluting {
+    z-index: 0;
+    background: repeating-conic-gradient(from 0deg, transparent 0deg 3deg, rgba(255, 255, 255, 0.22) 3deg 4.5deg, transparent 4.5deg 7.5deg);
+    mask-image: radial-gradient(circle, transparent 0 83%, #000 84% 98%, transparent 99%);
+    opacity: 0.65;
+}
+
+.ss-dot-rings,
+.ss-ticks {
+    z-index: 1;
+}
+
+.ss-time-arcs {
+    z-index: 2;
+}
+
+.ss-numbers {
+    z-index: 3;
+}
+
+.ss-hands {
+    z-index: 4;
+}
+
+.ss-minute-dot {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    border-radius: 50%;
+    background: rgba(59, 69, 80, 0.18);
+    box-shadow: 0 0 .18vmin rgba(255, 255, 255, 0.45);
+}
+
+.ss-center-shadow-ring {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    border: 1px solid rgba(67, 76, 86, 0.20);
+    border-radius: 50%;
+    box-shadow:
+        inset 0 0 1.8vmin rgba(67, 76, 86, 0.12),
+        0 0 1.2vmin rgba(255, 255, 255, 0.45);
+    transform: translate(-50%, -50%);
+}
+
+.ss-tick {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    border-radius: 999px;
+    background: rgba(69, 79, 90, 0.38);
+    box-shadow:
+        0 .08vmin .14vmin rgba(35, 42, 50, 0.28),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+    transform-origin: center center;
+}
+
+.ss-tick-medium {
+    background: rgba(69, 79, 90, 0.48);
+}
+
+.ss-tick-major {
+    background: linear-gradient(90deg, #f8fafc, #8f9aa6 48%, #f8fafc);
+}
+
+.ss-tick-reference {
+    background: linear-gradient(90deg, #ffffff, #6f7d88 50%, #ffffff);
+    box-shadow:
+        0 .12vmin .18vmin rgba(35, 42, 50, 0.30),
+        0 0 .38vmin rgba(255, 255, 255, 0.38);
+}
+
+.time-arcs {
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.time-arc {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: .78;
+    filter:
+        drop-shadow(0 .12vmin .14vmin rgba(35, 42, 50, 0.22))
+        drop-shadow(0 0 .18vmin currentColor);
+    pointer-events: stroke;
+    cursor: help;
+}
+
+.time-point {
+    opacity: .84;
+    stroke-width: max(2px, .32vmin);
+    filter:
+        drop-shadow(0 .12vmin .14vmin rgba(35, 42, 50, 0.22))
+        drop-shadow(0 0 .18vmin currentColor);
+    pointer-events: visiblePainted;
+    cursor: help;
+}
+
+.time-arc-separator {
+    display: none;
+    pointer-events: none;
+    opacity: .96;
+    filter: drop-shadow(0 .12vmin .14vmin rgba(35, 42, 50, .30));
+}
+
+.time-arc-separator-shadow,
+.time-arc-separator-cut {
+    fill: none;
+    stroke-linecap: butt;
+}
+
+.time-arc-separator-shadow {
+    stroke: rgba(40, 48, 58, .64);
+}
+
+.time-arc-separator-cut {
+    stroke: rgba(248, 250, 252, .96);
+}
+
+.time-point-callout {
+    color: currentColor;
+    opacity: .9;
+    pointer-events: none;
+}
+
+.time-point-callout-line {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: max(1px, .16vmin);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: .56;
+}
+
+.time-point-callout-dot {
+    fill: currentColor;
+    stroke: rgba(248, 250, 252, .92);
+    stroke-width: max(.8px, .11vmin);
+    opacity: .82;
+}
+
+.time-point-callout-label {
+    font-size: 12px;
+}
+
+.time-arc:hover,
+.time-arc.is-arc-hovered,
+.time-point:hover,
+.time-point.is-arc-hovered {
+    opacity: .98;
+    filter:
+        drop-shadow(0 .16vmin .18vmin rgba(35, 42, 50, 0.28))
+        drop-shadow(0 0 .72vmin currentColor);
+}
+
+.time-arc-label {
+    dominant-baseline: central;
+    font-family: "Aptos", "Segoe UI", Arial, sans-serif;
+    font-weight: 740;
+    letter-spacing: 0;
+    opacity: .92;
+    pointer-events: none;
+    text-anchor: middle;
+    user-select: none;
+}
+
+.time-arc-label textPath {
+    text-anchor: middle;
+}
+
+.time-arc-label--glass {
+    fill: rgba(248, 250, 252, .96);
+    stroke: rgba(35, 42, 50, .48);
+    stroke-width: 1px;
+    paint-order: stroke;
+}
+
+.time-arc-label--ink {
+    fill: rgba(35, 42, 50, .94);
+    stroke: rgba(248, 250, 252, .86);
+    stroke-width: 1.35px;
+    paint-order: stroke;
+}
+
+.time-arc-label--glow {
+    fill: #f8fafc;
+    stroke: rgba(35, 42, 50, .50);
+    stroke-width: 1px;
+    paint-order: stroke;
+    filter: drop-shadow(0 0 .22vmin currentColor);
+}
+
+.time-arc-label--color {
+    fill: var(--event-color);
+    stroke: rgba(248, 250, 252, .94);
+    stroke-width: 1.25px;
+    paint-order: stroke;
+}
+
+.time-arc-label--custom {
+    fill: var(--custom-label-color);
+    stroke: rgba(248, 250, 252, 0.88);
+    stroke-width: 1.2px;
+    paint-order: stroke;
+}
+
+.window-start-marker {
+    stroke: var(--window-start-marker-color, #365d7a);
+    stroke-width: var(--window-start-marker-width, max(3px, .52vmin));
+    stroke-linecap: round;
+    stroke-dasharray: var(--window-start-marker-dasharray, .01 12);
+    filter:
+        drop-shadow(0 0 .18vmin rgba(255, 255, 255, .72))
+        drop-shadow(0 0 var(--window-start-marker-glow, .24vmin) var(--window-start-marker-color, rgba(54, 93, 122, .34)));
+    opacity: var(--window-start-marker-opacity, 1);
+    pointer-events: none;
+}
+
+.window-start-marker-pulse-group {
+    color: var(--window-start-marker-pulse-color, #365d7a);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.window-start-marker-pulse-radial,
+.window-start-marker-pulse-orbit {
+    stroke: var(--window-start-marker-pulse-color, currentColor);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+    filter: drop-shadow(0 0 .36vmin var(--window-start-marker-pulse-color, currentColor));
+}
+
+.window-start-marker-pulse-radial {
+    opacity: 0;
+}
+
+.window-start-marker-pulse-orbit {
+    opacity: 0;
+    stroke-dasharray: .44 .56;
+    stroke-dashoffset: .2;
+}
+
+.window-start-marker-pulse-group.is-pulsing {
+    animation: window-start-marker-pulse-shell 560ms ease-out both;
+}
+
+.window-start-marker-pulse-group.is-pulsing .window-start-marker-pulse-radial {
+    animation: window-start-marker-pulse-radial 560ms ease-out both;
+}
+
+.window-start-marker-pulse-group.is-pulsing .window-start-marker-pulse-orbit {
+    animation: window-start-marker-pulse-orbit 560ms cubic-bezier(.2, .72, .25, 1) both;
+}
+
+@keyframes window-start-marker-pulse-shell {
+    0% { opacity: 0; }
+    18% { opacity: var(--window-start-marker-pulse-opacity, .20); }
+    100% { opacity: 0; }
+}
+
+@keyframes window-start-marker-pulse-radial {
+    0% { opacity: 0; }
+    20% { opacity: .18; }
+    100% { opacity: 0; }
+}
+
+@keyframes window-start-marker-pulse-orbit {
+    0% { opacity: 0; stroke-dashoffset: .26; }
+    24% { opacity: .28; }
+    100% { opacity: 0; stroke-dashoffset: -.02; }
+}
+
+.window-start-marker-emoji {
+    dominant-baseline: middle;
+    fill: var(--window-start-marker-color, #365d7a);
+    opacity: var(--window-start-marker-opacity, 1);
+    paint-order: stroke;
+    pointer-events: none;
+    stroke: rgba(248, 250, 252, 0.88);
+    stroke-width: 2px;
+    text-anchor: middle;
+    user-select: none;
+}
+
+.window-start-marker-boundary-label {
+    dominant-baseline: middle;
+    fill: var(--window-start-marker-color, #365d7a);
+    font-size: clamp(.62rem, 1.8vmin, 1rem);
+    font-weight: 800;
+    letter-spacing: 0;
+    opacity: var(--window-start-marker-opacity, 1);
+    paint-order: stroke;
+    pointer-events: none;
+    stroke: rgba(248, 250, 252, 0.90);
+    stroke-width: 2px;
+    text-anchor: middle;
+    text-transform: uppercase;
+    user-select: none;
+}
+
+.ss-number {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 2.36em;
+    height: 2.36em;
+    display: grid;
+    place-items: center;
+    color: rgba(37, 45, 54, 0.86);
+    font-family: "Aptos Display", "Segoe UI", Arial, sans-serif;
+    font-size: clamp(1.35rem, 4.95vmin, 3.9rem);
+    font-weight: 760;
+    line-height: 1;
+    text-align: center;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, .78);
+    transform-origin: center center;
+    user-select: none;
+}
+
+.clock.is-24-hour .ss-number {
+    color: rgba(37, 45, 54, 0.78);
+    font-size: clamp(.88rem, 3.15vmin, 2.3rem);
+}
+
+.clock.is-24-hour .ss-number:nth-child(6n) {
+    color: rgba(24, 31, 38, 0.92);
+    font-weight: 820;
+}
+
+.ss-hand {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    border-radius: 999px 999px 4px 4px;
+    clip-path: polygon(50% 0%, 78% 11%, 60% 100%, 40% 100%, 22% 11%);
+    filter: drop-shadow(.24vmin .34vmin .32vmin rgba(35, 42, 50, 0.30));
+    transform-origin: center bottom;
+}
+
+.ss-hour-hand,
+.ss-minute-hand {
+    background:
+        linear-gradient(90deg,
+            #fbfdff 0%,
+            #8c98a5 32%,
+            #303944 50%,
+            #8c98a5 68%,
+            #fbfdff 100%);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+}
+
+.ss-second-hand {
+    background: linear-gradient(180deg, #88a7bd 0%, #365d7a 58%, #263746 100%);
+}
+
+.ss-center {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 5;
+    border-radius: 50%;
+    background: radial-gradient(circle at 36% 34%, #ffffff, #aeb8c2 48%, #3f4a55 100%);
+    box-shadow:
+        -.20vmin -.20vmin .52vmin rgba(255, 255, 255, 0.58),
+        .30vmin .34vmin .62vmin rgba(35, 42, 50, .34),
+        inset 0 0 0 1px rgba(255, 255, 255, .44);
+    transform: translate(-50%, -50%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .window-start-marker-pulse-group.is-pulsing,
+    .window-start-marker-pulse-group.is-pulsing .window-start-marker-pulse-radial,
+    .window-start-marker-pulse-group.is-pulsing .window-start-marker-pulse-orbit {
+        animation-duration: 180ms;
+    }
+
+    .window-start-marker-pulse-group.is-pulsing .window-start-marker-pulse-orbit {
+        stroke-dashoffset: 0;
+    }
+}
+
+:root {
+    --page-bg: #d7dde3;
+    --face: #d7dde3;
+    --rim-width: clamp(6px, 1.65vmin, 15px);
+}
+
+body {
+    background: #d7dde3;
+    background-image: radial-gradient(circle at center, #f4f6f8 0%, #c3ccd5 58%, #8896a4 100%);
+}

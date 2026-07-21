@@ -1,0 +1,342 @@
+    /* Input & Control Elements styling */
+    #calendar-clock-root button,
+    #calendar-clock-root select,
+    #calendar-clock-root input {
+      height: 26px;
+      border: 1px solid rgba(110, 85, 61, 0.18);
+      border-radius: 7px;
+      background: rgba(255, 255, 255, 0.6);
+      color: #2c221a;
+      font: 500 12px Inter, sans-serif;
+      outline: none;
+      transition: all 0.15s ease;
+    }
+
+    #calendar-clock-root button:hover,
+    #calendar-clock-root select:hover,
+    #calendar-clock-root input:hover {
+      background: rgba(255, 255, 255, 0.85);
+      border-color: rgba(184, 141, 90, 0.4);
+    }
+
+    #calendar-clock-root button:focus,
+    #calendar-clock-root select:focus,
+    #calendar-clock-root input:focus {
+      background: #fff;
+      border-color: #b88d5a;
+      box-shadow: 0 0 0 3px rgba(184, 141, 90, 0.15);
+    }
+
+    #calendar-clock-root button {
+      padding: 0 10px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    #calendar-clock-root button:disabled {
+      cursor: not-allowed;
+      opacity: 0.35;
+      background: rgba(184, 141, 90, 0.04) !important;
+      border-color: rgba(184, 141, 90, 0.08) !important;
+    }
+
+    #calendar-clock-root select:disabled,
+    #calendar-clock-root input:disabled {
+      cursor: not-allowed;
+      opacity: 0.46;
+      color: rgba(110, 85, 61, 0.48);
+      background: rgba(184, 141, 90, 0.05) !important;
+      border-color: rgba(184, 141, 90, 0.08) !important;
+      box-shadow: none !important;
+    }
+
+    /* Mode segment buttons */
+    #calendar-clock-root .cc-view-buttons button {
+      height: 22px;
+      background: transparent;
+      border: 0;
+      border-radius: 6px;
+      padding: 0 8px;
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(110, 85, 61, 0.72);
+      box-shadow: none;
+    }
+
+    #calendar-clock-root .cc-view-buttons button:hover {
+      background: rgba(255, 255, 255, 0.4);
+      color: #2c221a;
+    }
+
+    #calendar-clock-root.cc-mode-full .cc-view-buttons button[data-cc-mode="full"],
+    #calendar-clock-root.cc-mode-mini .cc-view-buttons button[data-cc-mode="mini"],
+    #calendar-clock-root.cc-mode-hidden .cc-view-buttons button[data-cc-mode="hidden"] {
+      background: #fff;
+      color: #b88d5a;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    #calendar-clock-root .cc-btn-refresh {
+      height: 24px;
+      font-size: 11px;
+      background: #b88d5a;
+      color: #fff;
+      border: 0;
+      font-weight: 600;
+    }
+
+    #calendar-clock-root .cc-btn-refresh:focus,
+    #calendar-clock-root .cc-btn-refresh:hover {
+      background: #a3794b !important;
+      color: #fff !important;
+      border-color: transparent;
+    }
+
+    #calendar-clock-root .cc-btn-refresh:active {
+      background: #8f6840 !important;
+      color: #fff !important;
+    }
+
+    #calendar-clock-root .cc-btn-secondary {
+      height: 20px;
+      font-size: 10px;
+      padding: 0 6px;
+      border-radius: 5px;
+      background: rgba(184, 141, 90, 0.09);
+      color: rgba(110, 85, 61, 0.75);
+    }
+
+    #calendar-clock-root .cc-btn-time {
+      height: 24px;
+      max-width: 88px;
+      padding: 0 8px;
+      border-color: rgba(110, 85, 61, 0.14);
+      background: rgba(255, 255, 255, 0.42);
+      color: rgba(110, 85, 61, 0.78);
+      font-size: 11px;
+      font-weight: 700;
+      overflow: hidden;
+      white-space: nowrap;
+      margin-inline: 0;
+      transform: translateX(0) scaleX(1);
+      transform-origin: right center;
+      transition:
+        max-width 0.22s ease,
+        padding 0.22s ease,
+        margin 0.22s ease,
+        border-width 0.22s ease,
+        opacity 0.16s ease,
+        transform 0.22s ease,
+        background-color 0.15s ease,
+        border-color 0.15s ease,
+        color 0.15s ease,
+        box-shadow 0.15s ease;
+    }
+
+    #calendar-clock-root.cc-time-panel-open .cc-btn-time {
+      max-width: 0;
+      padding-left: 0;
+      padding-right: 0;
+      border-width: 0;
+      opacity: 0;
+      margin-left: -6px;
+      pointer-events: none;
+      transform: translateX(8px) scaleX(0.72);
+      box-shadow: none;
+    }
+
+    #calendar-clock-root.cc-time-panel-closed .cc-btn-time {
+      max-width: 88px;
+      padding-left: 8px;
+      padding-right: 8px;
+      border-width: 1px;
+      opacity: 1;
+      margin-left: 0;
+      pointer-events: auto;
+      transform: translateX(0) scaleX(1);
+    }
+
+    #calendar-clock-root .cc-btn-icon {
+      width: 20px;
+      height: 20px;
+      padding: 0;
+      border-radius: 6px;
+      background: rgba(184, 141, 90, 0.08);
+      color: rgba(110, 85, 61, 0.72);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    #calendar-clock-root .cc-whats-new-body {
+      display: grid;
+      gap: 8px;
+      padding: 2px 0 4px;
+      color: #3d2f24;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    #calendar-clock-root .cc-whats-new-body p {
+      margin: 0;
+      padding: 8px;
+      border: 1px solid rgba(110, 85, 61, 0.12);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.5);
+    }
+
+    /* Window range controls */
+    #calendar-clock-root .cc-window-row {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 5px;
+    }
+
+    #calendar-clock-root .cc-window-row select {
+      width: 100%;
+      padding: 0 6px;
+    }
+
+    #calendar-clock-root .cc-field-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(110, 85, 61, 0.72);
+    }
+
+    #calendar-clock-root .cc-window-summary {
+      box-sizing: border-box;
+      height: 55px;
+      font-size: 11px;
+      line-height: 1.35;
+      color: rgba(110, 85, 61, 0.72);
+      padding: 4px 6px;
+      background: rgba(184, 141, 90, 0.07);
+      border-radius: 6px;
+      border: 1px solid rgba(184, 141, 90, 0.10);
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
+    }
+
+    #calendar-clock-root .cc-window-follow-row {
+      padding-top: 4px;
+    }
+
+    #calendar-clock-root .cc-custom-window-row {
+      display: grid;
+      gap: 5px;
+    }
+
+    #calendar-clock-root .cc-custom-window-row[hidden] {
+      display: none;
+    }
+
+    #calendar-clock-root .cc-custom-divider-grid {
+      display: grid;
+      grid-template-columns: 70px 1fr;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #calendar-clock-root .cc-custom-divider-grid input[type="time"] {
+      width: 70px;
+      padding: 0 3px;
+      font-size: 11px;
+    }
+
+    #calendar-clock-root .cc-custom-divider-slider {
+      min-width: 0;
+      grid-template-columns: minmax(78px, 1fr) 38px;
+    }
+
+    #calendar-clock-root .cc-follow-help {
+      font-size: 10px;
+      line-height: 1.35;
+      color: rgba(110, 85, 61, 0.58);
+    }
+
+    #calendar-clock-root .cc-panel-section-visuals {
+      border-top: 1px solid rgba(110, 85, 61, 0.12);
+      padding-top: 10px;
+    }
+
+    #calendar-clock-root .cc-toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    #calendar-clock-root .cc-follow-hours-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: rgba(110, 85, 61, 0.7);
+    }
+
+    #calendar-clock-root .cc-follow-hours-group input[type="number"] {
+      width: 48px;
+      padding: 0 4px;
+      text-align: center;
+    }
+
+    /* iOS-Style Toggle Switch Component */
+    #calendar-clock-root .cc-toggle {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      max-width: 100%;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    #calendar-clock-root .cc-toggle input {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    #calendar-clock-root .cc-toggle-slider {
+      position: relative;
+      flex: 0 0 32px;
+      width: 32px;
+      height: 18px;
+      background: rgba(110, 85, 61, 0.15);
+      border-radius: 10px;
+      transition: background-color 0.2s ease;
+    }
+
+    #calendar-clock-root .cc-toggle-slider::before {
+      content: "";
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      left: 2px;
+      bottom: 2px;
+      background: #fff;
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+      transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    #calendar-clock-root .cc-toggle input:checked + .cc-toggle-slider {
+      background: #b88d5a;
+    }
+
+    #calendar-clock-root .cc-toggle input:checked + .cc-toggle-slider::before {
+      transform: translateX(14px);
+    }
+
+    #calendar-clock-root .cc-toggle-label {
+      min-width: 0;
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1.25;
+      white-space: normal;
+      color: #3d2f24;
+    }

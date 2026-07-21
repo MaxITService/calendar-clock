@@ -1,0 +1,104 @@
+{
+  "manifest_version": 3,
+  "name": "Calendar Clock",
+  "description": "Shows visible Google Calendar events as dynamic arches on a liquid glass clock.",
+  "version": "0.1.21",
+  "action": {
+    "default_title": "Calendar Clock",
+    "default_popup": "src/action-popup/action-popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "background": {
+    "service_worker": "src/background/background.js"
+  },
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://calendar.google.com/*",
+    "https://tasks.google.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://calendar.google.com/*"
+      ],
+      "js": [
+        "src/content/main-world-early-deletions.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "https://calendar.google.com/*",
+        "https://tasks.google.com/embed/*"
+      ],
+      "js": [
+        "src/content/optional-module-loader.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true
+    },
+    {
+      "matches": [
+        "https://calendar.google.com/*"
+      ],
+      "js": [
+        "src/content/calendar-content-state.js",
+        "src/content/calendar-dom-reader.js",
+        "src/content/time-window-controller.js",
+        "src/content/overlay/overlay-styles.js",
+        "src/content/overlay/template-loader.js",
+        "src/content/overlay/overlay-menu.js",
+        "src/content/overlay/debug-panel.js",
+        "src/content/calendar-content-entry.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://tasks.google.com/embed/*"
+      ],
+      "js": [
+        "src/content/tasks/tasks-content-entry.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "src/clock/popup.html",
+        "src/clock/styles/*.css",
+        "src/clock/scripts/*.js",
+        "src/clock/faces/*/*.js",
+        "src/clock/faces/*/*.css",
+        "src/content/overlay/styles/*.css",
+        "src/content/overlay/templates/*.html",
+        "src/content/page-owned-info/*.js",
+        "src/temporal-projection/*.js",
+        "src/content/event-reminders/*",
+        "src/content/sound/mechanical-clock/*",
+        "icons/*.png"
+      ],
+      "matches": [
+        "https://calendar.google.com/*",
+        "https://tasks.google.com/*"
+      ]
+    }
+  ]
+}

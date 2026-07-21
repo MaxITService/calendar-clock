@@ -1,0 +1,16 @@
+# Hidden directories
+**/.*/
+
+# Local agent notes
+.agent.md
+.agents.md
+.AGENT.md
+.AGENTS.md
+messages.md
+
+# Windows metadata
+desktop.ini
+
+# Python caches
+**/__pycache__/
+**/*.pyc

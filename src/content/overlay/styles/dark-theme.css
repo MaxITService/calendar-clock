@@ -1,0 +1,233 @@
+    #calendar-clock-root.cc-menu-theme-dark .cc-panel {
+      background: rgba(22, 24, 29, 0.82);
+      border-color: rgba(255, 255, 255, 0.14);
+      color: #f4ede3;
+      box-shadow:
+        0 14px 42px rgba(0, 0, 0, 0.28),
+        0 1px 2px rgba(0, 0, 0, 0.22),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-panel:hover {
+      border-color: rgba(245, 211, 154, 0.24);
+      box-shadow:
+        0 18px 50px rgba(0, 0, 0, 0.34),
+        0 1px 3px rgba(0, 0, 0, 0.24),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-panel-time-header,
+    #calendar-clock-root.cc-menu-theme-dark .cc-panel-whats-new-header,
+    #calendar-clock-root.cc-menu-theme-dark .cc-panel-section {
+      border-color: rgba(255, 255, 255, 0.09);
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-panel-section-visuals {
+      border-top-color: rgba(245, 211, 154, 0.14);
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-settings-body::-webkit-scrollbar-track,
+    #calendar-clock-root.cc-menu-theme-dark .cc-whats-new-body::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-settings-body::-webkit-scrollbar-thumb,
+    #calendar-clock-root.cc-menu-theme-dark .cc-whats-new-body::-webkit-scrollbar-thumb {
+      background: rgba(242, 197, 116, 0.46);
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-view-buttons {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark button,
+    #calendar-clock-root.cc-menu-theme-dark select,
+    #calendar-clock-root.cc-menu-theme-dark input {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.14);
+      color: #f4ede3;
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark button:hover,
+    #calendar-clock-root.cc-menu-theme-dark select:hover,
+    #calendar-clock-root.cc-menu-theme-dark input:hover {
+      background: rgba(255, 255, 255, 0.13);
+      border-color: rgba(245, 211, 154, 0.34);
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark button:focus,
+    #calendar-clock-root.cc-menu-theme-dark select:focus,
+    #calendar-clock-root.cc-menu-theme-dark input:focus {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: #f2c574;
+      box-shadow: 0 0 0 3px rgba(242, 197, 116, 0.18);
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark button:disabled,
+    #calendar-clock-root.cc-menu-theme-dark select:disabled,
+    #calendar-clock-root.cc-menu-theme-dark input:disabled {
+      background: rgba(255, 255, 255, 0.04) !important;
+      border-color: rgba(255, 255, 255, 0.08) !important;
+      color: rgba(244, 237, 227, 0.42);
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark select option {
+      background: #171a20;
+      color: #f4ede3;
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-panel-title,
+    #calendar-clock-root.cc-menu-theme-dark .cc-toggle-label,
+    #calendar-clock-root.cc-menu-theme-dark .cc-row-label,
+    #calendar-clock-root.cc-menu-theme-dark .cc-whats-new-body {
+      color: #f4ede3;
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-section-title,
+    #calendar-clock-root.cc-menu-theme-dark .cc-field-label,
+    #calendar-clock-root.cc-menu-theme-dark .cc-window-summary,
+    #calendar-clock-root.cc-menu-theme-dark .cc-follow-help,
+    #calendar-clock-root.cc-menu-theme-dark .cc-follow-hours-group,
+    #calendar-clock-root.cc-menu-theme-dark .cc-number-control,
+    #calendar-clock-root.cc-menu-theme-dark .cc-stats,
+    #calendar-clock-root.cc-menu-theme-dark .cc-slider-control output {
+      color: rgba(244, 237, 227, 0.68);
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-parser-warning {
+      border-color: rgba(255, 115, 105, 0.28);
+      background: rgba(255, 115, 105, 0.12);
+      color: #ffd8d3;
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-parser-warning strong,
+    #calendar-clock-root.cc-menu-theme-dark .cc-parser-warning a,
+    #calendar-clock-root.cc-menu-theme-dark .cc-parser-warning button {
+      color: #ffb2aa;
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-drag-indicator {
+      color: rgba(244, 237, 227, 0.42);
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-resize-se::before {
+      border-color: rgba(244, 237, 227, 0.36);
+      background:
+        linear-gradient(135deg, transparent 0 42%, rgba(244, 237, 227, 0.28) 43% 53%, transparent 54%),
+        linear-gradient(135deg, transparent 0 62%, rgba(244, 237, 227, 0.2) 63% 70%, transparent 71%);
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-resize-se:hover::before {
+      border-color: rgba(242, 197, 116, 0.8);
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-window-summary,
+    #calendar-clock-root.cc-menu-theme-dark .cc-whats-new-body p {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.09);
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-view-buttons button {
+      background: transparent;
+      color: rgba(244, 237, 227, 0.72);
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-view-buttons button:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #f4ede3;
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark.cc-mode-full .cc-view-buttons button[data-cc-mode="full"],
+    #calendar-clock-root.cc-menu-theme-dark.cc-mode-mini .cc-view-buttons button[data-cc-mode="mini"],
+    #calendar-clock-root.cc-menu-theme-dark.cc-mode-hidden .cc-view-buttons button[data-cc-mode="hidden"] {
+      background: rgba(242, 197, 116, 0.18);
+      color: #f2c574;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-btn-refresh {
+      background: #d7a757;
+      color: #171a20;
+      border: 0;
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-btn-refresh:focus,
+    #calendar-clock-root.cc-menu-theme-dark .cc-btn-refresh:hover {
+      background: #f2c574 !important;
+      color: #171a20 !important;
+      border-color: transparent;
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-btn-refresh:active {
+      background: #bf8e3f !important;
+      color: #171a20 !important;
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-btn-secondary,
+    #calendar-clock-root.cc-menu-theme-dark .cc-btn-time,
+    #calendar-clock-root.cc-menu-theme-dark .cc-btn-icon,
+    #calendar-clock-root.cc-menu-theme-dark .cc-window-action-buttons button {
+      background: rgba(255, 255, 255, 0.07);
+      border-color: rgba(255, 255, 255, 0.11);
+      color: rgba(244, 237, 227, 0.76);
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-window-action-buttons button:hover {
+      background: rgba(242, 197, 116, 0.13);
+      border-color: rgba(242, 197, 116, 0.36);
+      color: #f2c574;
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-toggle-slider {
+      background: rgba(255, 255, 255, 0.16);
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-toggle-slider::before {
+      background: #f8efe2;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.32);
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-toggle input:checked + .cc-toggle-slider {
+      background: #d7a757;
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-slider-control input[type="range"] {
+      background: transparent;
+      accent-color: #d7a757;
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-slider-control input[type="range"]:focus {
+      box-shadow: none;
+    }
+
+
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-debug-event,
+    #calendar-clock-root.cc-menu-theme-dark .cc-help section {
+      border-top-color: rgba(255, 255, 255, 0.12);
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-help h3 {
+      color: #f4ede3;
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-help p {
+      color: rgba(244, 237, 227, 0.74);
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-mini-action-btn {
+      border-color: rgba(255, 255, 255, .18);
+      background: rgba(38, 38, 42, .82);
+      color: rgba(255, 255, 255, .72);
+    }
+    #calendar-clock-root.cc-menu-theme-dark .cc-mini-action-btn:hover {
+      background: rgba(55, 55, 62, .96);
+      border-color: rgba(255, 255, 255, .32);
+      color: rgba(255, 255, 255, .92);
+    }
+
+    .calendar-clock-dom-highlight {
+      outline: 3px solid #d5312f !important;
+      outline-offset: 2px !important;
+      box-shadow: 0 0 0 5px rgba(213, 49, 47, .18) !important;
+    }

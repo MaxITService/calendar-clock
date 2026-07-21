@@ -1,0 +1,574 @@
+/* Cobalt Meridian: cold-luxury cartographic clock with chrome ticks and cobalt survey lines. */
+.clock {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    position: relative;
+    overflow: hidden;
+    background:
+        linear-gradient(145deg, rgba(224, 244, 255, 0.14), rgba(26, 70, 110, 0.04) 44%, rgba(255, 255, 255, 0.07)) padding-box,
+        radial-gradient(circle at 46% 38%, #eef8ff 0%, #bfd4e2 33%, #324960 66%, #07111f 100%) padding-box,
+        conic-gradient(from 218deg,
+            #f8fbff 0deg,
+            #8398aa 54deg,
+            #1167d8 118deg,
+            #03111f 186deg,
+            #00a7c7 260deg,
+            #f8fbff 360deg) border-box;
+    border: var(--rim-width, clamp(6px, 1.7vmin, 16px)) solid transparent;
+    box-shadow:
+        inset 0 0 0 clamp(2px, .58vmin, 7px) rgba(255, 255, 255, 0.42),
+        inset 0 0 5.8vmin rgba(3, 17, 31, 0.42),
+        0 0 0 1px rgba(221, 239, 248, 0.34),
+        0 4vmin 9vmin rgba(3, 12, 23, 0.58);
+}
+
+.clock::before {
+    content: "";
+    position: absolute;
+    inset: 7.6%;
+    z-index: 1;
+    border: 1px solid rgba(238, 248, 255, 0.24);
+    border-radius: 50%;
+    box-shadow:
+        inset 0 0 2.2vmin rgba(255, 255, 255, 0.32),
+        0 0 1.8vmin rgba(17, 103, 216, 0.16);
+    pointer-events: none;
+}
+
+.clock::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+    border-radius: 50%;
+    background:
+        linear-gradient(138deg, rgba(255, 255, 255, 0.34) 0 18%, transparent 18% 100%),
+        radial-gradient(circle at 34% 22%, rgba(255, 255, 255, 0.24), transparent 24%);
+    mix-blend-mode: screen;
+    pointer-events: none;
+}
+
+.cm-plate,
+.cm-map,
+.cm-grid,
+.cm-meridians,
+.cm-contours,
+.cm-survey-points,
+.cm-dot-rings,
+.cm-ticks,
+.cm-time-arcs,
+.cm-numbers,
+.cm-hands {
+    position: absolute;
+    inset: 0;
+}
+
+.cm-plate,
+.cm-map,
+.cm-grid,
+.cm-meridians,
+.cm-meridian,
+.cm-contours,
+.cm-contour,
+.cm-survey-points,
+.cm-survey-point,
+.cm-dot-rings,
+.cm-center-shadow-ring,
+.cm-minute-dot,
+.cm-ticks,
+.cm-tick,
+.cm-numbers,
+.cm-number,
+.cm-hands,
+.cm-hand,
+.cm-center {
+    pointer-events: none;
+}
+
+.cm-plate {
+    z-index: 0;
+    background:
+        radial-gradient(circle at 50% 50%, transparent 0 40%, rgba(2, 11, 22, 0.18) 41% 44%, transparent 45% 100%),
+        repeating-conic-gradient(from 0deg, rgba(255, 255, 255, 0.10) 0deg 1deg, transparent 1deg 10deg);
+    opacity: 0.84;
+}
+
+.cm-map {
+    z-index: 0;
+    background:
+        radial-gradient(ellipse at 38% 34%, rgba(238, 248, 255, 0.46), transparent 26%),
+        radial-gradient(ellipse at 70% 68%, rgba(0, 167, 199, 0.18), transparent 33%),
+        radial-gradient(circle at 50% 52%, transparent 0 58%, rgba(2, 11, 22, 0.34) 78%, rgba(2, 11, 22, 0.48) 100%);
+}
+
+.cm-grid {
+    z-index: 0;
+    mask-image: radial-gradient(circle, #000 0 68%, transparent 71%);
+    background:
+        linear-gradient(rgba(238, 248, 255, 0.11) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(238, 248, 255, 0.11) 1px, transparent 1px);
+    background-size: 9.5% 9.5%;
+    opacity: 0.42;
+}
+
+.cm-meridians {
+    z-index: 0;
+    opacity: 0.62;
+}
+
+.cm-meridian {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 112%;
+    height: 1px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, transparent, rgba(238, 248, 255, 0.08), rgba(0, 167, 199, 0.20), rgba(238, 248, 255, 0.08), transparent);
+}
+
+.cm-contours {
+    z-index: 0;
+}
+
+.cm-contour {
+    position: absolute;
+    border: 1px solid rgba(238, 248, 255, 0.10);
+    border-radius: 47% 53% 50% 50%;
+    box-shadow: inset 0 0 .7vmin rgba(17, 103, 216, 0.05);
+}
+
+.cm-survey-points {
+    z-index: 0;
+}
+
+.cm-survey-point {
+    position: absolute;
+    border-radius: 50%;
+    background: #eaf8ff;
+    box-shadow: 0 0 .42vmin rgba(0, 167, 199, 0.70);
+}
+
+.cm-dot-rings,
+.cm-ticks {
+    z-index: 1;
+}
+
+.cm-time-arcs {
+    z-index: 2;
+}
+
+.cm-numbers {
+    z-index: 3;
+}
+
+.cm-hands {
+    z-index: 4;
+}
+
+.cm-minute-dot {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    border-radius: 50%;
+    background: rgba(238, 248, 255, 0.23);
+    box-shadow: 0 0 .26vmin rgba(0, 167, 199, 0.20);
+}
+
+.cm-center-shadow-ring {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    border: 1px solid rgba(238, 248, 255, 0.16);
+    border-radius: 50%;
+    box-shadow:
+        inset 0 0 1.9vmin rgba(3, 17, 31, 0.24),
+        0 0 1.4vmin rgba(238, 248, 255, 0.20);
+    transform: translate(-50%, -50%);
+}
+
+.cm-tick {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    border-radius: 999px;
+    background: rgba(238, 248, 255, 0.44);
+    box-shadow:
+        0 .10vmin .18vmin rgba(3, 17, 31, 0.38),
+        0 0 .28vmin rgba(238, 248, 255, 0.22);
+    transform-origin: center center;
+}
+
+.cm-tick-medium {
+    background: rgba(155, 184, 205, 0.44);
+}
+
+.cm-tick-major {
+    background: rgba(238, 248, 255, 0.70);
+}
+
+.cm-tick-reference {
+    background: linear-gradient(180deg, #ffffff, #79dfff 44%, #1167d8 100%);
+    box-shadow:
+        0 .12vmin .22vmin rgba(3, 17, 31, 0.44),
+        0 0 .72vmin rgba(0, 167, 199, 0.34);
+}
+
+.time-arcs {
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.time-arc {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: .86;
+    filter:
+        drop-shadow(0 .16vmin .16vmin rgba(3, 17, 31, 0.36))
+        drop-shadow(0 0 .30vmin currentColor);
+    pointer-events: stroke;
+    cursor: help;
+}
+
+.time-point {
+    opacity: .9;
+    stroke-width: max(2px, .34vmin);
+    filter:
+        drop-shadow(0 .16vmin .16vmin rgba(3, 17, 31, 0.36))
+        drop-shadow(0 0 .30vmin currentColor);
+    pointer-events: visiblePainted;
+    cursor: help;
+}
+
+.time-arc-separator {
+    display: none;
+    pointer-events: none;
+    opacity: .98;
+    filter:
+        drop-shadow(0 .16vmin .18vmin rgba(3, 17, 31, .68))
+        drop-shadow(0 0 .24vmin rgba(238, 248, 255, .56));
+}
+
+.time-arc-separator-shadow,
+.time-arc-separator-cut {
+    fill: none;
+    stroke-linecap: butt;
+}
+
+.time-arc-separator-shadow {
+    stroke: rgba(3, 17, 31, .92);
+}
+
+.time-arc-separator-cut {
+    stroke: rgba(238, 248, 255, .94);
+}
+
+.time-point-callout {
+    color: currentColor;
+    opacity: .94;
+    pointer-events: none;
+}
+
+.time-point-callout-line {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: max(1px, .18vmin);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: .66;
+    filter: drop-shadow(0 .08vmin .10vmin rgba(3, 17, 31, .28));
+}
+
+.time-point-callout-dot {
+    fill: currentColor;
+    stroke: rgba(238, 248, 255, .92);
+    stroke-width: max(.8px, .12vmin);
+    opacity: .88;
+    filter: drop-shadow(0 0 .24vmin currentColor);
+}
+
+.time-point-callout-label {
+    font-size: 12px;
+}
+
+.time-arc:hover,
+.time-arc.is-arc-hovered,
+.time-point:hover,
+.time-point.is-arc-hovered {
+    opacity: 1;
+    filter:
+        drop-shadow(0 .20vmin .18vmin rgba(3, 17, 31, 0.42))
+        drop-shadow(0 0 1.15vmin currentColor);
+}
+
+.time-arc-label {
+    dominant-baseline: central;
+    font-family: "Aptos", "Segoe UI", Arial, sans-serif;
+    font-weight: 760;
+    letter-spacing: 0;
+    opacity: .95;
+    pointer-events: none;
+    text-anchor: middle;
+    user-select: none;
+}
+
+.time-arc-label textPath {
+    text-anchor: middle;
+}
+
+.time-arc-label--glass {
+    fill: rgba(238, 248, 255, .98);
+    stroke: rgba(3, 17, 31, .58);
+    stroke-width: 1px;
+    paint-order: stroke;
+    filter: drop-shadow(0 .08vmin .10vmin rgba(3, 17, 31, .28));
+}
+
+.time-arc-label--ink {
+    fill: rgba(3, 17, 31, .94);
+    stroke: rgba(238, 248, 255, .86);
+    stroke-width: 1.45px;
+    paint-order: stroke;
+    filter: drop-shadow(0 .08vmin .10vmin rgba(238, 248, 255, .20));
+}
+
+.time-arc-label--glow {
+    fill: #eaf8ff;
+    stroke: rgba(3, 17, 31, .58);
+    stroke-width: 1px;
+    paint-order: stroke;
+    filter:
+        drop-shadow(0 0 .30vmin currentColor)
+        drop-shadow(0 .10vmin .14vmin rgba(3, 17, 31, .36));
+}
+
+.time-arc-label--color {
+    fill: var(--event-color);
+    stroke: rgba(238, 248, 255, .94);
+    stroke-width: 1.32px;
+    paint-order: stroke;
+    filter: drop-shadow(0 .10vmin .12vmin rgba(3, 17, 31, .28));
+}
+
+.time-arc-label--custom {
+    fill: var(--custom-label-color);
+    stroke: rgba(238, 248, 255, 0.88);
+    stroke-width: 1.2px;
+    paint-order: stroke;
+    filter: drop-shadow(0 0 .18vmin rgba(3, 17, 31, 0.22));
+}
+
+.window-start-marker {
+    stroke: var(--window-start-marker-color, #00a7c7);
+    stroke-width: var(--window-start-marker-width, max(3px, .55vmin));
+    stroke-linecap: round;
+    stroke-dasharray: var(--window-start-marker-dasharray, .01 12);
+    filter:
+        drop-shadow(0 0 .24vmin rgba(238, 248, 255, .76))
+        drop-shadow(0 0 var(--window-start-marker-glow, .30vmin) var(--window-start-marker-color, rgba(0, 167, 199, .42)));
+    opacity: var(--window-start-marker-opacity, 1);
+    pointer-events: none;
+}
+
+.window-start-marker-pulse-group {
+    color: var(--window-start-marker-pulse-color, #00a7c7);
+    mix-blend-mode: screen;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.window-start-marker-pulse-radial,
+.window-start-marker-pulse-orbit {
+    stroke: var(--window-start-marker-pulse-color, currentColor);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+    filter:
+        drop-shadow(0 0 .24vmin rgba(238, 248, 255, .74))
+        drop-shadow(0 0 .46vmin var(--window-start-marker-pulse-color, currentColor));
+}
+
+.window-start-marker-pulse-radial {
+    opacity: 0;
+}
+
+.window-start-marker-pulse-orbit {
+    opacity: 0;
+    stroke-dasharray: .44 .56;
+    stroke-dashoffset: .2;
+}
+
+.window-start-marker-pulse-group.is-pulsing {
+    animation: window-start-marker-pulse-shell 560ms ease-out both;
+}
+
+.window-start-marker-pulse-group.is-pulsing .window-start-marker-pulse-radial {
+    animation: window-start-marker-pulse-radial 560ms ease-out both;
+}
+
+.window-start-marker-pulse-group.is-pulsing .window-start-marker-pulse-orbit {
+    animation: window-start-marker-pulse-orbit 560ms cubic-bezier(.2, .72, .25, 1) both;
+}
+
+@keyframes window-start-marker-pulse-shell {
+    0% { opacity: 0; }
+    18% { opacity: var(--window-start-marker-pulse-opacity, .24); }
+    100% { opacity: 0; }
+}
+
+@keyframes window-start-marker-pulse-radial {
+    0% { opacity: 0; }
+    20% { opacity: .22; }
+    100% { opacity: 0; }
+}
+
+@keyframes window-start-marker-pulse-orbit {
+    0% {
+        opacity: 0;
+        stroke-dashoffset: .26;
+    }
+    24% {
+        opacity: .34;
+    }
+    100% {
+        opacity: 0;
+        stroke-dashoffset: -.02;
+    }
+}
+
+.window-start-marker-emoji {
+    dominant-baseline: middle;
+    fill: var(--window-start-marker-color, #00a7c7);
+    filter:
+        drop-shadow(0 0 .40vmin rgba(238, 248, 255, .90))
+        drop-shadow(0 0 var(--window-start-marker-glow, .32vmin) var(--window-start-marker-color, rgba(0, 167, 199, .38)));
+    opacity: var(--window-start-marker-opacity, 1);
+    paint-order: stroke;
+    pointer-events: none;
+    stroke: rgba(3, 17, 31, 0.72);
+    stroke-width: 2px;
+    text-anchor: middle;
+    user-select: none;
+}
+
+.window-start-marker-boundary-label {
+    dominant-baseline: middle;
+    fill: var(--window-start-marker-color, #00a7c7);
+    filter:
+        drop-shadow(0 0 .36vmin rgba(238, 248, 255, .86))
+        drop-shadow(0 0 var(--window-start-marker-glow, .32vmin) var(--window-start-marker-color, rgba(0, 167, 199, .38)));
+    font-size: clamp(.62rem, 1.9vmin, 1.05rem);
+    font-weight: 800;
+    letter-spacing: 0;
+    opacity: var(--window-start-marker-opacity, 1);
+    paint-order: stroke;
+    pointer-events: none;
+    stroke: rgba(3, 17, 31, 0.76);
+    stroke-width: 2px;
+    text-anchor: middle;
+    text-transform: uppercase;
+    user-select: none;
+}
+
+.cm-number {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 2.36em;
+    height: 2.36em;
+    display: grid;
+    place-items: center;
+    color: rgba(238, 248, 255, 0.92);
+    font-family: "Aptos Display", "Segoe UI", Arial, sans-serif;
+    font-size: clamp(1.6rem, 5.9vmin, 4.7rem);
+    font-weight: 760;
+    line-height: 1;
+    text-align: center;
+    text-shadow:
+        0 1px 0 rgba(3, 17, 31, .72),
+        0 0 .52vmin rgba(0, 167, 199, .28);
+    transform-origin: center center;
+    user-select: none;
+}
+
+.cm-number:nth-child(3n) {
+    color: #ffffff;
+    font-weight: 820;
+}
+
+.clock.is-24-hour .cm-number {
+    color: rgba(238, 248, 255, 0.84);
+    font-size: clamp(.9rem, 3.3vmin, 2.45rem);
+}
+
+.clock.is-24-hour .cm-number:nth-child(6n) {
+    color: #ffffff;
+    font-weight: 820;
+}
+
+.cm-hand {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    border-radius: 999px 999px 4px 4px;
+    clip-path: polygon(50% 0%, 78% 10%, 62% 100%, 38% 100%, 22% 10%);
+    filter: drop-shadow(.26vmin .38vmin .36vmin rgba(3, 17, 31, 0.48));
+    transform-origin: center bottom;
+}
+
+.cm-hour-hand,
+.cm-minute-hand {
+    background:
+        linear-gradient(90deg,
+            #f8fbff 0%,
+            #a9bece 28%,
+            #102236 50%,
+            #a9bece 72%,
+            #f8fbff 100%);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+}
+
+.cm-second-hand {
+    background: linear-gradient(180deg, #b7fbff 0%, #00a7c7 44%, #1167d8 100%);
+    box-shadow: 0 0 .54vmin rgba(0, 167, 199, 0.42);
+}
+
+.cm-center {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 5;
+    border-radius: 50%;
+    background: radial-gradient(circle at 36% 34%, #ffffff, #98b4c6 44%, #1167d8 72%, #03111f 100%);
+    box-shadow:
+        -.20vmin -.20vmin .52vmin rgba(255, 255, 255, 0.50),
+        .30vmin .34vmin .64vmin rgba(3, 17, 31, .42),
+        inset 0 0 0 1px rgba(255, 255, 255, .38),
+        0 0 .58vmin rgba(0, 167, 199, 0.28);
+    transform: translate(-50%, -50%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .window-start-marker-pulse-group.is-pulsing,
+    .window-start-marker-pulse-group.is-pulsing .window-start-marker-pulse-radial,
+    .window-start-marker-pulse-group.is-pulsing .window-start-marker-pulse-orbit {
+        animation-duration: 180ms;
+    }
+
+    .window-start-marker-pulse-group.is-pulsing .window-start-marker-pulse-orbit {
+        stroke-dashoffset: 0;
+    }
+}
+
+:root {
+    --page-bg: #07111f;
+    --face: #324960;
+    --rim-width: clamp(6px, 1.7vmin, 16px);
+}
+
+body {
+    background: #07111f;
+    background-image: radial-gradient(circle at center, #304a62 0%, #07111f 64%, #02070d 100%);
+}

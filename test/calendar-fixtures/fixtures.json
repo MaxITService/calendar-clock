@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "events": [
+    { "name": "sleep", "title": "Sleep", "start": "00:00", "end": "07:00", "endDayOffset": 0 },
+    { "name": "morning-routine", "title": "Morning routine", "start": "07:00", "end": "08:00", "endDayOffset": 0 },
+    { "name": "commute-planning", "title": "Commute and plan the day", "start": "08:00", "end": "09:00", "endDayOffset": 0 },
+    { "name": "deep-work", "title": "Deep work", "start": "09:00", "end": "11:00", "endDayOffset": 0 },
+    { "name": "project-sync", "title": "Project sync meeting", "start": "10:00", "end": "11:00", "endDayOffset": 0 },
+    { "name": "lunch", "title": "Lunch", "start": "12:00", "end": "13:00", "endDayOffset": 0 },
+    { "name": "client-work", "title": "Client work", "start": "13:00", "end": "15:30", "endDayOffset": 0 },
+    { "name": "review-meeting", "title": "Review meeting", "start": "14:30", "end": "15:30", "endDayOffset": 0 },
+    { "name": "admin-email", "title": "Admin and email", "start": "15:30", "end": "16:00", "endDayOffset": 0 },
+    { "name": "exercise-groceries", "title": "Exercise and groceries", "start": "17:00", "end": "18:30", "endDayOffset": 0 },
+    { "name": "dinner-chores", "title": "Dinner and evening chores", "start": "19:00", "end": "20:30", "endDayOffset": 0 },
+    { "name": "personal-project", "title": "Personal project", "start": "21:00", "end": "00:30", "endDayOffset": 1 }
+  ]
+}

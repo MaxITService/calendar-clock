@@ -1,0 +1,512 @@
+/* Midnight Aurora – dark space clock face with polar-light accents. */
+
+/* ── Face & rim ─────────────────────────────────────── */
+.clock {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    position: relative;
+    overflow: hidden;
+    background:
+        linear-gradient(155deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.01) 40%, rgba(100, 200, 255, 0.06)) padding-box,
+        var(--face-texture) padding-box,
+        var(--face-grain) padding-box,
+        radial-gradient(circle at 48% 44%, #141e3d 0%, #0c1225 55%, #060912 100%) padding-box,
+        conic-gradient(from 200deg,
+            #6ee7b7 0deg,
+            #38bdf8 60deg,
+            #818cf8 120deg,
+            #c084fc 180deg,
+            #38bdf8 260deg,
+            #6ee7b7 360deg) border-box;
+    border: var(--rim-width) solid transparent;
+    box-shadow:
+        inset 0 0 0 clamp(2px, .65vmin, 7px) rgba(130, 200, 255, 0.18),
+        inset 0 0 6vmin rgba(6, 9, 18, 0.82),
+        0 0 0 1px rgba(130, 200, 255, 0.14),
+        0 4vmin 9vmin rgba(0, 0, 0, 0.72);
+}
+
+.clock::before {
+    content: "";
+    position: absolute;
+    inset: 8.4%;
+    border-radius: 50%;
+    border: 1px solid rgba(130, 200, 255, 0.14);
+    box-shadow:
+        inset 0 0 2vmin rgba(100, 160, 255, 0.06),
+        0 0 1.4vmin rgba(100, 160, 255, 0.03);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.clock::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0 22%, transparent 22% 100%);
+    pointer-events: none;
+    z-index: 6;
+    mix-blend-mode: screen;
+}
+
+/* ── Shared layout ──────────────────────────────────── */
+.ticks,
+.dot-rings,
+.hands,
+.numbers {
+    position: absolute;
+    inset: 0;
+}
+
+.ticks,
+.tick,
+.dot-rings,
+.center-shadow-ring,
+.minute-dot,
+.numbers,
+.number,
+.hands,
+.hand,
+.center {
+    pointer-events: none;
+}
+
+.ticks  { z-index: 1; }
+.dot-rings { z-index: 1; }
+.numbers { z-index: 3; }
+
+/* ── Dot rings ──────────────────────────────────────── */
+.minute-dot {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    border-radius: 50%;
+    background: rgba(160, 210, 255, 0.28);
+    box-shadow: 0 0 .32vmin rgba(100, 200, 255, 0.18);
+}
+
+.center-shadow-ring {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    border-radius: 50%;
+    border: 1px solid rgba(130, 200, 255, 0.12);
+    box-shadow:
+        inset 0 0 1.8vmin rgba(6, 9, 18, 0.55),
+        0 0 1.4vmin rgba(100, 180, 255, 0.08);
+    transform: translate(-50%, -50%);
+}
+
+/* ── Hands layer ────────────────────────────────────── */
+.hands { z-index: 4; }
+
+/* ── Event arcs SVG ─────────────────────────────────── */
+.time-arcs {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.time-arc {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: .88;
+    filter:
+        drop-shadow(0 .18vmin .18vmin rgba(0, 0, 0, 0.42))
+        drop-shadow(0 0 .32vmin currentColor);
+    pointer-events: stroke;
+    cursor: help;
+}
+
+.time-point {
+    opacity: .92;
+    stroke-width: max(2px, .34vmin);
+    filter:
+        drop-shadow(0 .18vmin .18vmin rgba(0, 0, 0, 0.42))
+        drop-shadow(0 0 .32vmin currentColor);
+    pointer-events: visiblePainted;
+    cursor: help;
+}
+
+.time-arc-separator {
+    display: none;
+    pointer-events: none;
+    opacity: .98;
+    filter:
+        drop-shadow(0 .16vmin .18vmin rgba(6, 9, 18, .78))
+        drop-shadow(0 0 .26vmin rgba(255, 255, 255, .48));
+}
+
+.time-arc-separator-shadow,
+.time-arc-separator-cut {
+    fill: none;
+    stroke-linecap: butt;
+}
+
+.time-arc-separator-shadow { stroke: rgba(6, 9, 18, .94); }
+.time-arc-separator-cut    { stroke: rgba(200, 220, 255, .92); }
+
+.time-point-callout {
+    pointer-events: none;
+    opacity: .94;
+    color: currentColor;
+}
+
+.time-point-callout-line {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: max(1px, .18vmin);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: .72;
+    filter: drop-shadow(0 .08vmin .10vmin rgba(0, 0, 0, .32));
+}
+
+.time-point-callout-dot {
+    fill: currentColor;
+    stroke: rgba(200, 220, 255, .88);
+    stroke-width: max(.8px, .12vmin);
+    opacity: .88;
+    filter: drop-shadow(0 0 .24vmin currentColor);
+}
+
+.time-point-callout-label {
+    font-size: 12px;
+}
+
+.time-arc:hover,
+.time-arc.is-arc-hovered,
+.time-point:hover,
+.time-point.is-arc-hovered {
+    opacity: 1;
+    filter:
+        drop-shadow(0 .22vmin .20vmin rgba(0, 0, 0, .52))
+        drop-shadow(0 0 1.4vmin currentColor);
+}
+
+/* ── Arc labels ─────────────────────────────────────── */
+.time-arc-label {
+    pointer-events: none;
+    text-anchor: middle;
+    dominant-baseline: central;
+    font-family: Outfit, Inter, "Segoe UI", Arial, sans-serif;
+    font-weight: 850;
+    letter-spacing: 0.5px;
+    opacity: .96;
+    user-select: none;
+}
+
+.time-arc-label textPath { text-anchor: middle; }
+
+.time-arc-label--glass {
+    fill: rgba(200, 225, 255, .96);
+    stroke: rgba(6, 9, 18, .72);
+    stroke-width: 1px;
+    paint-order: stroke;
+    filter:
+        drop-shadow(0 .08vmin .10vmin rgba(0, 0, 0, .42))
+        drop-shadow(0 0 .26vmin rgba(160, 210, 255, .38));
+}
+
+.time-arc-label--ink {
+    fill: rgba(200, 225, 255, .98);
+    stroke: rgba(6, 9, 18, .82);
+    stroke-width: 1.5px;
+    paint-order: stroke;
+    filter: drop-shadow(0 .08vmin .10vmin rgba(100, 180, 255, .22));
+}
+
+.time-arc-label--glow {
+    fill: #e0f0ff;
+    stroke: rgba(20, 30, 61, .7);
+    stroke-width: 1px;
+    paint-order: stroke;
+    filter:
+        drop-shadow(0 0 .32vmin currentColor)
+        drop-shadow(0 .10vmin .14vmin rgba(0, 0, 0, .52));
+}
+
+.time-arc-label--color {
+    fill: var(--event-color);
+    stroke: rgba(200, 220, 255, .88);
+    stroke-width: 1.4px;
+    paint-order: stroke;
+    filter: drop-shadow(0 .10vmin .12vmin rgba(0, 0, 0, .36));
+}
+
+.time-arc-label--custom {
+    fill: var(--custom-label-color);
+    stroke: rgba(6, 9, 18, 0.82);
+    stroke-width: 1.2px;
+    paint-order: stroke;
+    filter: drop-shadow(0 0 .2vmin rgba(160, 210, 255, 0.48));
+}
+
+/* ── Window start marker ────────────────────────────── */
+.window-start-marker {
+    stroke: var(--window-start-marker-color, #818cf8);
+    stroke-width: var(--window-start-marker-width, max(3px, .55vmin));
+    stroke-linecap: round;
+    stroke-dasharray: var(--window-start-marker-dasharray, .01 12);
+    filter:
+        drop-shadow(0 0 .28vmin rgba(200, 220, 255, .72))
+        drop-shadow(0 0 var(--window-start-marker-glow, .3vmin) var(--window-start-marker-color, rgba(129, 140, 248, .5)));
+    pointer-events: none;
+    opacity: var(--window-start-marker-opacity, 1);
+}
+
+.window-start-marker-pulse-group {
+    color: var(--window-start-marker-pulse-color, #818cf8);
+    opacity: 0;
+    pointer-events: none;
+    mix-blend-mode: screen;
+}
+
+.window-start-marker-pulse-radial,
+.window-start-marker-pulse-orbit {
+    stroke: var(--window-start-marker-pulse-color, currentColor);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+    filter:
+        drop-shadow(0 0 .24vmin rgba(200, 220, 255, .68))
+        drop-shadow(0 0 .46vmin var(--window-start-marker-pulse-color, currentColor));
+}
+
+.window-start-marker-pulse-radial { opacity: 0; }
+.window-start-marker-pulse-orbit  {
+    opacity: 0;
+    stroke-dasharray: .44 .56;
+    stroke-dashoffset: .2;
+}
+
+.window-start-marker-pulse-group.is-pulsing {
+    animation: window-start-marker-pulse-shell 560ms ease-out both;
+}
+.window-start-marker-pulse-group.is-pulsing .window-start-marker-pulse-radial {
+    animation: window-start-marker-pulse-radial 560ms ease-out both;
+}
+.window-start-marker-pulse-group.is-pulsing .window-start-marker-pulse-orbit {
+    animation: window-start-marker-pulse-orbit 560ms cubic-bezier(.2, .72, .25, 1) both;
+}
+
+@keyframes window-start-marker-pulse-shell {
+    0%   { opacity: 0; }
+    18%  { opacity: var(--window-start-marker-pulse-opacity, .24); }
+    100% { opacity: 0; }
+}
+
+@keyframes window-start-marker-pulse-radial {
+    0%   { opacity: 0; }
+    20%  { opacity: .22; }
+    100% { opacity: 0; }
+}
+
+@keyframes window-start-marker-pulse-orbit {
+    0%   { opacity: 0; stroke-dashoffset: .26; }
+    24%  { opacity: .34; }
+    100% { opacity: 0; stroke-dashoffset: -.02; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .window-start-marker-pulse-group.is-pulsing,
+    .window-start-marker-pulse-group.is-pulsing .window-start-marker-pulse-radial,
+    .window-start-marker-pulse-group.is-pulsing .window-start-marker-pulse-orbit {
+        animation-duration: 180ms;
+    }
+    .window-start-marker-pulse-group.is-pulsing .window-start-marker-pulse-orbit {
+        stroke-dashoffset: 0;
+    }
+}
+
+.window-start-marker-emoji {
+    fill: var(--window-start-marker-color, #818cf8);
+    stroke: rgba(6, 9, 18, 0.88);
+    stroke-width: 2px;
+    paint-order: stroke;
+    dominant-baseline: middle;
+    text-anchor: middle;
+    filter:
+        drop-shadow(0 0 .46vmin rgba(200, 220, 255, .85))
+        drop-shadow(0 0 var(--window-start-marker-glow, .36vmin) var(--window-start-marker-color, rgba(129, 140, 248, .5)));
+    pointer-events: none;
+    opacity: var(--window-start-marker-opacity, 1);
+    user-select: none;
+}
+
+.window-start-marker-boundary-label {
+    fill: var(--window-start-marker-color, #818cf8);
+    stroke: rgba(6, 9, 18, 0.9);
+    stroke-width: 2px;
+    paint-order: stroke;
+    dominant-baseline: middle;
+    text-anchor: middle;
+    font-size: clamp(.62rem, 1.9vmin, 1.05rem);
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    filter:
+        drop-shadow(0 0 .4vmin rgba(200, 220, 255, .82))
+        drop-shadow(0 0 var(--window-start-marker-glow, .36vmin) var(--window-start-marker-color, rgba(129, 140, 248, .5)));
+    pointer-events: none;
+    opacity: var(--window-start-marker-opacity, 1);
+    user-select: none;
+}
+
+/* ── Ticks ──────────────────────────────────────────── */
+.tick {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform-origin: center center;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #c7d2fe 0%, #818cf8 100%) !important;
+    box-shadow: 0 0 3px rgba(129, 140, 248, 0.35), 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* ── Numbers ────────────────────────────────────────── */
+.number {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 2.448em;
+    height: 2.448em;
+    display: grid;
+    place-items: center;
+    color: #c7d2fe;
+    font-family: "Outfit", "Inter", "Segoe UI", sans-serif;
+    font-weight: 700;
+    font-size: clamp(2.1528rem, 8.0496vmin, 6.4584rem);
+    line-height: 1;
+    text-align: center;
+    transform-origin: center center;
+    text-shadow:
+        0 0 8px rgba(129, 140, 248, 0.45),
+        0 2px 4px rgba(0, 0, 0, 0.7),
+        0 0 1px rgba(200, 210, 255, 0.6);
+    user-select: none;
+}
+
+.clock.is-24-hour .number {
+    color: #c7d2fe;
+    font-size: clamp(1.28rem, 4.5vmin, 3.45rem);
+}
+
+.clock.is-24-hour .number-24:nth-child(2n) {
+    font-weight: bold;
+    color: #e0e7ff;
+}
+
+/* ── Hands ──────────────────────────────────────────── */
+.hand {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform-origin: center bottom;
+    border-radius: 999px 999px 4px 4px;
+    filter: drop-shadow(.28vmin .38vmin .36vmin rgba(6, 9, 18, 0.62));
+    clip-path: polygon(50% 0%, 78% 11%, 66% 100%, 34% 100%, 22% 11%);
+}
+
+.hour-hand,
+.minute-hand {
+    background: linear-gradient(90deg, #e0e7ff 0%, #a5b4fc 38%, #818cf8 50%, #a5b4fc 62%, #e0e7ff 100%);
+}
+
+.second-hand {
+    background: linear-gradient(180deg, #6ee7b7 0%, #34d399 48%, #10b981 100%);
+}
+
+/* ── Center dot ─────────────────────────────────────── */
+.center {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: radial-gradient(circle at 38% 38%, #e0e7ff, #818cf8 70%, #6366f1);
+    z-index: 5;
+    box-shadow:
+        -.28vmin -.28vmin .58vmin rgba(200, 220, 255, 0.22),
+        .30vmin .34vmin .64vmin rgba(6, 9, 18, .55),
+        inset 0 0 0 1px rgba(200, 220, 255, .32),
+        0 0 6px rgba(129, 140, 248, .4);
+}
+
+/* ── Star particles (decorative layer) ──────────────── */
+.aurora-stars {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+    border-radius: 50%;
+}
+
+.aurora-star {
+    position: absolute;
+    border-radius: 50%;
+    background: #e0e7ff;
+    animation: aurora-star-twinkle 3s ease-in-out infinite alternate;
+}
+
+@keyframes aurora-star-twinkle {
+    0%   { opacity: 0.15; transform: scale(0.7); }
+    50%  { opacity: 0.8;  transform: scale(1.1); }
+    100% { opacity: 0.25; transform: scale(0.8); }
+}
+
+/* Stagger twinkle for visual variety */
+.aurora-star:nth-child(3n)   { animation-delay: 0.4s;  animation-duration: 3.6s; }
+.aurora-star:nth-child(3n+1) { animation-delay: 1.1s;  animation-duration: 4.2s; }
+.aurora-star:nth-child(3n+2) { animation-delay: 2.3s;  animation-duration: 2.8s; }
+.aurora-star:nth-child(5n)   { animation-delay: 0.7s;  animation-duration: 5s; }
+.aurora-star:nth-child(7n)   { animation-delay: 1.8s;  animation-duration: 3.1s; }
+
+/* Aurora glow ring – subtle colored halo behind tick marks */
+.aurora-glow {
+    position: absolute;
+    inset: 4%;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+    background: conic-gradient(
+        from 0deg,
+        rgba(110, 231, 183, 0.06),
+        rgba(56, 189, 248, 0.1),
+        rgba(129, 140, 248, 0.08),
+        rgba(192, 132, 252, 0.1),
+        rgba(56, 189, 248, 0.07),
+        rgba(110, 231, 183, 0.06)
+    );
+    filter: blur(8px);
+    animation: aurora-glow-rotate 28s linear infinite;
+}
+
+@keyframes aurora-glow-rotate {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .aurora-star  { animation: none; opacity: 0.35; }
+    .aurora-glow  { animation: none; }
+}
+
+/* ── Root overrides ─────────────────────────────────── */
+:root {
+    --page-bg: #060912;
+    --face: #0c1225;
+    --rim-width: clamp(6px, 1.7vmin, 16px);
+}
+
+body {
+    background: #060912;
+    background-image: radial-gradient(circle at center, #111833 0%, #060912 100%);
+}

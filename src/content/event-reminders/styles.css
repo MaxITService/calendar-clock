@@ -1,0 +1,242 @@
+#calendar-clock-root .cc-sound-reminder-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+}
+
+#calendar-clock-root button.cc-sound-link,
+#calendar-clock-root button.cc-sound-link:hover,
+#calendar-clock-root button.cc-sound-link:focus {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  box-shadow: none;
+  color: #8f4d00;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  height: auto;
+  padding: 1px 2px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+#calendar-clock-root button.cc-sound-link:hover {
+  color: #6f3b00;
+}
+
+#calendar-clock-root button.cc-sound-link:focus-visible,
+#calendar-clock-root .cc-sound-dialog button:focus-visible,
+#calendar-clock-root .cc-sound-dialog input:focus-visible {
+  outline: 2px solid #d88724;
+  outline-offset: 2px;
+}
+
+#calendar-clock-root button.cc-sound-link:disabled {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none;
+}
+
+#calendar-clock-root .cc-sound-lead {
+  font: inherit;
+  width: 58px;
+}
+
+#calendar-clock-root .cc-sound-modal {
+  align-items: center;
+  background: rgba(18, 14, 10, 0.52);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  pointer-events: auto;
+  position: fixed;
+  z-index: 2147483647;
+}
+
+#calendar-clock-root .cc-sound-dialog {
+  background: #fffaf2;
+  border: 1px solid rgba(160, 103, 32, 0.45);
+  border-radius: 12px;
+  box-shadow: 0 18px 60px rgba(25, 18, 10, 0.34);
+  color: #30271e;
+  display: grid;
+  gap: 10px;
+  max-height: min(620px, calc(100vh - 32px));
+  overflow: auto;
+  padding: 16px;
+  width: min(430px, calc(100vw - 32px));
+}
+
+#calendar-clock-root .cc-sound-dialog h2 {
+  font-size: 17px;
+  margin: 0;
+}
+
+#calendar-clock-root .cc-sound-current {
+  color: #755f49;
+  font-size: 12px;
+}
+
+#calendar-clock-root .cc-sound-source-actions,
+#calendar-clock-root .cc-sound-preview-actions,
+#calendar-clock-root .cc-sound-dialog-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+#calendar-clock-root .cc-sound-dialog button,
+#calendar-clock-root .cc-sound-dialog button:hover,
+#calendar-clock-root .cc-sound-dialog button:focus {
+  background: #fff;
+  border: 1px solid #c9ad8b;
+  border-radius: 6px;
+  box-shadow: none;
+  color: #30271e;
+  cursor: pointer;
+  font: 600 12px Inter, sans-serif;
+  height: 28px;
+  padding: 0 9px;
+}
+
+#calendar-clock-root .cc-sound-dialog button:hover {
+  background: #fff3df;
+  border-color: #b88950;
+}
+
+#calendar-clock-root .cc-sound-dialog button.cc-sound-primary,
+#calendar-clock-root .cc-sound-dialog button.cc-sound-primary:hover,
+#calendar-clock-root .cc-sound-dialog button.cc-sound-primary:focus {
+  background: #a95c05;
+  border-color: #a95c05;
+  color: #fff;
+}
+
+#calendar-clock-root .cc-sound-dialog button.cc-sound-primary:hover {
+  background: #8f4d00;
+  border-color: #8f4d00;
+}
+
+#calendar-clock-root .cc-sound-dialog button:disabled {
+  background: #eee4d6 !important;
+  border-color: #d8c7b1 !important;
+  color: #786b5d;
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+#calendar-clock-root .cc-sound-trim {
+  display: grid;
+  gap: 6px;
+}
+
+#calendar-clock-root .cc-sound-trim-visual {
+  background: rgba(164, 119, 64, 0.2);
+  border-radius: 5px;
+  height: 8px;
+  overflow: hidden;
+  position: relative;
+}
+
+#calendar-clock-root .cc-sound-trim-visual span {
+  background: #c8791c;
+  height: 100%;
+  position: absolute;
+}
+
+#calendar-clock-root .cc-sound-fields {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr 1fr;
+}
+
+#calendar-clock-root .cc-sound-fields label {
+  display: grid;
+  font-size: 12px;
+  gap: 3px;
+}
+
+#calendar-clock-root .cc-sound-fields input {
+  min-width: 0;
+}
+
+#calendar-clock-root .cc-sound-status {
+  font-size: 12px;
+  min-height: 1.4em;
+}
+
+#calendar-clock-root .cc-sound-status.is-error {
+  color: #9c211c;
+}
+
+#calendar-clock-root .cc-sound-dialog-footer {
+  justify-content: flex-end;
+}
+
+#calendar-clock-root.cc-menu-theme-dark button.cc-sound-link,
+#calendar-clock-root.cc-menu-theme-dark button.cc-sound-link:hover,
+#calendar-clock-root.cc-menu-theme-dark button.cc-sound-link:focus {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  color: #f2c574;
+  text-decoration: underline;
+}
+
+#calendar-clock-root.cc-menu-theme-dark button.cc-sound-link:hover {
+  color: #ffe0a3;
+}
+
+#calendar-clock-root.cc-menu-theme-dark button.cc-sound-link:disabled {
+  background: transparent !important;
+  border: 0 !important;
+}
+
+#calendar-clock-root.cc-menu-theme-dark .cc-sound-dialog {
+  background: #28231d;
+  border-color: #76552f;
+  color: #f5eadb;
+}
+
+#calendar-clock-root.cc-menu-theme-dark .cc-sound-current {
+  color: #d4c4ae;
+}
+
+#calendar-clock-root.cc-menu-theme-dark .cc-sound-dialog button,
+#calendar-clock-root.cc-menu-theme-dark .cc-sound-dialog button:hover,
+#calendar-clock-root.cc-menu-theme-dark .cc-sound-dialog button:focus {
+  background: #332c24;
+  border-color: #806c54;
+  color: #f5eadb;
+}
+
+#calendar-clock-root.cc-menu-theme-dark .cc-sound-dialog button:hover {
+  background: #44392e;
+  border-color: #a98b67;
+}
+
+#calendar-clock-root.cc-menu-theme-dark .cc-sound-dialog button.cc-sound-primary,
+#calendar-clock-root.cc-menu-theme-dark .cc-sound-dialog button.cc-sound-primary:hover,
+#calendar-clock-root.cc-menu-theme-dark .cc-sound-dialog button.cc-sound-primary:focus {
+  background: #c8791c;
+  border-color: #c8791c;
+  color: #21170d;
+}
+
+#calendar-clock-root.cc-menu-theme-dark .cc-sound-dialog button.cc-sound-primary:hover {
+  background: #e09339;
+  border-color: #e09339;
+}
+
+#calendar-clock-root.cc-menu-theme-dark .cc-sound-dialog button:disabled {
+  background: #35302a !important;
+  border-color: #51473d !important;
+  color: #a99c8d;
+}
+
+#calendar-clock-root.cc-menu-theme-dark .cc-sound-status.is-error {
+  color: #ffaaa5;
+}

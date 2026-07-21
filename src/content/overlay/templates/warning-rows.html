@@ -1,0 +1,20 @@
+<template data-cc-warning-row="capture-limit">
+  <strong>Capture limit</strong>
+  <span data-cc-capture-limit-message></span>
+  <button type="button" data-cc-action="open-debug">Debug</button>
+</template>
+<template data-cc-warning-row="storage-limit">
+  <strong>Local storage cleanup</strong>
+  <span data-cc-storage-limit-message></span>
+  <button type="button" data-cc-action="open-debug">Debug</button>
+</template>
+<template data-cc-warning-row="date-format">
+  <strong>Date format issue</strong>
+  <span><span data-cc-failed-date-count></span> event(s) hidden because Calendar Clock could not understand their date. Contact <a data-cc-support-email></a> with your date/time format and when this happened.</span>
+  <button type="button" data-cc-action="open-debug">Debug</button>
+</template>
+<template data-cc-warning-row="undated-task">
+  <strong>Floating Google Tasks</strong>
+  <span><span data-cc-hidden-undated-task-count></span> undated task(s) hidden because this clock window does not overlap today.</span>
+  <button type="button" data-cc-action="open-debug">Debug</button>
+</template>

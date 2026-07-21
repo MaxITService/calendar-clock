@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calendar Clock</title>
+    <link rel="stylesheet" href="styles/base.css" />
+    <link rel="stylesheet" href="styles/controls.css" />
+    <link rel="stylesheet" href="styles/magnifier.css" />
+    <link rel="stylesheet" href="styles/event-tooltip.css" />
+</head>
+<body>
+    <main class="stage" id="stage" aria-label="Analog clock with liquid glass magnifying cursor">
+        <div class="clock" id="clock"></div>
+        <div class="magnifier" id="magnifier" aria-hidden="true">
+            <div class="lens-window" id="lensWindow">
+                <div class="magnified-content" id="magnifiedContent">
+                    <div class="clock magnified-clock" id="magnifiedClock"></div>
+                </div>
+                <div class="liquid-glass-layer liquid-glass-refraction" id="lensGlassRefraction"></div>
+                <div class="liquid-glass-layer liquid-glass-tint" id="lensGlassTint"></div>
+                <div class="lens-shine"></div>
+                <div class="lens-center-cursor" aria-hidden="true"></div>
+            </div>
+        </div>
+    </main>
+    <div class="clock-timezone-indicator" id="clockTimezoneIndicator" hidden></div>
+
+    <div class="clock-window-actions" aria-label="Clock overlay controls">
+        <button id="clockFullButton" type="button" title="Full clock view">Full</button>
+        <button id="clockMiniButton" type="button" title="Mini clock view">Mini</button>
+        <button id="clockHideButton" type="button" title="Hide clock view">Hide</button>
+    </div>
+
+    <div class="lens-size-control" aria-label="Magnifier controls">
+        <input id="lensSizeSlider" type="range" aria-label="Magnifier size" />
+        <input id="autoIntervalInput" type="text" inputmode="numeric" value="600"
+            aria-label="Periodic current-time check interval in seconds" title="Periodic current-time check interval in seconds" />
+        <button id="manualAutoButton" type="button" aria-label="Preview automatic magnifier">Preview automatic magnifier</button>
+    </div>
+
+    <div class="time-range-controls calendar-panel" aria-label="Google Calendar event feed">
+        <div class="calendar-panel-header">
+            <strong id="calendarStatus">Waiting for Google Calendar</strong>
+            <button id="refreshCalendarButton" type="button" aria-label="Clear cached events and reload the active Google Calendar tab" title="Clear cached events and reload the active Google Calendar tab">Refresh</button>
+        </div>
+        <div class="display-window-controls" aria-label="Displayed 12 hour window">
+            <label class="radial-clock-toggle" title="Map 24 hours around the dial. With Follow Now from the Calendar overlay, the configured offset shows past hours and the remaining hours look forward.">
+                <input id="radial24HourToggle" type="checkbox" />
+                <span>24h radial (minute arrow works as before).</span>
+            </label>
+            <label>
+                <span>from</span>
+                <input id="displayWindowStart" type="time" value="08:00" />
+            </label>
+            <label>
+                <span>to</span>
+                <input id="displayWindowEnd" type="time" value="20:00" />
+            </label>
+        </div>
+        <div id="displayWindowSummary" class="display-window-summary">Showing window</div>
+        <div id="calendarEventList" class="calendar-event-list" aria-live="polite"></div>
+    </div>
+    <div class="arc-tooltip" id="arcTooltip" aria-hidden="true"></div>
+    <script src="scripts/app-state.js"></script>
+    <script src="scripts/face-registry.js"></script>
+    <script src="scripts/time-window.js"></script>
+    <script src="scripts/event-tooltip.js"></script>
+    <script src="scripts/clock-renderer.js"></script>
+    <script src="scripts/magnifier-motion.js"></script>
+    <script src="scripts/clock-controls.js"></script>
+    <script src="scripts/calendar-bridge.js"></script>
+    <script src="scripts/liquid-glass-filter.js"></script>
+    <script src="scripts/app-init.js"></script>
+</body>
+</html>

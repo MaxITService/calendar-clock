@@ -1,0 +1,1882 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Liquid Glass Clock</title>
+    <style>
+        /* ============================================================
+           ARCHITECTURE OVERVIEW
+           ============================================================
+           This page renders an analog clock with a "liquid glass"
+           magnifying-lens effect that follows the cursor.
+
+           LAYER STACK (inside .stage):
+             1. .clock              – the base clock (face, rim, hands, ticks, numbers, arcs)
+             2. .magnifier          – floating lens that appears on hover / auto-animation
+                └ .lens-window      – circular viewport with overflow:hidden
+                  └ .magnified-content  – clips & filters the magnified scene
+                    └ .magnified-clock  – a CLONE of .clock, scaled by MAGNIFY
+                  └ .liquid-glass-*     – refraction / tint overlays
+                  └ .lens-shine         – specular highlight
+
+           TEXTURE SYSTEM:
+             • --page-texture / --page-bg-base  → body & magnified-content background
+             • --face-texture                   → fine diagonal lines on the clock face
+             • The solid face color is applied via a linear-gradient shim
+               (plain colors are invalid as non-final background-image layers)
+
+           IMPORTANT FOR STYLE CHANGES:
+             • .magnified-clock carries class "clock" so it inherits ALL .clock
+               styles (border, background layers, pseudo-elements). Do NOT add
+               background overrides on .magnified-clock or the textures will
+               diverge from the base clock.
+             • The outer rim is a translucent wash, not a metallic ring.
+               See --rim-highlight / --rim-shadow tokens.
+             • Clock internals (ticks, numbers, hands) are built by JS in
+               buildClockFace() for BOTH .clock and .magnified-clock using
+               the same clockSize value.
+           ============================================================ */
+
+        /* --- Reset ------------------------------------------------- */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* --- Design tokens ----------------------------------------- */
+        :root {
+            /* Rim wash: translucent cream/gray, top-left highlight */
+            --rim-highlight: rgba(255, 255, 255, .68);
+            --rim-mid: rgba(239, 234, 225, .44);
+            --rim-shadow: rgba(176, 168, 156, .26);
+
+            /* Solid face base color (cream) */
+            --face: #eee7dc;
+
+            /* Rim dimensions */
+            --rim-width: clamp(9px, 2.7vmin, 24px);
+
+            /* Texture angles – tweak these to change the "linen" direction */
+            --page-texture-angle: 115deg;
+            --face-texture-angle: 82deg;
+
+            /* Page background: subtle linen lines over a soft gradient */
+            --page-texture:
+                repeating-linear-gradient(var(--page-texture-angle),
+                    rgba(255, 255, 255, .12) 0 1px,
+                    transparent 1px 9px);
+
+            --page-bg-base:
+                radial-gradient(circle at 15% 10%, rgba(255, 255, 255, .50), transparent 34%),
+                radial-gradient(circle at 85% 88%, rgba(184, 141, 90, .24), transparent 36%),
+                linear-gradient(180deg, #cdc6ba 0%, #dcd6cc 100%);
+
+            /* Clock face texture: fine diagonal white lines */
+            --face-texture:
+                repeating-linear-gradient(var(--face-texture-angle),
+                    rgba(255, 255, 255, .10) 0 1px,
+                    transparent 1px 8px);
+
+            --face-grain:
+                repeating-linear-gradient(90deg,
+                    rgba(184, 141, 90, .10) 0 6px,
+                    rgba(255, 255, 255, 0) 6px 18px);
+
+            /* Composed page background (texture + base) */
+            --page-bg: var(--page-texture), var(--page-bg-base);
+
+            /* Miscellaneous tokens */
+            --ink: #111111;
+            --second: #d5312f;
+            --lens-size: 550px;
+            --magnify: 1.55;
+            --clock-margin: 48px;
+        }
+
+        /* --- Page layout ------------------------------------------- */
+        html {
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            width: 100%;
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            background: var(--page-bg);
+            font-family: Georgia, "Times New Roman", serif;
+        }
+
+        /* --- Stage: square container that holds clock + magnifier -- */
+        .stage {
+            position: relative;
+            width: min(calc(100vw - var(--clock-margin) - var(--clock-margin)),
+                    calc(100vh - var(--clock-margin) - var(--clock-margin)));
+            height: min(calc(100vw - var(--clock-margin) - var(--clock-margin)),
+                    calc(100vh - var(--clock-margin) - var(--clock-margin)));
+            display: grid;
+            place-items: center;
+        }
+
+        /* --- UI controls (top-right): lens size slider, auto-interval --- */
+        .lens-size-control {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 40;
+            display: grid;
+            gap: 8px;
+            justify-items: end;
+            opacity: 0;
+            transition: opacity .18s ease;
+        }
+
+        .lens-size-control:hover,
+        .lens-size-control:focus-within {
+            opacity: 1;
+        }
+
+        .lens-size-control input[type="range"],
+        .lens-size-control input[type="text"],
+        .lens-size-control button {
+            width: 170px;
+        }
+
+        .lens-size-control input[type="range"] {
+            cursor: pointer;
+        }
+
+        .lens-size-control input[type="text"] {
+            padding: 6px 8px;
+            border: 1px solid rgba(110, 85, 61, .32);
+            border-radius: 8px;
+            background: rgba(248, 246, 241, .9);
+            color: var(--ink);
+            font: 14px Georgia, "Times New Roman", serif;
+            text-align: right;
+        }
+
+        .lens-size-control button {
+            padding: 7px 8px;
+            border: 1px solid rgba(110, 85, 61, .32);
+            border-radius: 8px;
+            background: rgba(184, 141, 90, .88);
+            color: #fff;
+            font: 14px Georgia, "Times New Roman", serif;
+            cursor: pointer;
+        }
+
+        .lens-size-control button:active {
+            transform: translateY(1px);
+        }
+
+        /* --- UI controls (bottom-right): time-range arc settings --- */
+        .time-range-controls {
+            position: fixed;
+            right: 16px;
+            bottom: 16px;
+            z-index: 40;
+            display: grid;
+            gap: 8px;
+            padding: 10px;
+            border: 1px solid rgba(110, 85, 61, .26);
+            border-radius: 12px;
+            background: rgba(248, 246, 241, .88);
+            box-shadow: 0 1.1vmin 2.4vmin rgba(0, 0, 0, .12);
+            color: rgba(70, 51, 32, .95);
+            font: 13px Georgia, "Times New Roman", serif;
+            opacity: 0;
+            transition: opacity .18s ease;
+        }
+
+        .time-range-controls:hover,
+        .time-range-controls:focus-within {
+            opacity: 1;
+        }
+
+        .time-range-row {
+            display: grid;
+            grid-template-columns: 74px 84px 84px;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .time-range-toggle,
+        .time-range-field {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+
+        .time-range-toggle input {
+            cursor: pointer;
+        }
+
+        .time-range-field input {
+            width: 58px;
+            padding: 4px 5px;
+            border: 1px solid rgba(110, 85, 61, .30);
+            border-radius: 7px;
+            background: rgba(255, 255, 255, .72);
+            color: var(--ink);
+            font: 12px Georgia, "Times New Roman", serif;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: textfield;
+        }
+
+        .time-range-field input[type="time"]::-webkit-calendar-picker-indicator,
+        .time-range-field input[type="time"]::-webkit-clear-button,
+        .time-range-field input[type="time"]::-webkit-inner-spin-button,
+        .time-range-field input[type="time"]::-webkit-outer-spin-button {
+            display: none;
+            -webkit-appearance: none;
+            opacity: 0;
+        }
+
+        .range-name {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .range-name::before {
+            content: "";
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        .range-red {
+            color: #d5312f;
+        }
+
+        .range-violet {
+            color: #7f3fbf;
+        }
+
+        .range-orange {
+            color: #f28c28;
+        }
+
+        /* --- Clock face & translucent outer rim ---------------------
+           Background layer stack (top → bottom):
+             1. Highlight sheen          – subtle 140° white gradient (padding-box)
+             2. Face texture             – fine diagonal linen lines   (padding-box)
+             3. Face grain               – faint warm vertical weave   (padding-box)
+             4. Solid face color shim    – opaque cream via gradient   (padding-box)
+             5. Translucent rim wash     – subtle cream/gray edge      (border-box)
+           The solid face color MUST be a linear-gradient(color,color)
+           because plain colors are invalid as <bg-image> in non-final
+           layers. Using a plain color here would cause the texture to
+           render inconsistently (especially in the magnified clone).
+           NOTE: .magnified-clock also carries this class. Do NOT add
+           background overrides on .magnified-clock or textures will
+           diverge from the base clock.
+        --------------------------------------------------------------- */
+        .clock {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            background:
+                linear-gradient(140deg, rgba(255, 255, 255, .42), rgba(255, 255, 255, .05) 42%, rgba(121, 82, 39, .08)) padding-box,
+                var(--face-texture) padding-box,
+                var(--face-grain) padding-box,
+                linear-gradient(var(--face), var(--face)) padding-box,
+                /* Rim: intentionally soft, matching the accidental non-metal render. */
+                conic-gradient(from 315deg,
+                    var(--rim-highlight) 0deg,
+                    var(--rim-mid) 56deg,
+                    var(--rim-shadow) 150deg,
+                    rgba(231, 225, 216, .34) 226deg,
+                    rgba(250, 247, 241, .54) 306deg,
+                    var(--rim-highlight) 360deg) border-box;
+            border: var(--rim-width) solid transparent;
+            box-shadow:
+                inset 0 0 0 clamp(3px, .8vmin, 8px) rgba(255, 255, 255, .55),
+                inset 0 0 5vmin rgba(99, 64, 27, .13),
+                0 0 0 1px rgba(255, 255, 255, .40),
+                0 4vmin 9vmin rgba(0, 0, 0, .15);
+        }
+
+        /* Inner decorative ring near the number track */
+        .clock::before {
+            content: "";
+            position: absolute;
+            inset: 8.4%;
+            border-radius: 50%;
+            border: 1px solid rgba(110, 85, 61, .22);
+            box-shadow:
+                inset 0 0 2vmin rgba(255, 255, 255, .55),
+                0 0 1.4vmin rgba(110, 85, 61, .08);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Glass-dome highlight across the face (screen-blended) */
+        .clock::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(255, 255, 255, .42) 0 24%, transparent 24% 100%);
+            pointer-events: none;
+            z-index: 6;
+            mix-blend-mode: screen;
+        }
+
+        /* --- Clock internals: ticks, numbers, hands, arcs ---------
+           Z-order inside .clock:
+             z1  .dot-rings   – 60-dot minute rings
+             z1  .center-shadow-ring – smaller copy of the shadowed circular border
+             z1  .ticks       – minute/hour tick marks
+             z2  .time-arcs   – SVG colored arcs for time ranges
+             z3  .numbers     – hour numerals 1-12
+             z4  .hands       – hour / minute / second hands
+             z5  .center      – center cap dot
+             z6  .clock::after – glass-dome highlight
+        --------------------------------------------------------------- */
+        .ticks,
+        .dot-rings,
+        .hands,
+        .numbers {
+            position: absolute;
+            inset: 0;
+        }
+
+        .ticks,
+        .tick,
+        .dot-rings,
+        .center-shadow-ring,
+        .minute-dot,
+        .numbers,
+        .number,
+        .hands,
+        .hand,
+        .center {
+            pointer-events: none;
+        }
+
+        .ticks {
+            z-index: 1;
+        }
+
+        .dot-rings {
+            z-index: 1;
+        }
+
+        .numbers {
+            z-index: 3;
+        }
+
+        /* Minute dot rings are generated from center/radius geometry in JS. */
+        .minute-dot {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            border-radius: 50%;
+            background: rgba(110, 85, 61, .22);
+            box-shadow: 0 0 .24vmin rgba(255, 255, 255, .22);
+        }
+
+        .center-shadow-ring {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            border-radius: 50%;
+            border: 1px solid rgba(110, 85, 61, .22);
+            box-shadow:
+                inset 0 0 1.8vmin rgba(110, 85, 61, .13),
+                0 0 1.4vmin rgba(255, 255, 255, .48);
+            transform: translate(-50%, -50%);
+        }
+
+        .hands {
+            z-index: 4;
+        }
+
+        /* SVG overlay for colored time-range arcs */
+        .time-arcs {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .time-arc {
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            opacity: .78;
+            filter:
+                drop-shadow(0 .18vmin .18vmin rgba(0, 0, 0, .14)) drop-shadow(0 0 .28vmin currentColor);
+            pointer-events: stroke;
+            cursor: help;
+        }
+
+        .time-arc:hover,
+        .time-arc.is-arc-hovered {
+            opacity: 1;
+            filter:
+                drop-shadow(0 .22vmin .20vmin rgba(0, 0, 0, .16)) drop-shadow(0 0 1vmin currentColor);
+        }
+
+        /* --- Tick marks -------------------------------------------- */
+        .tick {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform-origin: center center;
+            border-radius: 999px;
+        }
+
+        /* --- Hour numerals ----------------------------------------- */
+        .number {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 2.448em;
+            height: 2.448em;
+            display: grid;
+            place-items: center;
+            color: rgba(70, 51, 32, .92);
+            font-size: clamp(2.1528rem, 8.0496vmin, 6.4584rem);
+            line-height: 1;
+            text-align: center;
+            transform-origin: center center;
+            text-shadow: 0 1px 0 rgba(255, 255, 255, .75);
+            user-select: none;
+        }
+
+        /* --- Hands ------------------------------------------------- */
+        .hand {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform-origin: center bottom;
+            filter: drop-shadow(0 .45vmin .45vmin rgba(0, 0, 0, .20));
+            border-radius: 0;
+            clip-path: polygon(50% 0%, 100% 12%, 100% 100%, 0% 100%, 0% 12%);
+        }
+
+        /* Hour & minute: dark metallic gradient */
+        .hour-hand,
+        .minute-hand {
+            background:
+                linear-gradient(90deg,
+                    #050505 0%,
+                    #292929 44%,
+                    #000000 50%,
+                    #292929 56%,
+                    #050505 100%);
+        }
+
+        /* Second hand: red gradient */
+        .second-hand {
+            background: linear-gradient(180deg, #ff5a52 0%, #d5312f 48%, #a91516 100%);
+        }
+
+        /* Center cap over the hand pivot */
+        .center {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background: #121212;
+            z-index: 5;
+            box-shadow: 0 .45vmin 1vmin rgba(0, 0, 0, .22);
+        }
+
+        /* --- Magnifier lens ----------------------------------------
+           The magnifier is positioned at the cursor (or auto-animated).
+           It contains a lens-window that clips and filters a scaled
+           clone of the clock (.magnified-clock).
+           Visibility is toggled via .is-hovering / .is-auto-magnifying
+           classes on .stage.
+        --------------------------------------------------------------- */
+        .magnifier {
+            position: absolute;
+            width: var(--lens-size);
+            height: var(--lens-size);
+            left: 0;
+            top: 0;
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+            overflow: visible;
+            transform: translate(-50%, -50%) scale(.92);
+            transition: opacity .18s ease, transform .18s ease;
+            z-index: 20;
+            filter: drop-shadow(0 2.3vmin 2.5vmin rgba(0, 0, 0, .18));
+            will-change: left, top, transform;
+        }
+
+        .stage.is-auto-magnifying .magnifier {
+            pointer-events: auto;
+            cursor: pointer;
+        }
+
+        .stage.is-hovering .magnifier,
+        .stage.is-auto-magnifying .magnifier {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .stage.is-hovering {
+            cursor: none;
+        }
+
+        /* Lens viewport & magnified scene wrapper.
+           background: var(--page-bg) gives the magnified area the same
+           page texture so edges outside the clock face match. */
+        .lens-window,
+        .magnified-content {
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            overflow: hidden;
+            isolation: isolate;
+            z-index: 1;
+            background: var(--page-bg);
+            will-change: filter;
+        }
+
+        .lens-window {
+            box-shadow:
+                inset 0 0 0 1px rgba(255, 255, 255, .70),
+                inset 0 0 4.2vmin rgba(255, 255, 255, .26),
+                inset 0 -2.8vmin 4.8vmin rgba(73, 43, 12, .10),
+                0 1.8vmin 4.2vmin rgba(0, 0, 0, .15);
+            --lens-glare-x: 28%;
+            --lens-glare-y: 20%;
+        }
+
+        /* Magnified clone of the clock.
+           This element also carries class "clock", so it inherits the
+           full layered background (texture + face color + rim).
+           DO NOT override background or background-color here —
+           doing so breaks the texture pattern, causing a visible
+           mismatch between the magnified and base clock faces. */
+        .magnified-clock {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            transform-origin: 0 0;
+            will-change: transform;
+        }
+
+        /* --- Liquid-glass optical layers (inside the lens) -------- */
+        .liquid-glass-layer,
+        .lens-shine {
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            pointer-events: none;
+        }
+
+        .liquid-glass-refraction {
+            z-index: 8;
+            background:
+                radial-gradient(circle at 24% 18%, rgba(255, 255, 255, .20), transparent 24%),
+                radial-gradient(circle at 68% 80%, rgba(255, 255, 255, .075), transparent 38%);
+            mix-blend-mode: screen;
+        }
+
+        .liquid-glass-tint {
+            background:
+                radial-gradient(circle at 30% 22%, rgba(255, 255, 255, .12), transparent 22%),
+                radial-gradient(circle at 68% 80%, rgba(255, 255, 255, .035), transparent 34%),
+                rgba(255, 255, 255, .02);
+            mix-blend-mode: screen;
+        }
+
+        .lens-shine {
+            background:
+                radial-gradient(ellipse at 25% 18%, rgba(255, 255, 255, .42) 0 7%, rgba(255, 255, 255, .14) 12%, transparent 27%),
+                radial-gradient(circle at 51% 49%, transparent 0 55%, rgba(255, 255, 255, .06) 69%, rgba(255, 255, 255, .18) 100%),
+                linear-gradient(138deg, rgba(255, 255, 255, .18) 0 18%, rgba(255, 255, 255, .025) 35%, transparent 58%);
+            mix-blend-mode: screen;
+        }
+
+        /* --- Arc tooltip (time-range hover info) ------------------- */
+        .arc-tooltip {
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 80;
+            min-width: 380px;
+            padding: 18px 22px;
+            border: 1px solid rgba(110, 85, 61, .26);
+            border-left: 5px solid var(--arc-tooltip-color, #b88d5a);
+            border-radius: 16px;
+            background: rgba(248, 246, 241, .94);
+            color: rgba(35, 28, 20, .96);
+            box-shadow: 0 1.4vmin 3vmin rgba(0, 0, 0, .18);
+            font-family: "Century Gothic", sans-serif;
+            font-size: 26px;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: translate(14px, 14px) scale(.98);
+            transition: opacity .14s ease, transform .14s ease, visibility .14s ease;
+        }
+
+        .arc-tooltip.is-visible {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        .arc-tooltip-title {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+
+        .arc-tooltip-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--arc-tooltip-color, #b88d5a);
+        }
+
+        .arc-tooltip-range {
+            margin-bottom: 7px;
+            color: rgba(70, 51, 32, .78);
+            font-size: 12px;
+        }
+
+        .arc-tooltip-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 14px;
+            margin-top: 4px;
+        }
+
+        .arc-tooltip-row strong {
+            font-weight: bold;
+        }
+
+        .arc-tooltip-muted {
+            color: rgba(70, 51, 32, .68);
+        }
+
+        .arc-tooltip-progress {
+            height: 7px;
+            margin-top: 8px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: rgba(110, 85, 61, .16);
+        }
+
+        .arc-tooltip-progress span {
+            display: block;
+            height: 100%;
+            width: 0%;
+            border-radius: inherit;
+            background: var(--arc-tooltip-color, #b88d5a);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- ==========================================================
+         DOM STRUCTURE
+         ==========================================================
+         .stage                    – positions clock + magnifier
+           .clock                  – base clock (internals built by JS)
+           .magnifier              – cursor-following lens container
+             .lens-window          – circular clipping viewport
+               .magnified-content  – filtered wrapper (SVG displacement)
+                 .magnified-clock  – scaled clone (also has class "clock")
+               .liquid-glass-*    – refraction & tint overlays
+               .lens-shine        – specular highlight
+         ========================================================== -->
+    <main class="stage" id="stage" aria-label="Analog clock with liquid glass magnifying cursor">
+        <div class="clock" id="clock"></div>
+        <div class="magnifier" id="magnifier" aria-hidden="true">
+            <div class="lens-window" id="lensWindow">
+                <div class="magnified-content" id="magnifiedContent">
+                    <div class="clock magnified-clock" id="magnifiedClock"></div>
+                </div>
+                <div class="liquid-glass-layer liquid-glass-refraction" id="lensGlassRefraction"></div>
+                <div class="liquid-glass-layer liquid-glass-tint" id="lensGlassTint"></div>
+                <div class="lens-shine"></div>
+            </div>
+        </div>
+    </main>
+
+    <div class="lens-size-control" aria-label="Magnifying glass controls">
+        <input id="lensSizeSlider" type="range" aria-label="Magnifying glass size" />
+        <input id="autoIntervalInput" type="text" inputmode="numeric" value="600"
+            aria-label="Automatic magnifier interval in seconds" title="Automatic magnifier interval in seconds" />
+        <button id="manualAutoButton" type="button" aria-label="Manually launch automatic magnifier sequence">Launch
+            auto lens</button>
+    </div>
+
+    <div class="time-range-controls" aria-label="Clock time range controls">
+        <div class="time-range-row">
+            <label class="time-range-toggle">
+                <input id="range1Enabled" type="checkbox" checked />
+                <span class="range-name range-red">Red</span>
+            </label>
+            <label class="time-range-field">
+                <span>from</span>
+                <input id="range1From" type="time" value="08:58" aria-label="Red range from time" />
+            </label>
+            <label class="time-range-field">
+                <span>to</span>
+                <input id="range1To" type="time" value="16:50" aria-label="Red range to time" />
+            </label>
+        </div>
+        <div class="time-range-row">
+            <label class="time-range-toggle">
+                <input id="range2Enabled" type="checkbox" checked />
+                <span class="range-name range-violet">Violet</span>
+            </label>
+            <label class="time-range-field">
+                <span>from</span>
+                <input id="range2From" type="time" value="12:00" aria-label="Violet range from time" />
+            </label>
+            <label class="time-range-field">
+                <span>to</span>
+                <input id="range2To" type="time" value="12:30" aria-label="Violet range to time" />
+            </label>
+        </div>
+        <div class="time-range-row">
+            <label class="time-range-toggle">
+                <input id="range3Enabled" type="checkbox" />
+                <span class="range-name range-orange">Orange</span>
+            </label>
+            <label class="time-range-field">
+                <span>from</span>
+                <input id="range3From" type="time" value="15:00" aria-label="Orange range from time" />
+            </label>
+            <label class="time-range-field">
+                <span>to</span>
+                <input id="range3To" type="time" value="18:00" aria-label="Orange range to time" />
+            </label>
+        </div>
+    </div>
+    <div class="arc-tooltip" id="arcTooltip" aria-hidden="true"></div>
+
+    <script>
+        /* ============================================================
+           JAVASCRIPT – OVERVIEW
+           ============================================================
+           Sections (in order):
+             1. DOM references
+             2. Constants & configuration
+             3. Time-range control bindings
+             4. Mutable state
+             5. Clock face builder        – buildClockFace()
+             6. Time helpers              – parseTime*, formatDuration, etc.
+             7. Time-range arcs           – updateTimeArcs(), describeClockArc()
+             8. Arc tooltip system        – show/hide/position tooltip
+             9. Magnifier core            – updateMagnifier(), buildClock()
+            10. Auto-magnifier animation  – schedule, enter/hold/exit phases
+            11. Pointer event handlers
+            12. Lens size slider & UI
+            13. Liquid-glass SVG filter   – displacement & specular maps
+            14. Animation loop & resize
+           ============================================================ */
+
+        // ── 1. DOM references ──────────────────────────────────────
+        const stageEl = document.getElementById("stage");
+        const clockEl = document.getElementById("clock");
+        const magnifierEl = document.getElementById("magnifier");
+        const lensWindowEl = document.getElementById("lensWindow");
+        const lensGlassRefractionEl = document.getElementById("lensGlassRefraction");
+        const lensGlassTintEl = document.getElementById("lensGlassTint");
+        const magnifiedContentEl = document.getElementById("magnifiedContent");
+        const magnifiedClockEl = document.getElementById("magnifiedClock");
+        const lensSizeSliderEl = document.getElementById("lensSizeSlider");
+        const autoIntervalInputEl = document.getElementById("autoIntervalInput");
+        const manualAutoButtonEl = document.getElementById("manualAutoButton");
+        const arcTooltipEl = document.getElementById("arcTooltip");
+
+        // ── 2. Constants & configuration ───────────────────────────
+        const MAGNIFY = 1.55;                         // magnification factor
+        const AUTO_PRE_MS = 10000;                    // ms before target time the lens slides in
+        const AUTO_POST_MS = 10000;                   // ms after target time the lens stays
+        const AUTO_SLIDE_MS = 1600;                   // slide-in / slide-out animation duration
+        const SVG_NS = "http://www.w3.org/2000/svg";
+
+        const LENS_MIN_SIZE = 140;                    // slider min (px)
+        const LENS_DEFAULT_SIZE = 550;                // slider default (px)
+        const LENS_MAX_SIZE = LENS_DEFAULT_SIZE * 2;  // slider max (px)
+
+        /* Liquid-glass SVG filter tuning.
+           These control the displacement map, blur, and specular highlight
+           applied to .magnified-content via an SVG feDisplacementMap filter. */
+        const LIQUID_GLASS_CONFIG = {
+            glassThickness: 92,
+            bezelWidth: 42,
+            ior: 1.42,            // index of refraction
+            scaleRatio: 1.08,
+            blur: 0.85,
+            sharpCenterArea: 0.8,
+            blurTransitionRatio: 0.065,
+            specularOpacity: 0.78,
+            specularSat: 0.08,
+            tintColor: "255,255,255",
+            tintOpacity: 0.055,
+            innerShadow: "rgba(255,255,255,.34)",
+            innerShadowBlur: 38,
+            innerShadowSpread: -10,
+            balancedSpecular: false
+        };
+
+        // ── 3. Time-range control bindings ────────────────────────
+        const timeRangeControls = [
+            {
+                enabledEl: document.getElementById("range1Enabled"),
+                fromEl: document.getElementById("range1From"),
+                toEl: document.getElementById("range1To"),
+                color: "#d5312f",
+            },
+            {
+                enabledEl: document.getElementById("range2Enabled"),
+                fromEl: document.getElementById("range2From"),
+                toEl: document.getElementById("range2To"),
+                color: "#7f3fbf",
+            },
+            {
+                enabledEl: document.getElementById("range3Enabled"),
+                fromEl: document.getElementById("range3From"),
+                toEl: document.getElementById("range3To"),
+                color: "#f28c28",
+            },
+        ];
+
+        // ── 4. Mutable state ───────────────────────────────────────
+        let clockSize = 0;                   // px width of the base clock
+        let lensSize = 0;                    // px width of the lens
+        let pointerX = 0;                    // cursor X relative to .stage
+        let pointerY = 0;                    // cursor Y relative to .stage
+        let autoTimerId = null;              // setTimeout id for next auto sequence
+        let autoMagnifierActive = false;     // true while an auto-magnifier sequence runs
+        let autoPhase = "idle";              // "idle" | "enter" | "hold" | "exit"
+        let autoPhaseStart = 0;              // performance.now() when current phase began
+        let autoFromX = 0;                   // slide animation start X
+        let autoFromY = 0;                   // slide animation start Y
+        let autoToX = 0;                     // slide animation end X
+        let autoToY = 0;                     // slide animation end Y
+        let autoExitStartMs = 0;             // perf timestamp to begin exit phase
+        let activeArcTooltipIndex = null;    // which arc tooltip is showing (0/1/2 or null)
+        let arcTooltipHovered = false;       // pointer is over the tooltip itself
+        let arcTooltipHideTimer = null;      // delayed-hide timer for tooltip
+        let mouseMagnifierHidden = false;    // user double-clicked to hide lens
+        let liquidGlassDefsEl = null;        // <defs> element for SVG filters
+        let lensLiquidGlassFilterEl = null;  // current <filter> element
+        let lensGlassRebuildTimer = null;    // debounce timer for filter rebuild
+
+        // ── 5. Clock face builder ─────────────────────────────────
+        const DOT_RING_CONFIG = {
+            dotsPerRing: 60,
+            dotSizeRatio: 0.0024,
+            minDotSize: 1.35,
+            centerShadowRadiusRatioFromCenter: 0.1755,
+            // radiusRatioFromCenter controls closeness to center: 0 = center, 0.5 = clock edge.
+            rings: [
+                { className: "dot-ring-inner", radiusRatioFromCenter: 0.189 },
+                { className: "dot-ring-outer", radiusRatioFromCenter: 0.416, dotSizeMultiplier: 2 },
+            ],
+        };
+
+        // Builds ticks, 60-dot rings, numbers, hands, time-arc SVG, and center dot
+        // into the given target element. Called for BOTH the base clock
+        // and the magnified clone with identical clockSize.
+        function buildClockFace(target) {
+            target.innerHTML = "";
+            const size = clockSize || target.offsetWidth;
+            const r = size / 2;
+
+            function makeMinuteDotRing(config) {
+                const ring = document.createElement("div");
+                const dotRadius = size * config.radiusRatioFromCenter;
+                const dotSize = Math.max(DOT_RING_CONFIG.minDotSize, size * DOT_RING_CONFIG.dotSizeRatio)
+                    * (config.dotSizeMultiplier || 1);
+
+                ring.className = `dot-ring ${config.className}`;
+                ring.dataset.dotCount = String(DOT_RING_CONFIG.dotsPerRing);
+                ring.dataset.radiusRatioFromCenter = String(config.radiusRatioFromCenter);
+                ring.dataset.dotSizeMultiplier = String(config.dotSizeMultiplier || 1);
+                ring.dataset.radius = String(dotRadius);
+
+                for (let i = 0; i < DOT_RING_CONFIG.dotsPerRing; i++) {
+                    const dot = document.createElement("div");
+                    dot.className = "minute-dot";
+                    Object.assign(dot.style, {
+                        width: dotSize + "px",
+                        height: dotSize + "px",
+                        transform: `translate(-50%,-50%) rotate(${i * 6}deg) translateY(-${dotRadius}px)`,
+                    });
+                    ring.appendChild(dot);
+                }
+
+                return ring;
+            }
+
+            function makeCenterShadowRing() {
+                const ring = document.createElement("div");
+                const ringRadius = size * DOT_RING_CONFIG.centerShadowRadiusRatioFromCenter;
+                ring.className = "center-shadow-ring";
+                ring.dataset.radiusRatioFromCenter = String(DOT_RING_CONFIG.centerShadowRadiusRatioFromCenter);
+                ring.dataset.radius = String(ringRadius);
+                Object.assign(ring.style, {
+                    width: (ringRadius * 2) + "px",
+                    height: (ringRadius * 2) + "px",
+                });
+                return ring;
+            }
+
+            const dotRingsEl = document.createElement("div");
+            dotRingsEl.className = "dot-rings";
+            dotRingsEl.appendChild(makeCenterShadowRing());
+            DOT_RING_CONFIG.rings.forEach(config => {
+                dotRingsEl.appendChild(makeMinuteDotRing(config));
+            });
+
+            const ticksEl = document.createElement("div");
+            ticksEl.className = "ticks";
+
+            for (let i = 0; i < 60; i++) {
+                const isMajor = i % 5 === 0;
+                const tick = document.createElement("div");
+                tick.className = "tick";
+                const tickR = isMajor ? r * 0.895 : r * 0.912;
+                const w = isMajor ? r * 0.020 : r * 0.010;
+                const h = isMajor ? r * 0.104 : r * 0.050;
+                Object.assign(tick.style, {
+                    width: w + "px",
+                    height: h + "px",
+                    background: isMajor ? "#6e553d" : "#8a775f",
+                    opacity: isMajor ? "1" : "0.76",
+                    transform: `translate(-50%,-50%) rotate(${i * 6}deg) translateY(-${tickR}px)`,
+                });
+                ticksEl.appendChild(tick);
+            }
+
+            const arcsSvg = document.createElementNS(SVG_NS, "svg");
+            arcsSvg.classList.add("time-arcs");
+            arcsSvg.setAttribute("viewBox", `0 0 ${size} ${size}`);
+            arcsSvg.setAttribute("aria-hidden", "true");
+
+            timeRangeControls.forEach((control, index) => {
+                const arc = document.createElementNS(SVG_NS, "path");
+                arc.classList.add("time-arc", `time-arc-${index + 1}`);
+                arc.dataset.rangeIndex = String(index);
+                arc.setAttribute("stroke", control.color);
+                arc.style.color = control.color;
+                arc.setAttribute("stroke-width", String(Math.max(8, size * 0.018)));
+                attachArcTooltipEvents(arc);
+                arcsSvg.appendChild(arc);
+            });
+
+            const numbersEl = document.createElement("div");
+            numbersEl.className = "numbers";
+            for (let n = 1; n <= 12; n++) {
+                const number = document.createElement("div");
+                number.className = "number";
+                number.textContent = n;
+                const angle = n * 30;
+                const numberR = r * 0.69;
+                Object.assign(number.style, {
+                    marginLeft: "-1.224em",
+                    marginTop: "-1.224em",
+                    transform: `rotate(${angle}deg) translateY(-${numberR}px) rotate(${-angle}deg)`,
+                });
+                numbersEl.appendChild(number);
+            }
+
+            const handsEl = document.createElement("div");
+            handsEl.className = "hands";
+
+            function makeHand(cls, wRatio, hRatio) {
+                const el = document.createElement("div");
+                el.className = "hand " + cls;
+                const w = size * wRatio;
+                const h = size * hRatio;
+                Object.assign(el.style, {
+                    width: w + "px",
+                    height: h + "px",
+                    marginLeft: (-w / 2) + "px",
+                    marginTop: (-h) + "px",
+                });
+                return el;
+            }
+
+            const handWidth = 0.021;
+            const hourHand = makeHand("hour-hand", handWidth, 0.252);
+            const minHand = makeHand("minute-hand", handWidth * 0.6, 0.386);
+            const secHand = makeHand("second-hand", handWidth * 0.3, 0.427);
+
+            const dot = document.createElement("div");
+            dot.className = "center";
+            const ds = size * 0.052;
+            Object.assign(dot.style, {
+                width: ds + "px",
+                height: ds + "px",
+            });
+
+            handsEl.append(hourHand, minHand, secHand, dot);
+            target.append(dotRingsEl, ticksEl, arcsSvg, numbersEl, handsEl);
+        }
+
+        // ── 6. Time helpers ────────────────────────────────────────
+        function parseTimeToDayMinutes(value) {
+            const match = /^(\d{2}):(\d{2})$/.exec(value);
+            if (!match) return null;
+
+            const hours = Number(match[1]);
+            const minutes = Number(match[2]);
+            if (hours > 23 || minutes > 59) return null;
+
+            return hours * 60 + minutes;
+        }
+
+        function formatDuration(totalMinutes) {
+            const wholeMinutes = Math.max(0, Math.floor(totalMinutes));
+            const hours = Math.floor(wholeMinutes / 60);
+            const minutes = wholeMinutes % 60;
+
+            if (hours && minutes) return `${hours}h ${minutes}m`;
+            if (hours) return `${hours}h`;
+            return `${minutes}m`;
+        }
+
+        function getRangeProgressInfo(control) {
+            const fromMinutes = parseTimeToDayMinutes(control.fromEl.value);
+            const toMinutes = parseTimeToDayMinutes(control.toEl.value);
+
+            if (fromMinutes === null || toMinutes === null) {
+                return { valid: false };
+            }
+
+            const now = new Date();
+            const nowMinutes = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+
+            let duration = toMinutes - fromMinutes;
+            if (duration <= 0) duration += 24 * 60;
+            if (fromMinutes === toMinutes) duration = 24 * 60;
+
+            let used = nowMinutes - fromMinutes;
+            if (used < 0) used += 24 * 60;
+
+            const isActive = used <= duration;
+            const remaining = Math.max(0, duration - used);
+            const completion = Math.min(100, Math.max(0, used / duration * 100));
+
+            return {
+                valid: true,
+                isActive,
+                used,
+                remaining,
+                completion,
+            };
+        }
+
+        // ── 8. Arc tooltip system ──────────────────────────────────
+        function updateArcTooltipContent(index) {
+            const control = timeRangeControls[index];
+            const info = getRangeProgressInfo(control);
+            const rangeName = index === 0 ? "Red range" : index === 1 ? "Violet range" : "Orange range";
+
+            arcTooltipEl.style.setProperty("--arc-tooltip-color", control.color);
+
+            let content = `
+                <div class="arc-tooltip-title">
+                    <span class="arc-tooltip-dot"></span>
+                    <span>${rangeName}</span>
+                </div>
+                <div class="arc-tooltip-range">${control.fromEl.value} → ${control.toEl.value}</div>
+            `;
+
+            if (!info.valid) {
+                content += `<div class="arc-tooltip-muted">Invalid time range</div>`;
+            } else if (!info.isActive) {
+                content += `<div class="arc-tooltip-muted">Not active now</div>`;
+            } else {
+                content += `
+                    <div class="arc-tooltip-row">
+                        <span>Time used</span>
+                        <strong>${formatDuration(info.used)}</strong>
+                    </div>
+                    <div class="arc-tooltip-row">
+                        <span>Time to end</span>
+                        <strong>${formatDuration(info.remaining)}</strong>
+                    </div>
+                    <div class="arc-tooltip-row">
+                        <span>Completion</span>
+                        <strong>${info.completion.toFixed(1)}%</strong>
+                    </div>
+                    <div class="arc-tooltip-progress">
+                        <span style="width: ${info.completion}%"></span>
+                    </div>
+                `;
+            }
+
+            arcTooltipEl.innerHTML = content;
+        }
+
+        function positionArcTooltip(event) {
+            const gap = 14;
+            let x = event.clientX + gap;
+            let y = event.clientY + gap;
+
+            const tooltipRect = arcTooltipEl.getBoundingClientRect();
+
+            if (x + tooltipRect.width + gap > window.innerWidth) {
+                x = event.clientX - tooltipRect.width - gap;
+            }
+
+            if (y + tooltipRect.height + gap > window.innerHeight) {
+                y = event.clientY - tooltipRect.height - gap;
+            }
+
+            arcTooltipEl.style.left = x + "px";
+            arcTooltipEl.style.top = y + "px";
+        }
+
+        function showArcTooltip(event) {
+            clearTimeout(arcTooltipHideTimer);
+
+            const nextIndex = Number(event.currentTarget.dataset.rangeIndex);
+
+            if (activeArcTooltipIndex !== null && activeArcTooltipIndex !== nextIndex) {
+                setArcHoverState(activeArcTooltipIndex, false);
+            }
+
+            activeArcTooltipIndex = nextIndex;
+            setArcHoverState(activeArcTooltipIndex, true);
+            updateArcTooltipContent(activeArcTooltipIndex);
+
+            arcTooltipEl.classList.add("is-visible");
+            arcTooltipEl.setAttribute("aria-hidden", "false");
+
+            positionArcTooltip(event);
+        }
+
+        function moveArcTooltip(event) {
+            if (activeArcTooltipIndex === null) return;
+
+            updateArcTooltipContent(activeArcTooltipIndex);
+            positionArcTooltip(event);
+        }
+
+        function setArcHoverState(index, isHovered) {
+            document.querySelectorAll(`.time-arc-${index + 1}`).forEach(arc => {
+                arc.classList.toggle("is-arc-hovered", isHovered);
+            });
+        }
+
+        function hideArcTooltip(index = activeArcTooltipIndex) {
+            if (index !== null) {
+                setArcHoverState(index, false);
+            }
+
+            if (index === activeArcTooltipIndex) {
+                activeArcTooltipIndex = null;
+                arcTooltipEl.classList.remove("is-visible");
+                arcTooltipEl.setAttribute("aria-hidden", "true");
+            }
+        }
+
+        function queueHideArcTooltip(event) {
+            clearTimeout(arcTooltipHideTimer);
+            const leavingIndex = Number(event.currentTarget.dataset.rangeIndex);
+
+            arcTooltipHideTimer = setTimeout(() => {
+                if (!arcTooltipHovered) {
+                    hideArcTooltip(leavingIndex);
+                }
+            }, 120);
+        }
+
+        function attachArcTooltipEvents(arc) {
+            arc.addEventListener("pointerenter", showArcTooltip);
+            arc.addEventListener("pointermove", moveArcTooltip);
+            arc.addEventListener("pointerleave", queueHideArcTooltip);
+        }
+
+        arcTooltipEl.addEventListener("pointerenter", () => {
+            arcTooltipHovered = true;
+            clearTimeout(arcTooltipHideTimer);
+        });
+
+        arcTooltipEl.addEventListener("pointerleave", () => {
+            arcTooltipHovered = false;
+            hideArcTooltip();
+        });
+
+        function updateVisibleArcTooltip() {
+            if (activeArcTooltipIndex === null) return;
+            updateArcTooltipContent(activeArcTooltipIndex);
+        }
+
+        // ── 9. Magnifier core ─────────────────────────────────────
+        function buildClock() {
+            clockSize = clockEl.offsetWidth;
+            lensSize = magnifierEl.offsetWidth;
+            buildClockFace(clockEl);
+            buildClockFace(magnifiedClockEl);
+            setTime();
+            updateTimeArcs();
+            updateMagnifier();
+            scheduleLensLiquidGlassRebuild();
+        }
+
+        function setTime() {
+            const now = new Date();
+            const secs = now.getSeconds() + now.getMilliseconds() / 1000;
+            const mins = now.getMinutes() + secs / 60;
+            const hrs = (now.getHours() % 12) + mins / 60;
+
+            document.querySelectorAll(".hour-hand").forEach(h => h.style.transform = `rotate(${hrs * 30}deg)`);
+            document.querySelectorAll(".minute-hand").forEach(m => m.style.transform = `rotate(${mins * 6}deg)`);
+            document.querySelectorAll(".second-hand").forEach(s => s.style.transform = `rotate(${secs * 6}deg)`);
+        }
+
+        // ── 7. Time-range arcs ────────────────────────────────────
+        function parseTimeToClockMinutes(value) {
+            const match = /^(\d{2}):(\d{2})$/.exec(value);
+            if (!match) return null;
+
+            const hours = Number(match[1]);
+            const minutes = Number(match[2]);
+            if (hours > 23 || minutes > 59) return null;
+
+            return ((hours % 12) * 60) + minutes;
+        }
+
+        function pointOnClockArc(cx, cy, radius, angleDeg) {
+            const angleRad = angleDeg * Math.PI / 180;
+            return {
+                x: cx + Math.sin(angleRad) * radius,
+                y: cy - Math.cos(angleRad) * radius,
+            };
+        }
+
+        function describeClockArc(size, radius, fromMinutes, toMinutes) {
+            let durationMinutes = toMinutes - fromMinutes;
+            if (durationMinutes <= 0) durationMinutes += 12 * 60;
+
+            const durationDeg = Math.min(durationMinutes * 0.5, 359.99);
+            const startDeg = fromMinutes * 0.5;
+            const endDeg = startDeg + durationDeg;
+            const cx = size / 2;
+            const cy = size / 2;
+            const start = pointOnClockArc(cx, cy, radius, startDeg);
+            const end = pointOnClockArc(cx, cy, radius, endDeg);
+            const largeArcFlag = durationDeg > 180 ? 1 : 0;
+
+            return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${end.x} ${end.y}`;
+        }
+
+        function updateTimeArcs() {
+            if (!clockSize) return;
+
+            const arcStrokeWidth = Math.max(8, clockSize * 0.018);
+            const outerArcRadius = clockSize * 0.285;
+
+            const arcRadii = [
+                outerArcRadius,
+                outerArcRadius - arcStrokeWidth,
+                outerArcRadius - arcStrokeWidth * 2,
+            ];
+
+            timeRangeControls.forEach((control, index) => {
+                const fromMinutes = parseTimeToClockMinutes(control.fromEl.value);
+                const toMinutes = parseTimeToClockMinutes(control.toEl.value);
+                const showArc = control.enabledEl.checked && fromMinutes !== null && toMinutes !== null;
+
+                document.querySelectorAll(`.time-arc-${index + 1}`).forEach(arc => {
+                    arc.style.display = showArc ? "" : "none";
+                    if (!showArc) return;
+
+                    arc.setAttribute("d", describeClockArc(clockSize, arcRadii[index], fromMinutes, toMinutes));
+                });
+            });
+        }
+
+        function updateMagnifier() {
+            if (!clockSize || !lensSize) return;
+
+            magnifierEl.style.left = pointerX + "px";
+            magnifierEl.style.top = pointerY + "px";
+
+            const lensCenter = lensSize / 2;
+            magnifiedClockEl.style.width = clockSize + "px";
+            magnifiedClockEl.style.height = clockSize + "px";
+            magnifiedClockEl.style.transform = `translate(${lensCenter - pointerX * MAGNIFY}px, ${lensCenter - pointerY * MAGNIFY}px) scale(${MAGNIFY})`;
+        }
+
+        // ── 10. Auto-magnifier animation ──────────────────────────
+        function getMinuteHandTip() {
+            const now = new Date();
+            const secs = now.getSeconds() + now.getMilliseconds() / 1000;
+            const mins = now.getMinutes() + secs / 60;
+            const angle = mins * 6 * Math.PI / 180;
+            const clockRect = clockEl.getBoundingClientRect();
+            const stageRect = stageEl.getBoundingClientRect();
+            const centerX = clockRect.left - stageRect.left + clockRect.width / 2;
+            const centerY = clockRect.top - stageRect.top + clockRect.height / 2;
+            const minuteHandLength = clockSize * 0.386;
+
+            return {
+                x: centerX + Math.sin(angle) * minuteHandLength,
+                y: centerY - Math.cos(angle) * minuteHandLength,
+            };
+        }
+
+        function getOutsideRightPosition(y) {
+            const stageRect = stageEl.getBoundingClientRect();
+
+            return {
+                x: window.innerWidth - stageRect.left + lensSize / 2 + 16,
+                y,
+            };
+        }
+
+        function easeInOutCubic(t) {
+            return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        }
+
+        function lerp(a, b, t) {
+            return a + (b - a) * t;
+        }
+
+        function getAutoIntervalSeconds() {
+            const parsed = Number(autoIntervalInputEl.value.trim());
+            return Number.isFinite(parsed) && parsed > 0 ? parsed : 600;
+        }
+
+        function scheduleNextAutoMagnifier() {
+            clearTimeout(autoTimerId);
+
+            const intervalMs = getAutoIntervalSeconds() * 1000;
+            const now = new Date();
+            const hourStart = new Date(now);
+            hourStart.setMinutes(0, 0, 0);
+
+            const elapsedMs = now - hourStart;
+            const nextElapsedMs = Math.floor(elapsedMs / intervalMs + 1) * intervalMs;
+            const nextHourStart = new Date(hourStart.getTime() + 60 * 60 * 1000);
+
+            const targetRunTime = nextElapsedMs < 60 * 60 * 1000
+                ? hourStart.getTime() + nextElapsedMs
+                : nextHourStart.getTime();
+
+            const lensStartTime = targetRunTime - AUTO_PRE_MS;
+
+            autoTimerId = setTimeout(() => {
+                startAutoMagnifier(targetRunTime);
+                scheduleNextAutoMagnifier();
+            }, Math.max(0, lensStartTime - Date.now()));
+        }
+
+        function startAutoMagnifier(targetRunTime = Date.now() + AUTO_PRE_MS) {
+            if (autoMagnifierActive) return;
+
+            lensSize = magnifierEl.offsetWidth;
+            const target = getMinuteHandTip();
+            const outside = getOutsideRightPosition(target.y);
+
+            pointerX = outside.x;
+            pointerY = outside.y;
+            updateMagnifier();
+
+            autoExitStartMs =
+                performance.now() +
+                Math.max(0, targetRunTime + AUTO_POST_MS - Date.now() - AUTO_SLIDE_MS);
+
+            stageEl.classList.remove("is-hovering");
+            stageEl.classList.add("is-auto-magnifying");
+            autoMagnifierActive = true;
+            autoPhase = "enter";
+            autoPhaseStart = performance.now();
+            autoFromX = outside.x;
+            autoFromY = outside.y;
+        }
+
+        function startAutoMagnifierExit() {
+            if (!autoMagnifierActive || autoPhase === "exit") return;
+
+            lensSize = magnifierEl.offsetWidth;
+
+            const outside = getOutsideRightPosition(pointerY);
+
+            autoPhase = "exit";
+            autoPhaseStart = performance.now();
+
+            autoFromX = pointerX;
+            autoFromY = pointerY;
+            autoToX = outside.x;
+            autoToY = outside.y;
+        }
+
+        function updateAutoMagnifier(nowMs) {
+            if (!autoMagnifierActive) return;
+
+            lensSize = magnifierEl.offsetWidth;
+
+            if (autoPhase === "enter") {
+                const t = Math.min(1, (nowMs - autoPhaseStart) / AUTO_SLIDE_MS);
+                const eased = easeInOutCubic(t);
+                const target = getMinuteHandTip();
+                pointerX = lerp(autoFromX, target.x, eased);
+                pointerY = lerp(autoFromY, target.y, eased);
+                updateMagnifier();
+
+                if (t >= 1) {
+                    autoPhase = "hold";
+                    autoPhaseStart = nowMs;
+                }
+            } else if (autoPhase === "hold") {
+                const target = getMinuteHandTip();
+                pointerX = target.x;
+                pointerY = target.y;
+                updateMagnifier();
+
+                if (nowMs >= autoExitStartMs) {
+                    const outside = getOutsideRightPosition(pointerY);
+                    autoPhase = "exit";
+                    autoPhaseStart = nowMs;
+                    autoFromX = pointerX;
+                    autoFromY = pointerY;
+                    autoToX = outside.x;
+                    autoToY = outside.y;
+                }
+            } else if (autoPhase === "exit") {
+                const t = Math.min(1, (nowMs - autoPhaseStart) / AUTO_SLIDE_MS);
+                const eased = easeInOutCubic(t);
+                pointerX = lerp(autoFromX, autoToX, eased);
+                pointerY = lerp(autoFromY, autoToY, eased);
+                updateMagnifier();
+
+                if (t >= 1) {
+                    autoMagnifierActive = false;
+                    autoPhase = "idle";
+                    stageEl.classList.remove("is-auto-magnifying");
+                }
+            }
+        }
+
+        // ── 11. Pointer event handlers ─────────────────────────────
+        function moveFromEvent(event) {
+            if (autoMagnifierActive || mouseMagnifierHidden) return;
+
+            const rect = stageEl.getBoundingClientRect();
+            pointerX = event.clientX - rect.left;
+            pointerY = event.clientY - rect.top;
+            stageEl.classList.add("is-hovering");
+            updateMagnifier();
+        }
+
+        stageEl.addEventListener("pointerenter", event => {
+            moveFromEvent(event);
+        });
+
+        stageEl.addEventListener("pointermove", moveFromEvent);
+
+        stageEl.addEventListener("pointerleave", () => {
+            stageEl.classList.remove("is-hovering");
+            mouseMagnifierHidden = false;
+        });
+
+        document.addEventListener("dblclick", event => {
+            if (autoMagnifierActive) return;
+
+            mouseMagnifierHidden = !mouseMagnifierHidden;
+
+            if (mouseMagnifierHidden) {
+                stageEl.classList.remove("is-hovering");
+                return;
+            }
+
+            if (stageEl.contains(event.target)) {
+                moveFromEvent(event);
+            }
+        });
+
+        // ── 12. Lens size slider & UI ─────────────────────────────
+        function setupLensSizeSlider() {
+            lensSizeSliderEl.min = String(LENS_MIN_SIZE);
+            lensSizeSliderEl.max = String(LENS_MAX_SIZE);
+            lensSizeSliderEl.value = String(LENS_DEFAULT_SIZE);
+
+            document.documentElement.style.setProperty("--lens-size", LENS_DEFAULT_SIZE + "px");
+        }
+
+        lensSizeSliderEl.addEventListener("input", () => {
+            document.documentElement.style.setProperty("--lens-size", lensSizeSliderEl.value + "px");
+            lensSize = magnifierEl.offsetWidth;
+            updateMagnifier();
+            scheduleLensLiquidGlassRebuild();
+        });
+
+        autoIntervalInputEl.addEventListener("input", scheduleNextAutoMagnifier);
+        manualAutoButtonEl.addEventListener("click", startAutoMagnifier);
+
+        magnifierEl.addEventListener("pointerdown", event => {
+            if (!autoMagnifierActive) return;
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            startAutoMagnifierExit();
+        });
+
+        timeRangeControls.forEach(control => {
+            control.enabledEl.addEventListener("change", updateTimeArcs);
+            control.fromEl.addEventListener("input", updateTimeArcs);
+            control.toEl.addEventListener("input", updateTimeArcs);
+        });
+
+        // ── 13. Liquid-glass SVG filter ────────────────────────────
+        // Generates displacement & specular maps as data-URL canvases,
+        // builds an SVG <filter> with feDisplacementMap, and applies
+        // it to .magnified-content for the refraction effect.
+        function surfaceFn(x) {
+            return Math.pow(1 - Math.pow(1 - x, 4), 0.25);
+        }
+
+        function calcRefractionProfile(glassThickness, bezelWidth, ior, samples = 128) {
+            const eta = 1 / ior;
+
+            function refract(nx, ny) {
+                const dot = ny;
+                const k = 1 - eta * eta * (1 - dot * dot);
+                if (k < 0) return null;
+                const sq = Math.sqrt(k);
+                return [-(eta * dot + sq) * nx, eta - (eta * dot + sq) * ny];
+            }
+
+            const p = new Float64Array(samples);
+            for (let i = 0; i < samples; i++) {
+                const x = i / samples;
+                const y = surfaceFn(x);
+                const dx = x < 1 ? 0.0001 : -0.0001;
+                const y2 = surfaceFn(x + dx);
+                const deriv = (y2 - y) / dx;
+                const mag = Math.sqrt(deriv * deriv + 1);
+                const ref = refract(-deriv / mag, -1 / mag);
+                p[i] = ref ? ref[0] * ((y * bezelWidth + glassThickness) / ref[1]) : 0;
+            }
+            return p;
+        }
+
+        function generateDisplacementMap(w, h, radius, bezelWidth, profile, maxDisp) {
+            const c = document.createElement("canvas");
+            c.width = w;
+            c.height = h;
+            const ctx = c.getContext("2d", { willReadFrequently: false });
+            const img = ctx.createImageData(w, h);
+            const d = img.data;
+
+            for (let i = 0; i < d.length; i += 4) {
+                d[i] = 128;
+                d[i + 1] = 128;
+                d[i + 2] = 0;
+                d[i + 3] = 255;
+            }
+
+            const r = radius;
+            const rSq = r * r;
+            const r1Sq = (r + 1) ** 2;
+            const rBSq = Math.max(r - bezelWidth, 0) ** 2;
+            const wB = w - r * 2;
+            const hB = h - r * 2;
+            const S = profile.length;
+
+            for (let y1 = 0; y1 < h; y1++) {
+                for (let x1 = 0; x1 < w; x1++) {
+                    const x = x1 < r ? x1 - r : x1 >= w - r ? x1 - r - wB : 0;
+                    const y = y1 < r ? y1 - r : y1 >= h - r ? y1 - r - hB : 0;
+                    const dSq = x * x + y * y;
+                    if (dSq > r1Sq || dSq < rBSq) continue;
+
+                    const dist = Math.sqrt(dSq);
+                    const fromSide = r - dist;
+                    const op = dSq < rSq ? 1 : 1 - (dist - Math.sqrt(rSq)) / (Math.sqrt(r1Sq) - Math.sqrt(rSq));
+                    if (op <= 0 || dist === 0) continue;
+
+                    const cos = x / dist;
+                    const sin = y / dist;
+                    const bi = Math.min(((fromSide / bezelWidth) * S) | 0, S - 1);
+                    const disp = profile[bi] || 0;
+                    const dX = (-cos * disp) / maxDisp;
+                    const dY = (-sin * disp) / maxDisp;
+                    const idx = (y1 * w + x1) * 4;
+                    d[idx] = (128 + dX * 127 * op + 0.5) | 0;
+                    d[idx + 1] = (128 + dY * 127 * op + 0.5) | 0;
+                }
+            }
+
+            ctx.putImageData(img, 0, 0);
+            return c.toDataURL();
+        }
+
+        function generateSpecularMap(w, h, radius, bezelWidth, balanced) {
+            const angle = Math.PI / 3;
+            const c = document.createElement("canvas");
+            c.width = w;
+            c.height = h;
+            const ctx = c.getContext("2d", { willReadFrequently: false });
+            const img = ctx.createImageData(w, h);
+            const d = img.data;
+            d.fill(0);
+
+            const r = radius;
+            const rSq = r * r;
+            const r1Sq = (r + 1) ** 2;
+            const rBSq = Math.max(r - bezelWidth, 0) ** 2;
+            const wB = w - r * 2;
+            const hB = h - r * 2;
+            const sv = [Math.cos(angle), Math.sin(angle)];
+
+            for (let y1 = 0; y1 < h; y1++) {
+                for (let x1 = 0; x1 < w; x1++) {
+                    const x = x1 < r ? x1 - r : x1 >= w - r ? x1 - r - wB : 0;
+                    const y = y1 < r ? y1 - r : y1 >= h - r ? y1 - r - hB : 0;
+                    const dSq = x * x + y * y;
+                    if (dSq > r1Sq || dSq < rBSq) continue;
+
+                    const dist = Math.sqrt(dSq);
+                    const fromSide = r - dist;
+                    const op = dSq < rSq ? 1 : 1 - (dist - Math.sqrt(rSq)) / (Math.sqrt(r1Sq) - Math.sqrt(rSq));
+                    if (op <= 0 || dist === 0) continue;
+
+                    const cos = x / dist;
+                    const sin = -y / dist;
+                    const dot = balanced ? 1 : Math.abs(cos * sv[0] + sin * sv[1]);
+                    const edge = Math.sqrt(Math.max(0, 1 - (1 - fromSide) ** 2));
+                    const coeff = dot * edge;
+                    const col = (255 * coeff) | 0;
+                    const alpha = (col * coeff * op) | 0;
+                    const idx = (y1 * w + x1) * 4;
+                    d[idx] = col;
+                    d[idx + 1] = col;
+                    d[idx + 2] = col;
+                    d[idx + 3] = alpha;
+                }
+            }
+
+            ctx.putImageData(img, 0, 0);
+            return c.toDataURL();
+        }
+
+        function generateEdgeBlurMask(w, h, radius, sharpAreaRatio, transitionRatio) {
+            const c = document.createElement("canvas");
+            c.width = w;
+            c.height = h;
+            const ctx = c.getContext("2d", { willReadFrequently: false });
+            const img = ctx.createImageData(w, h);
+            const d = img.data;
+            const cx = w / 2;
+            const cy = h / 2;
+            const sharpArea = Math.max(0, Math.min(1, sharpAreaRatio));
+            const sharpRadius = radius * Math.sqrt(sharpArea);
+            const transition = Math.max(1, radius * Math.max(0.01, transitionRatio));
+
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    const dist = Math.hypot(x + 0.5 - cx, y + 0.5 - cy);
+                    const idx = (y * w + x) * 4;
+                    const t = Math.max(0, Math.min(1, (dist - sharpRadius) / transition));
+                    const alpha = dist <= radius ? t * t * (3 - 2 * t) : 0;
+                    d[idx] = 255;
+                    d[idx + 1] = 255;
+                    d[idx + 2] = 255;
+                    d[idx + 3] = Math.round(255 * alpha);
+                }
+            }
+
+            ctx.putImageData(img, 0, 0);
+            return c.toDataURL();
+        }
+
+        function svgEl(tag, attrs) {
+            const el = document.createElementNS(SVG_NS, tag);
+            for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+            return el;
+        }
+
+        function ensureLiquidGlassDefs() {
+            const old = document.getElementById("clock-liquid-glass-defs");
+            if (old && document.documentElement.contains(old)) {
+                liquidGlassDefsEl = old;
+                return;
+            }
+
+            const svg = document.createElementNS(SVG_NS, "svg");
+            svg.setAttribute("width", "0");
+            svg.setAttribute("height", "0");
+            svg.style.cssText = "position:fixed;top:0;left:0;width:0;height:0;pointer-events:none;z-index:-1;";
+            liquidGlassDefsEl = document.createElementNS(SVG_NS, "defs");
+            liquidGlassDefsEl.id = "clock-liquid-glass-defs";
+            svg.appendChild(liquidGlassDefsEl);
+            document.documentElement.appendChild(svg);
+        }
+
+        function buildLiquidGlassFilter(id, w, h, radius, cfg) {
+            const bezel = Math.max(1, Math.min(cfg.bezelWidth, radius - 1, Math.min(w, h) / 2 - 1));
+            const profile = calcRefractionProfile(cfg.glassThickness, bezel, cfg.ior, 128);
+            const maxDisp = Math.max(...Array.from(profile).map(Math.abs)) || 1;
+            const dispUrl = generateDisplacementMap(w, h, radius, bezel, profile, maxDisp);
+            const edgeBlurMaskUrl = generateEdgeBlurMask(w, h, radius, cfg.sharpCenterArea, cfg.blurTransitionRatio);
+            const scale = maxDisp * cfg.scaleRatio;
+            const pad = 0.08;
+            const fx = Math.round(-w * pad);
+            const fy = Math.round(-h * pad);
+            const fw = Math.round(w * (1 + pad * 2));
+            const fh = Math.round(h * (1 + pad * 2));
+
+            const filter = svgEl("filter", {
+                id,
+                x: String(fx),
+                y: String(fy),
+                width: String(fw),
+                height: String(fh),
+                filterUnits: "userSpaceOnUse",
+                primitiveUnits: "userSpaceOnUse",
+                "color-interpolation-filters": "sRGB"
+            });
+
+            const blur = svgEl("feGaussianBlur", {
+                in: "SourceGraphic",
+                stdDeviation: cfg.blur,
+                result: "blurred"
+            });
+            const dispImg = svgEl("feImage", {
+                href: dispUrl,
+                x: 0,
+                y: 0,
+                width: w,
+                height: h,
+                result: "disp_map"
+            });
+            const dispMap = svgEl("feDisplacementMap", {
+                in: "blurred",
+                in2: "disp_map",
+                scale,
+                xChannelSelector: "R",
+                yChannelSelector: "G",
+                result: "displaced"
+            });
+            const edgeBlurMask = svgEl("feImage", {
+                href: edgeBlurMaskUrl,
+                x: 0,
+                y: 0,
+                width: w,
+                height: h,
+                result: "edge_blur_mask"
+            });
+            const edgeBlurOnly = svgEl("feComposite", {
+                in: "displaced",
+                in2: "edge_blur_mask",
+                operator: "in",
+                result: "edge_blur_only"
+            });
+            const merged = svgEl("feMerge", {});
+            merged.append(
+                svgEl("feMergeNode", { in: "SourceGraphic" }),
+                svgEl("feMergeNode", { in: "edge_blur_only" })
+            );
+
+            filter.append(blur, dispImg, dispMap, edgeBlurMask, edgeBlurOnly, merged);
+            return filter;
+        }
+
+        function rebuildLensLiquidGlass() {
+            ensureLiquidGlassDefs();
+
+            const rect = lensWindowEl.getBoundingClientRect();
+            const w = Math.round(lensWindowEl.offsetWidth || rect.width);
+            const h = Math.round(lensWindowEl.offsetHeight || rect.height);
+            if (w < 8 || h < 8) return;
+
+            const radius = Math.max(2, Math.min(w, h) / 2);
+            if (lensLiquidGlassFilterEl) lensLiquidGlassFilterEl.remove();
+
+            const id = "clock-lg-lens-" + Math.random().toString(36).slice(2, 10);
+            lensLiquidGlassFilterEl = buildLiquidGlassFilter(id, w, h, radius, LIQUID_GLASS_CONFIG);
+            liquidGlassDefsEl.appendChild(lensLiquidGlassFilterEl);
+
+            /*
+                Important fix:
+                Do not use backdrop-filter here. A transparent backdrop-filter layer samples
+                the original, unmagnified clock behind the lens.
+
+                Also do not filter .magnified-clock directly. That element is a large translated
+                clone of the clock, so the SVG lens map would become a huge/static second lens.
+                The filter belongs on the lens-sized viewport wrapper instead.
+            */
+            lensGlassRefractionEl.style.backdropFilter = "none";
+            lensGlassRefractionEl.style.webkitBackdropFilter = "none";
+            magnifiedClockEl.style.filter = "none";
+            magnifiedContentEl.style.filter = `url(#${id}) brightness(.95) contrast(.96) saturate(.94)`;
+
+            lensGlassTintEl.style.backgroundColor = `rgba(${LIQUID_GLASS_CONFIG.tintColor},${LIQUID_GLASS_CONFIG.tintOpacity})`;
+            lensGlassTintEl.style.boxShadow = `
+                inset 0 0 ${LIQUID_GLASS_CONFIG.innerShadowBlur}px ${LIQUID_GLASS_CONFIG.innerShadowSpread}px ${LIQUID_GLASS_CONFIG.innerShadow},
+                inset 0 0 0 1px rgba(255,255,255,.52),
+                inset 1.4vmin 1.4vmin 3.8vmin rgba(255,255,255,.22),
+                inset -2.8vmin -3vmin 5.8vmin rgba(83,55,30,.16)
+            `;
+        }
+
+        function scheduleLensLiquidGlassRebuild() {
+            clearTimeout(lensGlassRebuildTimer);
+            lensGlassRebuildTimer = setTimeout(rebuildLensLiquidGlass, 32);
+        }
+
+        // ── 14. Initialization & animation loop ───────────────────
+        setupLensSizeSlider();
+        buildClock();
+        scheduleNextAutoMagnifier();
+
+        function animateClock(nowMs) {
+            setTime();
+            updateAutoMagnifier(nowMs);
+            updateVisibleArcTooltip();
+            requestAnimationFrame(animateClock);
+        }
+
+        requestAnimationFrame(animateClock);
+
+        let resizeTimer;
+        window.addEventListener("resize", () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(buildClock, 80);
+        });
+
+        window.addEventListener("load", () => {
+            buildClock();
+            rebuildLensLiquidGlass();
+        });
+    </script>
+</body>
+
+</html>

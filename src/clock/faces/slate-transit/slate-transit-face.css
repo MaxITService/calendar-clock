@@ -1,0 +1,450 @@
+/* Slate Transit: a dark transport dial with ivory rails and a rust seconds hand. */
+.clock {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    border: var(--rim-width, clamp(8px, 1.9vmin, 18px)) solid #151a1d;
+    border-radius: 50%;
+    background: #22292d;
+    box-shadow:
+        inset 0 0 0 max(2px, .38vmin) #697176,
+        inset 0 0 0 max(5px, .82vmin) #1a2024,
+        inset 0 0 4.6vmin rgba(10, 13, 15, .54),
+        0 1.6vmin 4.2vmin rgba(12, 16, 18, .44);
+}
+
+.clock::before {
+    content: "";
+    position: absolute;
+    inset: 5.6%;
+    z-index: 1;
+    border: max(1px, .15vmin) solid rgba(225, 224, 214, .72);
+    border-radius: 50%;
+    box-shadow:
+        0 0 0 max(2px, .32vmin) rgba(18, 23, 26, .78),
+        inset 0 0 0 max(1px, .12vmin) rgba(225, 224, 214, .16);
+    pointer-events: none;
+}
+
+.clock::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at 50% 112%, rgba(8, 11, 13, .28), transparent 46%),
+        linear-gradient(142deg, rgba(224, 225, 218, .07) 0 18%, transparent 34%);
+    pointer-events: none;
+}
+
+.st-dial,
+.st-rail,
+.st-inner-field,
+.st-ticks,
+.st-time-arcs,
+.st-numbers,
+.st-hands {
+    position: absolute;
+    inset: 0;
+}
+
+.st-dial,
+.st-rail,
+.st-inner-field,
+.st-ticks,
+.st-tick,
+.st-numbers,
+.st-number,
+.st-hands,
+.st-hand,
+.st-center {
+    pointer-events: none;
+}
+
+.st-dial {
+    z-index: 0;
+    background:
+        repeating-conic-gradient(from .4deg, rgba(225, 224, 214, .018) 0deg .45deg, transparent .45deg 1.4deg),
+        radial-gradient(circle at 48% 43%, #2e373c 0%, #242b2f 62%, #1b2125 100%);
+}
+
+.st-rail {
+    z-index: 0;
+    background:
+        radial-gradient(circle, transparent 0 77.7%, rgba(223, 222, 212, .22) 77.9% 78.15%, transparent 78.35%),
+        radial-gradient(circle, transparent 0 86.2%, rgba(223, 222, 212, .48) 86.4% 86.75%, transparent 86.95%),
+        radial-gradient(circle, transparent 0 92.0%, rgba(223, 222, 212, .18) 92.2% 92.5%, transparent 92.7%);
+}
+
+.st-inner-field {
+    z-index: 0;
+    background:
+        radial-gradient(circle, rgba(20, 25, 28, .38) 0 14.8%, transparent 15.1%),
+        radial-gradient(circle, transparent 0 37.8%, rgba(223, 222, 212, .18) 38% 38.25%, transparent 38.45%);
+}
+
+.st-ticks {
+    z-index: 1;
+}
+
+.st-time-arcs {
+    z-index: 2;
+}
+
+.st-numbers {
+    z-index: 3;
+}
+
+.st-hands {
+    z-index: 4;
+}
+
+.st-tick {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    background: rgba(218, 217, 208, .48);
+    transform-origin: center center;
+}
+
+.st-tick-medium {
+    background: rgba(222, 221, 211, .64);
+}
+
+.st-tick-major {
+    background: #d5d4cb;
+}
+
+.st-tick-reference {
+    background: #ecebe3;
+    box-shadow: 0 0 0 max(.5px, .06vmin) rgba(9, 12, 14, .40);
+}
+
+.time-arcs {
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.time-arc {
+    fill: none;
+    stroke-linecap: butt;
+    stroke-linejoin: round;
+    opacity: .90;
+    filter: drop-shadow(0 .12vmin .14vmin rgba(8, 11, 13, .54));
+    pointer-events: stroke;
+    cursor: help;
+}
+
+.time-point {
+    opacity: .94;
+    stroke-width: max(1.5px, .24vmin);
+    filter: drop-shadow(0 .12vmin .14vmin rgba(8, 11, 13, .54));
+    pointer-events: visiblePainted;
+    cursor: help;
+}
+
+.time-arc-separator {
+    display: none;
+    opacity: .98;
+    filter: drop-shadow(0 .10vmin .12vmin rgba(8, 11, 13, .58));
+    pointer-events: none;
+}
+
+.time-arc-separator-shadow,
+.time-arc-separator-cut {
+    fill: none;
+    stroke-linecap: butt;
+}
+
+.time-arc-separator-shadow {
+    stroke: rgba(8, 11, 13, .84);
+}
+
+.time-arc-separator-cut {
+    stroke: rgba(225, 224, 214, .94);
+}
+
+.time-point-callout {
+    color: currentColor;
+    opacity: .96;
+    pointer-events: none;
+}
+
+.time-point-callout-line {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: max(1px, .15vmin);
+    stroke-linecap: square;
+    stroke-linejoin: miter;
+    opacity: .72;
+}
+
+.time-point-callout-dot {
+    fill: currentColor;
+    stroke: #20272b;
+    stroke-width: max(1px, .13vmin);
+    opacity: .96;
+}
+
+.time-point-callout-label {
+    font-size: 12px;
+}
+
+.time-arc:hover,
+.time-arc.is-arc-hovered,
+.time-point:hover,
+.time-point.is-arc-hovered {
+    opacity: 1;
+    filter: drop-shadow(0 .16vmin .20vmin rgba(8, 11, 13, .68));
+}
+
+.time-arc-label {
+    dominant-baseline: central;
+    font-family: "Bahnschrift", "Arial Narrow", "Segoe UI", sans-serif;
+    font-weight: 680;
+    letter-spacing: .01em;
+    opacity: .98;
+    pointer-events: none;
+    user-select: none;
+}
+
+.time-arc-label textPath {
+    text-anchor: middle;
+}
+
+.time-arc-label--glass {
+    fill: #ecebe3;
+    stroke: rgba(15, 19, 22, .80);
+    stroke-width: 1.2px;
+    paint-order: stroke;
+}
+
+.time-arc-label--ink {
+    fill: #ecebe3;
+    stroke: rgba(15, 19, 22, .90);
+    stroke-width: 1.35px;
+    paint-order: stroke;
+}
+
+.time-arc-label--glow {
+    fill: #ecebe3;
+    stroke: rgba(15, 19, 22, .84);
+    stroke-width: 1.2px;
+    paint-order: stroke;
+}
+
+.time-arc-label--color {
+    fill: var(--event-color);
+    stroke: rgba(18, 23, 26, .94);
+    stroke-width: 1.5px;
+    paint-order: stroke;
+}
+
+.time-arc-label--custom {
+    fill: var(--custom-label-color);
+    stroke: rgba(18, 23, 26, .92);
+    stroke-width: 1.45px;
+    paint-order: stroke;
+}
+
+.window-start-marker {
+    stroke: var(--window-start-marker-color, #c86449);
+    stroke-width: var(--window-start-marker-width, max(3px, .50vmin));
+    stroke-linecap: square;
+    stroke-dasharray: var(--window-start-marker-dasharray, .01 10);
+    opacity: var(--window-start-marker-opacity, 1);
+    pointer-events: none;
+}
+
+.window-start-marker-pulse-group {
+    color: var(--window-start-marker-pulse-color, #c86449);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.window-start-marker-pulse-radial,
+.window-start-marker-pulse-orbit {
+    stroke: var(--window-start-marker-pulse-color, currentColor);
+    stroke-linecap: square;
+    stroke-linejoin: miter;
+    opacity: 0;
+    vector-effect: non-scaling-stroke;
+}
+
+.window-start-marker-pulse-orbit {
+    stroke-dasharray: .44 .56;
+    stroke-dashoffset: .2;
+}
+
+.window-start-marker-pulse-group.is-pulsing {
+    animation: st-window-marker-shell 560ms ease-out both;
+}
+
+.window-start-marker-pulse-group.is-pulsing .window-start-marker-pulse-radial {
+    animation: st-window-marker-radial 560ms ease-out both;
+}
+
+.window-start-marker-pulse-group.is-pulsing .window-start-marker-pulse-orbit {
+    animation: st-window-marker-orbit 560ms cubic-bezier(.2, .72, .25, 1) both;
+}
+
+@keyframes st-window-marker-shell {
+    0% { opacity: 0; }
+    18% { opacity: var(--window-start-marker-pulse-opacity, .20); }
+    100% { opacity: 0; }
+}
+
+@keyframes st-window-marker-radial {
+    0% { opacity: 0; }
+    20% { opacity: .18; }
+    100% { opacity: 0; }
+}
+
+@keyframes st-window-marker-orbit {
+    0% { opacity: 0; stroke-dashoffset: .26; }
+    24% { opacity: .26; }
+    100% { opacity: 0; stroke-dashoffset: -.02; }
+}
+
+.window-start-marker-emoji {
+    dominant-baseline: middle;
+    fill: var(--window-start-marker-color, #c86449);
+    opacity: var(--window-start-marker-opacity, 1);
+    paint-order: stroke;
+    pointer-events: none;
+    stroke: rgba(19, 24, 27, .94);
+    stroke-width: 2px;
+    text-anchor: middle;
+    user-select: none;
+}
+
+.window-start-marker-boundary-label {
+    dominant-baseline: middle;
+    fill: var(--window-start-marker-color, #c86449);
+    font-family: "Bahnschrift", "Arial Narrow", "Segoe UI", sans-serif;
+    font-size: clamp(.62rem, 1.8vmin, 1rem);
+    font-weight: 720;
+    letter-spacing: .035em;
+    opacity: var(--window-start-marker-opacity, 1);
+    paint-order: stroke;
+    pointer-events: none;
+    stroke: rgba(19, 24, 27, .96);
+    stroke-width: 2px;
+    text-anchor: middle;
+    text-transform: uppercase;
+    user-select: none;
+}
+
+.st-number {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 2.3em;
+    height: 2.3em;
+    display: grid;
+    place-items: center;
+    color: #ecebe3;
+    font-family: "Bahnschrift", "Arial Narrow", "Segoe UI", sans-serif;
+    font-size: clamp(1.7rem, 6.3vmin, 5rem);
+    font-stretch: condensed;
+    font-weight: 760;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.055em;
+    line-height: 1;
+    text-align: center;
+    text-shadow: 0 .16vmin .20vmin rgba(8, 11, 13, .66);
+    transform-origin: center center;
+    user-select: none;
+}
+
+.st-number-empty {
+    visibility: hidden;
+}
+
+.clock.is-24-hour .st-number {
+    color: rgba(217, 216, 207, .76);
+    font-size: clamp(.76rem, 2.72vmin, 2rem);
+    font-weight: 540;
+    letter-spacing: -.035em;
+}
+
+.clock.is-24-hour .st-number-reference {
+    color: #ecebe3;
+    font-weight: 800;
+}
+
+.st-hand {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    border-radius: 0;
+    filter: drop-shadow(.20vmin .28vmin .22vmin rgba(8, 11, 13, .58));
+    transform-origin: center bottom;
+}
+
+.st-hour-hand,
+.st-minute-hand {
+    background: linear-gradient(90deg, #aeada5 0 18%, #e5e4dc 18% 82%, #aeada5 82% 100%);
+    clip-path: polygon(50% 0%, 78% 9%, 68% 88%, 100% 88%, 100% 100%, 0 100%, 0 88%, 32% 88%, 22% 9%);
+}
+
+.st-minute-hand {
+    clip-path: polygon(50% 0%, 74% 6%, 62% 91%, 100% 91%, 100% 100%, 0 100%, 0 91%, 38% 91%, 26% 6%);
+}
+
+.st-second-hand {
+    background: #c86449;
+    box-shadow: 0 0 0 max(.5px, .06vmin) rgba(82, 31, 23, .34);
+}
+
+.st-second-hand::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: calc(100% - 1px);
+    width: max(5px, 1.05vmin);
+    height: 22%;
+    border: max(1px, .17vmin) solid #c86449;
+    border-radius: 0;
+    transform: translateX(-50%);
+}
+
+.st-center {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 5;
+    border: max(2px, .24vmin) solid #e3e2da;
+    border-radius: 50%;
+    background: #c86449;
+    box-shadow:
+        0 .24vmin .34vmin rgba(8, 11, 13, .62),
+        inset 0 0 0 max(2px, .18vmin) #282f33;
+    transform: translate(-50%, -50%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .window-start-marker-pulse-group.is-pulsing,
+    .window-start-marker-pulse-group.is-pulsing .window-start-marker-pulse-radial,
+    .window-start-marker-pulse-group.is-pulsing .window-start-marker-pulse-orbit {
+        animation-duration: 180ms;
+    }
+
+    .window-start-marker-pulse-group.is-pulsing .window-start-marker-pulse-orbit {
+        stroke-dashoffset: 0;
+    }
+}
+
+:root {
+    --page-bg: #1b2125;
+    --face: #22292d;
+    --rim-width: clamp(8px, 1.9vmin, 18px);
+}
+
+body {
+    background: #1b2125;
+    background-image: radial-gradient(circle at center, #343d42 0%, #222a2f 60%, #151a1d 100%);
+}

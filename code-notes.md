@@ -66,6 +66,9 @@
 | `src/clock/faces/graphite-regulator/graphite-regulator-builder.js` | Builds the Graphite Regulator architectural instrument clock face. |
 | `src/clock/faces/graphite-regulator/graphite-regulator-face.css` | Matte ceramic, graphite index, and vermilion seconds styling. |
 | `src/clock/faces/graphite-regulator/graphite-regulator-face.js` | Registers Graphite Regulator and its arc render tuning. |
+| `src/clock/faces/slate-transit/slate-transit-builder.js` | Builds the Slate Transit dark transport instrument clock face. |
+| `src/clock/faces/slate-transit/slate-transit-face.css` | Slate, ivory rail, and muted rust seconds styling. |
+| `src/clock/faces/slate-transit/slate-transit-face.js` | Registers Slate Transit and its arc render tuning. |
 | `src/clock/faces/rhodium-reserve/rhodium-reserve-builder.js` | Builds the Rhodium Reserve lacquer-and-rhodium mechanical clock face. |
 | `src/clock/faces/rhodium-reserve/rhodium-reserve-face.css` | Anthracite lacquer, faceted rhodium markers, and restrained green seconds styling. |
 | `src/clock/faces/rhodium-reserve/rhodium-reserve-face.js` | Registers Rhodium Reserve and its arc render tuning. |

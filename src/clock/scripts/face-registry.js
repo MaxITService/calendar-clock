@@ -64,6 +64,15 @@ const CLOCK_FACE_MODULES = [
         ],
     },
     {
+        id: "slate-transit",
+        name: "Slate Transit",
+        styles: ["faces/slate-transit/slate-transit-face.css"],
+        scripts: [
+            "faces/slate-transit/slate-transit-builder.js",
+            "faces/slate-transit/slate-transit-face.js",
+        ],
+    },
+    {
         id: "rhodium-reserve",
         name: "Rhodium Reserve",
         styles: ["faces/rhodium-reserve/rhodium-reserve-face.css"],

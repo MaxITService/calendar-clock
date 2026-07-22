@@ -728,6 +728,12 @@ assert.match(clockAppStateSource, /eventLabelShortenThreshold\s*=\s*250/);
 assert.match(clockAppStateSource, /eventLabelArcDistance\s*=\s*12/);
 assert.match(rootTemplateSource, /data-cc-event-label-font-size-full[^>]*value="22"/);
 assert.match(rootTemplateSource, /data-cc-event-label-font-size-mini[^>]*value="18"/);
+const eventLabelFontSelect = rootTemplateSource.match(/<select[^>]*data-cc-event-label-font-preset[\s\S]*?<\/select>/)?.[0] || "";
+assert.ok(eventLabelFontSelect, "event label font presets use a select");
+assert.equal((eventLabelFontSelect.match(/<option\b/g) || []).length, 9);
+assert.match(eventLabelFontSelect, /<option value="custom">Custom\.\.\.<\/option>/);
+assert.match(rootTemplateSource, /data-cc-event-label-font-family[^>]*hidden/);
+assert.doesNotMatch(rootTemplateSource, /<datalist[^>]*cc-event-label-font-options/);
 assert.match(rootTemplateSource, /data-cc-event-label-shorten-threshold[^>]*value="250"/);
 assert.match(rootTemplateSource, /data-cc-event-label-arc-distance[^>]*value="12"/);
 assert.match(rootTemplateSource, /Full is the large Calendar Clock opened with the Full button/);
@@ -750,6 +756,8 @@ assert.match(
   /#calendar-clock-root\.cc-mode-hidden \.cc-clock-surface\s*\{[^}]*display:\s*none/s
 );
 assert.match(overlaySource, /fontSize:\s*getCalendarClockEventLabelFontSizeForMode\(\)/);
+assert.match(overlaySource, /eventLabelFontPresetEl\.addEventListener\("change"/);
+assert.match(overlaySource, /updateEventLabelFontControls\(labelFontFamily\)/);
 assert.match(overlaySource, /function wipeCalendarClockStoredEvents[\s\S]*clearCalendarClockFrameEvents\(\)[\s\S]*requestCalendarClockStoredEventClear[\s\S]*reloadCalendarClockFrameEvents\(\)/);
 assert.match(overlaySource, /function wipeCalendarClockAppSettingsToDefault[\s\S]*wipeCalendarClockStoredEvents[\s\S]*location\.reload\(\)/);
 assert.match(overlaySource, /data-cc-action='refresh'[\s\S]*hardRefreshCalendarClockEventsFromToolbar/);

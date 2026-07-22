@@ -16,6 +16,7 @@ const CALENDAR_CLOCK_TICK_SOUND_DEFAULT_DURATION_MS = 5000;
 const CALENDAR_CLOCK_TICK_SOUND_MAX_DURATION_MS = 60000;
 const CALENDAR_CLOCK_TICK_SOUND_FADE_SECONDS = 0.04;
 const CALENDAR_CLOCK_TICK_SOUND_GAIN = 0.72;
+const CALENDAR_CLOCK_CUSTOM_EVENT_LABEL_FONT_VALUE = "custom";
 let calendarClockUiPromise = null;
 let calendarClockWarningRowTemplates = null;
 
@@ -553,6 +554,7 @@ function bindPanelControls() {
   const eventLabelStyleEl = calendarClockRoot.querySelector("[data-cc-event-label-style]");
   const eventLabelCustomColorRowEl = calendarClockRoot.querySelector("[data-cc-event-label-custom-color-row]");
   const eventLabelCustomColorEl = calendarClockRoot.querySelector("[data-cc-event-label-custom-color]");
+  const eventLabelFontPresetEl = calendarClockRoot.querySelector("[data-cc-event-label-font-preset]");
   const eventLabelFontFamilyEl = calendarClockRoot.querySelector("[data-cc-event-label-font-family]");
   const eventLabelFontResetEl = calendarClockRoot.querySelector("[data-cc-action='event-label-font-reset']");
   const eventLabelFontSizeFullEl = calendarClockRoot.querySelector("[data-cc-event-label-font-size-full]");
@@ -893,7 +895,24 @@ function bindPanelControls() {
     syncClockFrame();
   });
 
+  eventLabelFontPresetEl.addEventListener("change", () => {
+    if (eventLabelFontPresetEl.value === CALENDAR_CLOCK_CUSTOM_EVENT_LABEL_FONT_VALUE) {
+      eventLabelFontFamilyEl.hidden = false;
+      eventLabelFontFamilyEl.value = calendarClockState.eventLabelFontFamily;
+      eventLabelFontFamilyEl.focus();
+      eventLabelFontFamilyEl.select();
+      return;
+    }
+
+    calendarClockState.eventLabelFontFamily = normalizeEventLabelFontFamily(eventLabelFontPresetEl.value);
+    eventLabelFontFamilyEl.hidden = true;
+    eventLabelFontFamilyEl.value = calendarClockState.eventLabelFontFamily;
+    saveCalendarClockState();
+    syncClockFrame();
+  });
+
   eventLabelFontFamilyEl.addEventListener("input", () => {
+    eventLabelFontPresetEl.value = CALENDAR_CLOCK_CUSTOM_EVENT_LABEL_FONT_VALUE;
     calendarClockState.eventLabelFontFamily = normalizeEventLabelFontFamily(eventLabelFontFamilyEl.value);
     saveCalendarClockState({ debounceMs: CALENDAR_CLOCK_STATE_SAVE_DEBOUNCE_MS });
     syncClockFrame();
@@ -1740,6 +1759,18 @@ function getSelectableWindowPreset() {
   return null;
 }
 
+function updateEventLabelFontControls(fontFamily) {
+  const presetEl = calendarClockRoot.querySelector("[data-cc-event-label-font-preset]");
+  const customInputEl = calendarClockRoot.querySelector("[data-cc-event-label-font-family]");
+  const hasMatchingPreset = Array.from(presetEl.options).some(option => (
+    option.value !== CALENDAR_CLOCK_CUSTOM_EVENT_LABEL_FONT_VALUE && option.value === fontFamily
+  ));
+
+  presetEl.value = hasMatchingPreset ? fontFamily : CALENDAR_CLOCK_CUSTOM_EVENT_LABEL_FONT_VALUE;
+  customInputEl.value = fontFamily;
+  customInputEl.hidden = hasMatchingPreset;
+}
+
 function updatePanelControls() {
   if (!calendarClockRoot) return;
 
@@ -1955,7 +1986,7 @@ function updatePanelControls() {
   calendarClockRoot.querySelector("[data-cc-event-labels]").disabled = !areArcsVisible;
   calendarClockRoot.querySelector("[data-cc-event-label-style]").value = labelStyle;
   calendarClockRoot.querySelector("[data-cc-event-label-custom-color]").value = labelCustomColor;
-  calendarClockRoot.querySelector("[data-cc-event-label-font-family]").value = labelFontFamily;
+  updateEventLabelFontControls(labelFontFamily);
   calendarClockRoot.querySelector("[data-cc-event-label-font-size-full]").value = String(labelFontSizeFull);
   calendarClockRoot.querySelector("[data-cc-event-label-font-size-full-output]").textContent = `${labelFontSizeFull}px`;
   calendarClockRoot.querySelector("[data-cc-event-label-font-size-mini]").value = String(labelFontSizeMini);

@@ -357,19 +357,20 @@
                     <input id="cc-event-label-custom-color" data-cc-event-label-custom-color type="color" value="#ffffff" title="Choose custom event label color">
                   </div>
                   <div class="cc-divider-settings-row">
-                    <label class="cc-row-label" for="cc-event-label-font-family" title="Choose a system font stack for event labels. You can type a font name or choose a common installed font.">Font</label>
+                    <label class="cc-row-label" for="cc-event-label-font-preset" title="Choose a common system font for event labels, or select Custom to enter your own font stack.">Font</label>
                     <div class="cc-font-control">
-                      <input id="cc-event-label-font-family" data-cc-event-label-font-family type="text" list="cc-event-label-font-options" value="Inter, Segoe UI, Arial, sans-serif" title="Type a system font stack for event labels">
-                      <datalist id="cc-event-label-font-options">
-                        <option value="Inter, Segoe UI, Arial, sans-serif"></option>
-                        <option value="Segoe UI, Arial, sans-serif"></option>
-                        <option value="Arial, Helvetica, sans-serif"></option>
-                        <option value="Verdana, Geneva, sans-serif"></option>
-                        <option value="Tahoma, Geneva, sans-serif"></option>
-                        <option value="Georgia, Times New Roman, serif"></option>
-                        <option value="Trebuchet MS, Arial, sans-serif"></option>
-                        <option value="Century Gothic, Arial, sans-serif"></option>
-                      </datalist>
+                      <select id="cc-event-label-font-preset" data-cc-event-label-font-preset title="Choose a common system font, or select Custom to enter your own font stack">
+                        <option value="Inter, Segoe UI, Arial, sans-serif">Inter / Segoe UI</option>
+                        <option value="Segoe UI, Arial, sans-serif">Segoe UI</option>
+                        <option value="Arial, Helvetica, sans-serif">Arial</option>
+                        <option value="Verdana, Geneva, sans-serif">Verdana</option>
+                        <option value="Tahoma, Geneva, sans-serif">Tahoma</option>
+                        <option value="Georgia, Times New Roman, serif">Georgia</option>
+                        <option value="Trebuchet MS, Arial, sans-serif">Trebuchet MS</option>
+                        <option value="Century Gothic, Arial, sans-serif">Century Gothic</option>
+                        <option value="custom">Custom...</option>
+                      </select>
+                      <input id="cc-event-label-font-family" data-cc-event-label-font-family type="text" value="Inter, Segoe UI, Arial, sans-serif" aria-label="Custom event label font stack" title="Type a custom system font stack for event labels" hidden>
                       <button type="button" class="cc-btn-secondary cc-font-reset-btn" data-cc-action="event-label-font-reset" title="Reset event label font family and both Full and Mini sizes">Reset</button>
                     </div>
                   </div>

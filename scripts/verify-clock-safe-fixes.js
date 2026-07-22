@@ -23,6 +23,18 @@ function read(relativePath) {
   return fs.readFileSync(path.join(repoRoot, relativePath), "utf8");
 }
 
+const clockFaceBuilderPaths = fs.readdirSync(path.join(repoRoot, "src/clock/faces"), { withFileTypes: true })
+  .filter(entry => entry.isDirectory())
+  .map(entry => `src/clock/faces/${entry.name}/${entry.name}-builder.js`)
+  .filter(relativePath => fs.existsSync(path.join(repoRoot, relativePath)));
+assert.ok(clockFaceBuilderPaths.length > 0);
+clockFaceBuilderPaths.forEach(relativePath => {
+  const source = read(relativePath);
+  assert.match(source, /classList\.toggle\("is-24-hour", use24HourRadial\)/, `${relativePath} must expose 24-hour styling`);
+  assert.match(source, /const numberCount = use24HourRadial \? 24 : 12;/, `${relativePath} must build a complete 24-hour scale`);
+  assert.match(source, /use24HourRadial \? [^\n]*15 : [^\n]*30/, `${relativePath} must map hours to 15-degree positions in 24-hour mode`);
+});
+
 const calendarClockMessageContract = new Set([
   "CALENDAR_CLOCK_AUDIO_STORAGE_ACK",
   "CALENDAR_CLOCK_AUDIO_STORAGE_CONNECT",

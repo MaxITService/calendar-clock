@@ -69,6 +69,9 @@
 | `src/clock/faces/slate-transit/slate-transit-builder.js` | Builds the Slate Transit dark transport instrument clock face. |
 | `src/clock/faces/slate-transit/slate-transit-face.css` | Slate, ivory rail, and muted rust seconds styling. |
 | `src/clock/faces/slate-transit/slate-transit-face.js` | Registers Slate Transit and its arc render tuning. |
+| `src/clock/faces/abyss-diver/abyss-diver-builder.js` | Builds the unbranded Abyss Diver professional dive-watch face. |
+| `src/clock/faces/abyss-diver/abyss-diver-face.css` | Black ceramic bezel, lume indices, and brushed-steel hand styling. |
+| `src/clock/faces/abyss-diver/abyss-diver-face.js` | Registers Abyss Diver and its inset arc render tuning. |
 | `src/clock/faces/rhodium-reserve/rhodium-reserve-builder.js` | Builds the Rhodium Reserve lacquer-and-rhodium mechanical clock face. |
 | `src/clock/faces/rhodium-reserve/rhodium-reserve-face.css` | Anthracite lacquer, faceted rhodium markers, and restrained green seconds styling. |
 | `src/clock/faces/rhodium-reserve/rhodium-reserve-face.js` | Registers Rhodium Reserve and its arc render tuning. |

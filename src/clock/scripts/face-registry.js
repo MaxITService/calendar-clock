@@ -73,6 +73,15 @@ const CLOCK_FACE_MODULES = [
         ],
     },
     {
+        id: "abyss-diver",
+        name: "Abyss Diver",
+        styles: ["faces/abyss-diver/abyss-diver-face.css"],
+        scripts: [
+            "faces/abyss-diver/abyss-diver-builder.js",
+            "faces/abyss-diver/abyss-diver-face.js",
+        ],
+    },
+    {
         id: "rhodium-reserve",
         name: "Rhodium Reserve",
         styles: ["faces/rhodium-reserve/rhodium-reserve-face.css"],

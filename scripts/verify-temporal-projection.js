@@ -288,7 +288,7 @@ function checkLocaleAndTimeParsing() {
   });
 }
 
-function makeBackgroundContext({ moduleAvailable = true } = {}) {
+function makeBackgroundContext({ moduleAvailable = true, configureStorage = null } = {}) {
   const listeners = {};
   const writes = [];
   const chromeApi = {
@@ -303,6 +303,7 @@ function makeBackgroundContext({ moduleAvailable = true } = {}) {
     storage: { local: { get() {}, set(data, callback) { writes.push(data); callback?.(); } } },
     tabs: { sendMessage() {} }
   };
+  if (configureStorage) chromeApi.storage.local = configureStorage({ chromeApi, writes });
   const sandbox = vm.createContext({
     chrome: chromeApi,
     console,
@@ -321,6 +322,110 @@ function makeBackgroundContext({ moduleAvailable = true } = {}) {
   if (moduleAvailable) vm.runInContext(fs.readFileSync(temporalPath, "utf8"), sandbox);
   vm.runInContext(fs.readFileSync(backgroundPath, "utf8"), sandbox);
   return { sandbox, listeners, writes };
+}
+
+async function checkSerializedFeedSavesAndReadFailure() {
+  const state = {};
+  let activeTransactions = 0;
+  let maxActiveTransactions = 0;
+  let readCount = 0;
+  let writeCount = 0;
+  let backgroundSandbox = null;
+  const background = makeBackgroundContext({
+    configureStorage: ({ chromeApi }) => ({
+      get(_keys, callback) {
+        activeTransactions += 1;
+        maxActiveTransactions = Math.max(maxActiveTransactions, activeTransactions);
+        readCount += 1;
+        const snapshot = JSON.parse(JSON.stringify(state));
+        setTimeout(() => {
+          if (readCount === 1) {
+            chromeApi.runtime.lastError = { message: "temporary read failure" };
+            callback(undefined);
+            chromeApi.runtime.lastError = null;
+            activeTransactions -= 1;
+            return;
+          }
+          backgroundSandbox.snapshotJson = JSON.stringify(snapshot);
+          callback(vm.runInContext("JSON.parse(snapshotJson)", backgroundSandbox));
+        }, 5);
+      },
+      set(data, callback) {
+        writeCount += 1;
+        setTimeout(() => {
+          Object.assign(state, JSON.parse(JSON.stringify(data)));
+          activeTransactions -= 1;
+          callback();
+        }, 5);
+      }
+    })
+  });
+  backgroundSandbox = background.sandbox;
+  const { listeners, sandbox } = background;
+
+  const send = message => new Promise(resolve => {
+    sandbox.messageJson = JSON.stringify(message);
+    const realmMessage = vm.runInContext("JSON.parse(messageJson)", sandbox);
+    assert.equal(listeners.message(realmMessage, { url: "https://calendar.google.com/" }, resolve), true);
+  });
+  const failedRead = await send({
+    type: "CALENDAR_CLOCK_TASKS",
+    tasks: [{ id: "unwritten", capturedFrom: "google-tasks-dom", title: "Unwritten" }]
+  });
+  assert.equal(failedRead.ok, false);
+  assert.equal(failedRead.storageStatus.kind, "read-failed");
+  assert.match(failedRead.error, /temporary read failure/i);
+  assert.equal(writeCount, 0);
+  assert.deepEqual(state, {});
+
+  const event = timed(
+    "serialized-calendar",
+    "2026-07-22T10:00:00.000Z",
+    "2026-07-22T11:00:00.000Z",
+    "UTC"
+  );
+  const projectionContext = context("UTC");
+  const calendarSave = send({
+    type: "CALENDAR_CLOCK_EVENTS",
+    events: [event],
+    displayEvents: [event],
+    captureView: {
+      mode: "day",
+      visibleDateKeys: ["2026-07-22"],
+      dateKeySource: "dated-url",
+      canClearMissingDates: true
+    },
+    displayDateKeys: ["2026-07-22"],
+    windowStartDate: "2026-07-22T00:00:00.000Z",
+    windowEndDate: "2026-07-23T00:00:00.000Z",
+    timeZone: "UTC",
+    temporalContext: projectionContext,
+    feedMode: "dom",
+    effectiveSource: { activeSource: "google-calendar-dom" }
+  });
+  const taskSave = send({
+    type: "CALENDAR_CLOCK_TASKS",
+    tasks: [{
+      id: "serialized-task",
+      capturedFrom: "google-tasks-dom",
+      title: "Serialized task",
+      start: "12:00",
+      end: "12:00"
+    }]
+  });
+  const [calendarResponse, taskResponse] = await Promise.all([calendarSave, taskSave]);
+
+  assert.equal(calendarResponse.ok, true, JSON.stringify(calendarResponse));
+  assert.equal(taskResponse.ok, true, JSON.stringify(taskResponse));
+  assert.equal(maxActiveTransactions, 1);
+  assert.equal(writeCount, 2);
+  assert.deepEqual(
+    state.calendarClockCalendarEvents.map(item => item.id),
+    ["serialized-calendar"],
+    JSON.stringify({ calendarResponse, taskResponse, state })
+  );
+  assert.deepEqual(state.calendarClockTaskEvents.map(item => item.id), ["serialized-task"]);
+  assert.deepEqual(state.calendarClockEvents.map(item => item.id), ["serialized-calendar", "serialized-task"]);
 }
 
 function checkStoreAndBoundary() {
@@ -590,11 +695,17 @@ if (process.argv[2] === "--probe") {
   const parsedCivil = vm.runInContext("formatLocalDateKey(findExplicitCalendarEventDate('03/04/2026'))", reader);
   process.stdout.write(JSON.stringify({ temporal: event.temporal, parsedCivil }));
 } else {
-  checkProjectionEdges();
-  checkDstAndDomWallTimes();
-  checkLocaleAndTimeParsing();
-  checkStoreAndBoundary();
-  checkInvalidInputs();
-  checkSystemTimezoneInvariance();
-  console.log("Temporal projection verification passed.");
+  (async () => {
+    checkProjectionEdges();
+    checkDstAndDomWallTimes();
+    checkLocaleAndTimeParsing();
+    checkStoreAndBoundary();
+    await checkSerializedFeedSavesAndReadFailure();
+    checkInvalidInputs();
+    checkSystemTimezoneInvariance();
+    console.log("Temporal projection verification passed.");
+  })().catch(error => {
+    console.error(error);
+    process.exitCode = 1;
+  });
 }

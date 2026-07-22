@@ -39,6 +39,7 @@ try {
   calendarClockTemporalProjectionDiagnostic = `temporal projection unavailable: ${String(error?.message || error)}`;
 }
 const calendarClockAudioBridgeTokens = new Map();
+let calendarClockFeedSaveQueue = Promise.resolve();
 
 function removeExpiredCalendarClockAudioBridgeTokens(now = Date.now()) {
   calendarClockAudioBridgeTokens.forEach((record, token) => {
@@ -572,21 +573,62 @@ function saveCalendarClockFeed(partial, sender, sendResponse) {
     });
     return;
   }
-  chrome.storage.local.get(
-    [
-      "calendarClockCalendarEvents",
-      "calendarClockTaskEvents",
-      "calendarClockEvents",
-      "calendarClockSource",
-      "calendarClockCalendarSource",
-      "calendarClockTaskSource",
-      "calendarClockCaptureMeta",
-      "calendarClockCalendarEventStore",
-      "calendarClockFeedMode",
-      "calendarClockActiveSource",
-      "calendarClockOverlayState"
-    ],
-    result => {
+
+  const queuedSave = calendarClockFeedSaveQueue.then(() => new Promise(resolve => {
+    let completed = false;
+    const complete = response => {
+      if (completed) return;
+      completed = true;
+      try {
+        sendResponse(response);
+      } finally {
+        resolve();
+      }
+    };
+
+    try {
+      saveCalendarClockFeedTransaction(partial, sender, complete, hasCalendarEvents, temporalFeed);
+    } catch (error) {
+      complete({
+        ok: false,
+        error: String(error?.message || error || "Calendar Clock could not process this snapshot.")
+      });
+    }
+  }));
+  calendarClockFeedSaveQueue = queuedSave.catch(() => undefined);
+}
+
+function saveCalendarClockFeedTransaction(partial, sender, sendResponse, hasCalendarEvents, temporalFeed) {
+  const storageKeys = [
+    "calendarClockCalendarEvents",
+    "calendarClockTaskEvents",
+    "calendarClockEvents",
+    "calendarClockSource",
+    "calendarClockCalendarSource",
+    "calendarClockTaskSource",
+    "calendarClockCaptureMeta",
+    "calendarClockCalendarEventStore",
+    "calendarClockFeedMode",
+    "calendarClockActiveSource",
+    "calendarClockOverlayState"
+  ];
+
+  const failRead = error => {
+    const storageStatus = {
+      kind: "read-failed",
+      message: String(error?.message || error || "Calendar Clock could not read the saved event feed.")
+    };
+    sendResponse({ ok: false, error: storageStatus.message, storageStatus });
+  };
+
+  try {
+    chrome.storage.local.get(storageKeys, result => {
+      const storageError = chrome.runtime.lastError;
+      if (storageError) {
+        failRead(storageError);
+        return;
+      }
+
       const hasTaskEvents = Object.prototype.hasOwnProperty.call(partial, "taskEvents");
       const temporalContext = temporalFeed?.context || null;
       const feedMode = hasCalendarEvents
@@ -787,8 +829,10 @@ function saveCalendarClockFeed(partial, sender, sendResponse) {
           storageStatus
         });
       });
-    }
-  );
+    });
+  } catch (error) {
+    failRead(error);
+  }
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

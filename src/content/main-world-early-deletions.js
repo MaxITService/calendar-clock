@@ -2,10 +2,7 @@
 // fetch/XHR methods before the optional structured-record module is ready.
 (function initializeCalendarClockEarlyDeletions(root, factory) {
   const api = factory();
-  if (typeof module === "object" && module.exports && typeof process === "object" && process.versions?.node) {
-    module.exports = api;
-    return;
-  }
+  root.CalendarClockEarlyDeletions = api;
   api.install(root);
 })(globalThis, () => {
   const OBSERVER_SYMBOL_KEY = "calendarClock.earlyDeletionObserver.v1";
@@ -70,8 +67,10 @@
     if (scope[observerSymbol]) return scope[observerSymbol];
 
     const subscribers = new Set();
+    const responseSubscribers = new Set();
     const pending = [];
-    function publish(deletedIds, transport, url) {
+    let requestSequence = 0;
+    function publish(deletedIds, transport, url, sequence) {
       if (!deletedIds.length) return;
       let endpoint = "";
       try {
@@ -80,7 +79,8 @@
       const message = Object.freeze({
         deletedIds: Object.freeze(deletedIds.slice()),
         transport,
-        endpoint
+        endpoint,
+        requestSequence: Math.max(0, Number(sequence) || 0)
       });
       if (!subscribers.size) {
         pending.push(message);
@@ -92,6 +92,14 @@
       });
     }
 
+    function publishResponse(message) {
+      if (!responseSubscribers.size) return;
+      const frozenMessage = Object.freeze({ ...message });
+      responseSubscribers.forEach(listener => {
+        try { listener(frozenMessage); } catch (_error) { /* isolate optional consumers */ }
+      });
+    }
+
     const observer = Object.freeze({
       subscribe(listener) {
         if (typeof listener !== "function") return () => {};
@@ -100,6 +108,11 @@
           try { listener(message); } catch (_error) { /* isolate optional consumers */ }
         });
         return () => subscribers.delete(listener);
+      },
+      subscribeResponses(listener) {
+        if (typeof listener !== "function") return () => {};
+        responseSubscribers.add(listener);
+        return () => responseSubscribers.delete(listener);
       }
     });
     Object.defineProperty(scope, observerSymbol, {
@@ -118,6 +131,7 @@
           const init = argumentsList[1];
           const url = typeof input === "string" || input instanceof URL ? String(input) : input?.url || "";
           const method = init?.method || input?.method || "GET";
+          const sequence = ++requestSequence;
           let deletedIdsPromise = Promise.resolve([]);
           if (isCalendarSyncMutationRequest(url, method, scope.location.href) && init?.body !== undefined) {
             deletedIdsPromise = Promise.resolve(extractDeletedEventIds(
@@ -138,8 +152,26 @@
           }
           const result = Reflect.apply(target, thisArg, argumentsList);
           Promise.resolve(result).then(response => {
-            if (response?.ok !== true) return;
-            deletedIdsPromise.then(ids => publish(ids, "early-fetch", url), () => {});
+            deletedIdsPromise.then(ids => {
+              if (response?.ok === true) publish(ids, "early-fetch", url, sequence);
+              publishResponse({
+                transport: "fetch",
+                url: response?.url || url,
+                requestUrl: url,
+                method: String(method || "GET"),
+                requestSequence: sequence,
+                response
+              });
+            }, () => {
+              publishResponse({
+                transport: "fetch",
+                url: response?.url || url,
+                requestUrl: url,
+                method: String(method || "GET"),
+                requestSequence: sequence,
+                response
+              });
+            });
           }, () => {});
           return result;
         }
@@ -163,6 +195,7 @@
             requests.set(thisArg, {
               method: String(argumentsList[0] || "GET"),
               url: String(argumentsList[1] || ""),
+              requestSequence: ++requestSequence,
               deletedIds: []
             });
             return Reflect.apply(target, thisArg, argumentsList);
@@ -187,8 +220,16 @@
                 const completed = requests.get(thisArg) || request;
                 const status = Number(thisArg.status) || 0;
                 if (status >= 200 && status < 300) {
-                  publish(completed.deletedIds || [], "early-xhr", completed.url);
+                  publish(completed.deletedIds || [], "early-xhr", completed.url, completed.requestSequence);
                 }
+                publishResponse({
+                  transport: "xhr",
+                  url: thisArg.responseURL || completed.url || "",
+                  requestUrl: completed.url,
+                  method: completed.method,
+                  requestSequence: completed.requestSequence,
+                  xhr: thisArg
+                });
               });
             }
             return Reflect.apply(target, thisArg, argumentsList);

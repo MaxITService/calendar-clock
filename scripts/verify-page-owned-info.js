@@ -4,9 +4,12 @@ const path = require("path");
 const vm = require("vm");
 
 const repoRoot = path.resolve(__dirname, "..");
-const earlyDeletions = require(path.join(repoRoot, "src/content/main-world-early-deletions.js"));
-const hook = require(path.join(repoRoot, "src/content/page-owned-info/main-world-hook.js"));
-const bridge = require(path.join(repoRoot, "src/content/optional-module-loader.js"));
+require(path.join(repoRoot, "src/content/main-world-early-deletions.js"));
+require(path.join(repoRoot, "src/content/page-owned-info/main-world-hook.js"));
+require(path.join(repoRoot, "src/content/optional-module-loader.js"));
+const earlyDeletions = globalThis.CalendarClockEarlyDeletions;
+const hook = globalThis.CalendarClockPageOwnedHook;
+const bridge = globalThis.CalendarClockOptionalModuleLoader;
 
 function observedCalendarFixture({
   startHour = 21,
@@ -62,6 +65,12 @@ function testMissingEndBecomesPoint() {
   assert.strictEqual(records[0].end, "14:00");
   assert.strictEqual(records[0].durationKind, "point");
   assert.strictEqual(records[0].startDate, records[0].endDate);
+}
+
+function testInvalidTimeZoneIsRejected() {
+  const fixture = observedCalendarFixture();
+  fixture[0][2][1][0][1][0][35][2] = "Mars/Olympus";
+  assert.deepStrictEqual(hook.extractCalendarRecords(fixture), []);
 }
 
 function testTasksSyncPointExtractor() {
@@ -157,11 +166,7 @@ function testDeletedCalendarRecordEviction() {
   }).toString();
 
   assert.deepStrictEqual(
-    hook.extractDeletedCalendarEventIdsFromRequest("/calendar/u/0/sync.sync", "POST", body, base),
-    [deletedId]
-  );
-  assert.deepStrictEqual(
-    hook.extractDeletedCalendarEventIdsFromRequest("/calendar/u/0/sync.sync", "POST", currentBody, base),
+    earlyDeletions.extractDeletedEventIds("/calendar/u/0/sync.sync", "POST", body, base),
     [deletedId]
   );
   assert.deepStrictEqual(
@@ -169,15 +174,19 @@ function testDeletedCalendarRecordEviction() {
     [deletedId]
   );
   assert.deepStrictEqual(
-    hook.extractDeletedCalendarEventIdsFromRequest("/calendar/u/0/sync.sync", "POST", updateBody, base),
+    earlyDeletions.extractDeletedEventIds("/calendar/u/0/sync.sync", "POST", currentBody, base),
+    [deletedId]
+  );
+  assert.deepStrictEqual(
+    earlyDeletions.extractDeletedEventIds("/calendar/u/0/sync.sync", "POST", updateBody, base),
     []
   );
   assert.deepStrictEqual(
-    hook.extractDeletedCalendarEventIdsFromRequest("/calendar/u/0/sync.sync", "GET", body, base),
+    earlyDeletions.extractDeletedEventIds("/calendar/u/0/sync.sync", "GET", body, base),
     []
   );
   assert.deepStrictEqual(
-    hook.extractDeletedCalendarEventIdsFromRequest("https://example.com/calendar/u/0/sync.sync", "POST", body, base),
+    earlyDeletions.extractDeletedEventIds("https://example.com/calendar/u/0/sync.sync", "POST", body, base),
     []
   );
 
@@ -255,6 +264,7 @@ function testEarlyTombstonePublishesWhileStructuredCaptureIsDisabled() {
   scope[Symbol.for(earlyDeletions.OBSERVER_SYMBOL_KEY)] = {
     subscribe(listener) { earlyListener = listener; }
   };
+  earlyDeletions.install(scope);
   hook.install(scope);
   const messages = [];
   const port = {
@@ -384,6 +394,7 @@ async function testTransportNonInterference() {
     addEventListener: (type, listener) => listeners.set(type, listener),
     removeEventListener: type => listeners.delete(type)
   };
+  earlyDeletions.install(scope);
   hook.install(scope);
   const receiver = {};
   const result = scope.fetch.call(receiver, "https://example.com");
@@ -450,6 +461,7 @@ async function testFetchDeletionRequiresSuccessfulResponse() {
     addEventListener: (type, listener) => listeners.set(type, listener),
     removeEventListener: type => listeners.delete(type)
   };
+  earlyDeletions.install(scope);
   hook.install(scope);
   const messages = enableInstalledPageOwnedHook(scope, listeners);
   const latestRecords = () => messages.filter(message => message.type === "records").at(-1)?.records || [];
@@ -513,6 +525,7 @@ async function testXhrDeletionRequiresSuccessfulResponse() {
     addEventListener: (type, listener) => listeners.set(type, listener),
     removeEventListener: type => listeners.delete(type)
   };
+  earlyDeletions.install(scope);
   hook.install(scope);
   const messages = enableInstalledPageOwnedHook(scope, listeners);
   const latestRecords = () => messages.filter(message => message.type === "records").at(-1)?.records || [];
@@ -558,6 +571,8 @@ function makeVmContext() {
     WeakMap,
     WeakSet
   });
+  vm.runInContext(fs.readFileSync(path.join(repoRoot, "src/temporal-projection/temporal-projection.js"), "utf8"), context);
+  context.calendarClockTemporalProjection = context.CalendarClockTemporalProjection;
   vm.runInContext(fs.readFileSync(path.join(repoRoot, "src/content/calendar-content-state.js"), "utf8"), context);
   vm.runInContext(fs.readFileSync(path.join(repoRoot, "src/content/time-window-controller.js"), "utf8"), context);
   return context;
@@ -589,8 +604,13 @@ function testOptionalModuleIsolation() {
   assert.match(tasksSource, /taskClockPageOwnedWasEnabled\s*&&\s*!isEnabled\)\s*queueTaskPublish/);
   assert.match(tasksSource, /TASK_CLOCK_CAPTURE_LIMIT_OPTIONS\s*=\s*\[50, 100, 200\]/);
   const loaderSource = fs.readFileSync(path.join(repoRoot, "src/content/optional-module-loader.js"), "utf8");
+  const earlyObserverSource = fs.readFileSync(path.join(repoRoot, "src/content/main-world-early-deletions.js"), "utf8");
+  const hookSource = fs.readFileSync(path.join(repoRoot, "src/content/page-owned-info/main-world-hook.js"), "utf8");
   const backgroundSource = fs.readFileSync(path.join(repoRoot, "src/background/background.js"), "utf8");
   assert.match(loaderSource, /let enabled = true/);
+  assert.match(earlyObserverSource, /subscribeResponses/);
+  assert.match(earlyObserverSource, /new Proxy/);
+  assert.doesNotMatch(hookSource, /new Proxy/);
   assert.match(backgroundSource, /function shouldSuppressCalendarClockDomTaskFeed/);
 }
 
@@ -867,6 +887,7 @@ function testStorageQuotaRetry() {
 (async () => {
   testExtractorFixture();
   testMissingEndBecomesPoint();
+  testInvalidTimeZoneIsRejected();
   testTasksSyncPointExtractor();
   testBridgeTrustAndSchema();
   testEndpointMatching();

@@ -1,4 +1,6 @@
 // Bridges the clock page with the extension/content script and renders the small Calendar event list.
+const CALENDAR_CLOCK_HARD_REFRESH_FALLBACK_MS = 3000;
+let calendarClockHardRefreshFallbackTimer = null;
 function parseWindowMessageDate(value) {
             if (!value) return null;
             const date = new Date(value);
@@ -251,6 +253,7 @@ function setDisplayWindow(start, end, options = {}) {
 
         function normalizeCalendarEvents(events, source = {}) {
             if (!Array.isArray(events)) return [];
+            const temporalApi = globalThis.CalendarClockTemporalProjection;
 
             return events
                 .map((event, index) => {
@@ -262,18 +265,12 @@ function setDisplayWindow(start, end, options = {}) {
                         : event.durationKind === "all-day" || event.isAllDay === true
                             ? "all-day"
                             : "range";
-                    const temporalKind = event.temporal?.kind;
-                    const temporal = ["timed", "point", "all-day"].includes(temporalKind)
-                        && typeof event.temporal?.occurrenceKey === "string"
-                        && /^\d{4}-\d{2}-\d{2}$/.test(event.temporal?.firstDateKey || "")
-                        && /^\d{4}-\d{2}-\d{2}$/.test(event.temporal?.lastDateKey || "")
-                        ? { ...event.temporal }
-                        : null;
-                    if (event.capturedFrom !== "google-tasks-dom" && (!temporal
-                        || temporal.contractVersion !== source?.temporalContext?.contractVersion
-                        || temporal.projectionPolicyVersion !== source?.temporalContext?.projectionPolicyVersion
-                        || temporal.contextFingerprint !== source?.temporalContext?.fingerprint
-                        || temporal.contextFingerprint !== source?.contextFingerprint)) return null;
+                    const isDomTask = event.capturedFrom === "google-tasks-dom";
+                    const hasValidTemporalContract = temporalApi?.validateEvent?.(event, source?.temporalContext) === true
+                        && source?.temporalContext?.fingerprint === source?.contextFingerprint;
+                    if (!isDomTask && !hasValidTemporalContract) return null;
+                    const temporal = hasValidTemporalContract ? { ...event.temporal } : null;
+                    const temporalKind = temporal?.kind;
                     if (temporal) durationKind = temporal.kind === "timed" ? "range" : temporal.kind;
                     const itemKind = event.itemKind === "task"
                         || event.sourceKind === "calendar-task"
@@ -453,6 +450,8 @@ function setDisplayWindow(start, end, options = {}) {
         }
 
         function applyCalendarEvents(events, source = null) {
+            clearTimeout(calendarClockHardRefreshFallbackTimer);
+            calendarClockHardRefreshFallbackTimer = null;
             if (activeArcTooltipIndex !== null) hideArcTooltip();
             calendarEvents = normalizeCalendarEvents(events, source);
             calendarSource = source;
@@ -647,6 +646,10 @@ function setDisplayWindow(start, end, options = {}) {
                         if (hardReset && response.ok === true) {
                             applyCalendarEvents([], null);
                             calendarStatusEl.textContent = "Reloading Google Calendar";
+                            calendarClockHardRefreshFallbackTimer = setTimeout(() => {
+                                calendarClockHardRefreshFallbackTimer = null;
+                                loadStoredCalendarEvents();
+                            }, CALENDAR_CLOCK_HARD_REFRESH_FALLBACK_MS);
                             return;
                         }
 
@@ -690,6 +693,8 @@ function setDisplayWindow(start, end, options = {}) {
                             changes.calendarClockEvents.newValue || [],
                             changes.calendarClockSource?.newValue || calendarSource
                         );
+                    } else if (changes.calendarClockSource) {
+                        loadStoredCalendarEvents();
                     }
                 });
             } catch (error) {

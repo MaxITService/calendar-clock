@@ -898,13 +898,12 @@ function getCalendarEventWindowOverlapMinutes(event) {
   if (!displayDateRange) return null;
   const { startDate, endDate } = displayDateRange;
   const displayDateKeys = typeof getDateKeysForDateRange === "function" ? getDateKeysForDateRange(startDate, endDate) : [];
-  if (!temporalApi.overlapsInstantRange(event, startDate.toISOString(), endDate.toISOString(), displayDateKeys)) return 0;
-  if (event.temporal.kind === "all-day" || event.temporal.kind === "point") return 1;
-  const eventStartDate = new Date(event.temporal.startInstant);
-  const eventEndDate = new Date(event.temporal.endInstant);
-  const overlapStart = Math.max(eventStartDate.getTime(), startDate.getTime());
-  const overlapEnd = Math.min(eventEndDate.getTime(), endDate.getTime());
-  return Math.max(0, (overlapEnd - overlapStart) / (60 * 1000));
+  return temporalApi.getInstantRangeOverlapMinutes(
+    event,
+    startDate.toISOString(),
+    endDate.toISOString(),
+    displayDateKeys
+  );
 }
 
 function filterCalendarEventsToDisplayWindow(events, displayWindow) {
@@ -1037,6 +1036,21 @@ function makeCalendarClockCaptureViewAuthoritative(captureView, activeSource) {
   };
 }
 
+function showCalendarClockPublicationFailure(error, storageStatus = null) {
+  const reason = String(error?.message || error || "Calendar event publication failed").slice(0, 300);
+  calendarClockEffectiveEventSource = {
+    requestedMode: calendarClockState.pageOwnedInfo === true ? "page-owned" : "dom",
+    activeSource: "unavailable",
+    status: `publication failed: ${reason}`,
+    fallback: false,
+    captureStatus: { phase: "error", reason }
+  };
+  if (storageStatus) calendarClockStorageStatus = storageStatus;
+  renderCalendarClockEventSnapshot();
+  renderDebugPanel();
+  updatePanelStats();
+}
+
 async function publishCalendarEvents() {
   if (calendarClockExtensionContextInvalidated) return calendarClockEvents;
 
@@ -1057,7 +1071,7 @@ async function publishCalendarEvents() {
       captureStatus: { phase: "unavailable", reason: diagnostic }
     };
     calendarClockEvents = [];
-    renderCalendarClockEventSnapshot();
+    showCalendarClockPublicationFailure(diagnostic);
     return [];
   }
 
@@ -1151,8 +1165,15 @@ async function publishCalendarEvents() {
       calendarClockStorageStatus = response.storageStatus;
     }
     if (response?.captureMeta) applyCalendarClockCaptureMeta(response.captureMeta);
+    if (response?.ok === false) {
+      showCalendarClockPublicationFailure(
+        response.error || "Calendar Clock rejected the event snapshot",
+        response.storageStatus || null
+      );
+      return;
+    }
     if (Array.isArray(response?.calendarEvents)) {
-      calendarClockEvents = response.calendarEvents;
+      calendarClockEvents = limitCalendarClockEvents(response.calendarEvents, captureLimit);
       renderCalendarClockEventSnapshot();
       if (Array.isArray(response.events) && response.events.length === 0) {
         clearCalendarClockFrameEvents();
@@ -1174,15 +1195,7 @@ function queuePublishCalendarEvents() {
   publishTimer = setTimeout(() => {
     publishCalendarEvents().catch(error => {
       calendarClockWarn("temporal event publication failed closed", error);
-      calendarClockEffectiveEventSource = {
-        requestedMode: calendarClockState.pageOwnedInfo === true ? "page-owned" : "dom",
-        activeSource: "unavailable",
-        status: `safe degraded state: ${String(error?.message || error)}`,
-        fallback: false,
-        captureStatus: { phase: "unavailable", reason: String(error?.message || error) }
-      };
-      calendarClockEvents = [];
-      renderCalendarClockEventSnapshot();
+      showCalendarClockPublicationFailure(error);
     });
   }, 300);
 }

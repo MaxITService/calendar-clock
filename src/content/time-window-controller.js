@@ -25,7 +25,6 @@ function minutesBetween(start, end) {
 
 const CALENDAR_CLOCK_FOLLOW_WINDOW_MINUTES = 12 * 60;
 const CALENDAR_CLOCK_RADIAL_FOLLOW_WINDOW_MINUTES = 24 * 60;
-const CALENDAR_CLOCK_TRUSTED_CAPTURE_DATE_KEY_SOURCES = new Set(["dated-url", "visible-dom"]);
 
 function parseCalendarBaseDateFromUrl() {
   const match = location.pathname.match(/\/r\/(?:day|week|month|customday|customweek)\/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
@@ -154,9 +153,7 @@ function getCalendarClockCaptureDateContext() {
 }
 
 function isCalendarClockCaptureDateScopeTrusted(captureView) {
-  if (!CALENDAR_CLOCK_TRUSTED_CAPTURE_DATE_KEY_SOURCES.has(captureView?.dateKeySource)) return false;
-  if (captureView.dateKeySource === "dated-url" && !/^(day|week)$/.test(captureView?.mode || "")) return false;
-  return Array.isArray(captureView?.visibleDateKeys) && captureView.visibleDateKeys.length > 0;
+  return globalThis.calendarClockTemporalProjection?.isCaptureViewDateScopeTrusted?.(captureView) === true;
 }
 
 function getCalendarClockCaptureView() {
@@ -197,10 +194,6 @@ function getCalendarEventDateKey(event) {
 }
 
 function getWindowAnchorDate() {
-  return getCurrentDayDate();
-}
-
-function getRadialWindowAnchorDate() {
   return getCurrentDayDate();
 }
 
@@ -264,7 +257,7 @@ function getWindowDateRange() {
       return { startDate, endDate };
     }
 
-    const baseDate = getRadialWindowAnchorDate();
+    const baseDate = getWindowAnchorDate();
     const startDate = makeCalendarClockZonedDate(baseDate.getUTCFullYear(), baseDate.getUTCMonth(), baseDate.getUTCDate());
     const endDate = makeCalendarClockZonedDate(baseDate.getUTCFullYear(), baseDate.getUTCMonth(), baseDate.getUTCDate() + 1);
     return { startDate, endDate };
@@ -464,13 +457,7 @@ function getDateAwareOverlapMinutes(event) {
   const temporal = globalThis.calendarClockTemporalProjection;
   if (!temporal?.validateEvent?.(event)) return null;
   const dateKeys = getDateKeysForDateRange(startDate, endDate);
-  if (!temporal.overlapsInstantRange(event, startDate.toISOString(), endDate.toISOString(), dateKeys)) return 0;
-  if (isAllDayCalendarEvent(event)) return Math.max(1, (endDate.getTime() - startDate.getTime()) / (60 * 1000));
-  if (isPointCalendarEvent(event)) return 1;
-  const eventRange = parseEventDateRange(event);
-  const overlapStart = Math.max(eventRange.startDate.getTime(), startDate.getTime());
-  const overlapEnd = Math.min(eventRange.endDate.getTime(), endDate.getTime());
-  return Math.max(0, (overlapEnd - overlapStart) / (60 * 1000));
+  return temporal.getInstantRangeOverlapMinutes(event, startDate.toISOString(), endDate.toISOString(), dateKeys);
 }
 
 function getVisibleEventSegment(event, displayWindow = getDisplayWindow()) {

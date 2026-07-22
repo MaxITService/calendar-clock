@@ -1,9 +1,5 @@
 (function initializeCalendarClockTemporalProjection(root, factory) {
   const api = factory();
-  if (typeof module === "object" && module.exports && typeof process === "object" && process.versions?.node) {
-    module.exports = api;
-    return;
-  }
   root.CalendarClockTemporalProjection = api;
 })(globalThis, () => {
   "use strict";
@@ -14,6 +10,7 @@
   const TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
   const ABSOLUTE_ISO_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/;
   const KINDS = new Set(["timed", "point", "all-day"]);
+  const TRUSTED_CAPTURE_DATE_KEY_SOURCES = new Set(["dated-url", "visible-dom"]);
 
   function fail(code, message) {
     return { ok: false, diagnostic: { code, message } };
@@ -362,16 +359,42 @@
       && event.temporal.lastDateKey >= firstDateKey;
   }
 
-  function overlapsInstantRange(event, startInstant, endInstant, dateKeys = []) {
-    if (!validateEvent(event)) return false;
-    if (event.temporal.kind === "all-day") return overlapsDateKeys(event, dateKeys);
+  function getInstantRangeOverlapMinutes(event, startInstant, endInstant, dateKeys = []) {
+    if (!validateEvent(event)) return 0;
     const start = parseAbsoluteInstant(startInstant);
     const end = parseAbsoluteInstant(endInstant);
-    if (!start || !end || end.milliseconds <= start.milliseconds) return false;
+    if (!start || !end || end.milliseconds <= start.milliseconds) return 0;
+    if (event.temporal.kind === "all-day") {
+      const normalizedDateKeys = normalizeDateKeys(dateKeys);
+      const overlaps = normalizedDateKeys.length
+        ? overlapsDateKeys(event, normalizedDateKeys)
+        : spansIntersect(
+          event,
+          dateKeyForInstant(start.milliseconds, event.temporal.calendarTimeZone),
+          dateKeyForInstant(end.milliseconds - 1, event.temporal.calendarTimeZone)
+        );
+      return overlaps ? Math.max(1, (end.milliseconds - start.milliseconds) / (60 * 1000)) : 0;
+    }
     const eventStart = Date.parse(event.temporal.startInstant);
     const eventEnd = Date.parse(event.temporal.endInstant);
-    if (event.temporal.kind === "point") return eventStart >= start.milliseconds && eventStart < end.milliseconds;
-    return Math.min(eventEnd, end.milliseconds) > Math.max(eventStart, start.milliseconds);
+    if (event.temporal.kind === "point") {
+      return eventStart >= start.milliseconds && eventStart < end.milliseconds ? 1 : 0;
+    }
+    return Math.max(0, (Math.min(eventEnd, end.milliseconds) - Math.max(eventStart, start.milliseconds)) / (60 * 1000));
+  }
+
+  function overlapsInstantRange(event, startInstant, endInstant, dateKeys = []) {
+    return getInstantRangeOverlapMinutes(event, startInstant, endInstant, dateKeys) > 0;
+  }
+
+  function isCaptureViewDateScopeTrusted(captureView) {
+    if (!TRUSTED_CAPTURE_DATE_KEY_SOURCES.has(captureView?.dateKeySource)) return false;
+    if (captureView.dateKeySource === "dated-url" && !/^(day|week)$/.test(String(captureView?.mode || ""))) return false;
+    return normalizeDateKeys(captureView?.visibleDateKeys).length > 0;
+  }
+
+  function canCaptureViewPurgeMissingDates(captureView) {
+    return captureView?.canClearMissingDates === true && isCaptureViewDateScopeTrusted(captureView);
   }
 
   function compareEvents(left, right) {
@@ -406,7 +429,10 @@
     normalizeDateKeys,
     overlapsDateKeys,
     spansIntersect,
+    getInstantRangeOverlapMinutes,
     overlapsInstantRange,
+    isCaptureViewDateScopeTrusted,
+    canCaptureViewPurgeMissingDates,
     compareEvents
   });
 });

@@ -166,4 +166,7 @@ testDatedItemsCrossMidnight();
 testSameDayDatedTaskAndEventMix();
 testUndatedTasksUseStableClockTimeFallback();
 testSnapshotTypeCountsUseItemMetadata();
+const popupSource = fs.readFileSync(path.join(repoRoot, "src/action-popup/action-popup.js"), "utf8");
+assert.match(popupSource, /const STORAGE_KEYS = \[\s*"calendarClockEvents",\s*"calendarClockSource"\s*\]/);
+assert.match(popupSource, /storage\.local\.get\(STORAGE_KEYS[\s\S]*runtime\?\.lastError/);
 console.log("Popup snapshot sort verifier passed.");

@@ -105,11 +105,6 @@ function getFullDebugPayload() {
   };
 }
 
-// Retained for internal callers that expect the original, comprehensive payload.
-function getDebugPayload() {
-  return getFullDebugPayload();
-}
-
 function getSafeDebugCount(value) {
   return Math.max(0, Math.round(Number(value) || 0));
 }

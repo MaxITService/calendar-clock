@@ -16,8 +16,9 @@ Calendar Clock works on the visible Google Calendar page, not through the Google
 - The toolbar icon opens the snapshot popup for the latest stored data.
 - Overlay controls are available inside Google Calendar after the content script has added the overlay.
 - Experimental page-owned mode is enabled by default and observes Calendar `sync.sync`/`sync.prefetcheventrange` plus Google Tasks `TasksApiService/Sync` at document start. Calendar records use ID `0`, updated time `4`, title `5`, start `35`, and optional end `36`; timed Tasks use ID `0`, title `1.1`, updated time `2`, schedule `8`, and optional Calendar relation `23`. Every record is validated before use. Responses are partial, so the cache is updated incrementally by unique event ID; a drag reschedule replaces that ID's prior time, and request sequence prevents an older response from restoring it.
+- One early MAIN-world observer owns fetch/XHR wrapping, deletion parsing, and response sequencing; the optional structured extractor only subscribes to its bounded messages.
 - Page-owned records do not carry display colors or DOM nodes. Their raw event IDs are matched to the base64 IDs on Calendar DOM chips so arcs retain the original Calendar color and can highlight/scroll to the visible chip; unmatched offscreen records use a stable fallback color.
-- Both structured and DOM records pass through the same versioned projection in the Calendar display timezone before filtering or storage. Timed intervals are `[start, end)`; all-day records retain their civil start and exclusive civil end without timezone-shifting API UTC sentinels.
+- Both structured and DOM records pass through the same versioned projection in the Calendar display timezone before filtering or storage. Timed intervals are `[start, end)`; all-day records retain their civil bounds and can derive overlap directly from an absolute window when display date keys are unavailable.
 - Stored projections are partitioned by Calendar timezone and projection-policy version. Missing/invalid timezone context or an unavailable projection module rejects publication instead of using the computer timezone.
 
 ## Clock Mapping

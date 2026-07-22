@@ -5,7 +5,8 @@ const path = require("path");
 const vm = require("vm");
 
 const repoRoot = path.resolve(__dirname, "..");
-const temporal = require(path.join(repoRoot, "src/temporal-projection/temporal-projection.js"));
+require(path.join(repoRoot, "src/temporal-projection/temporal-projection.js"));
+const temporal = globalThis.CalendarClockTemporalProjection;
 const temporalContext = temporal.createContext("Europe/Helsinki").value;
 
 function project(id, startDate, endDate) {
@@ -21,6 +22,53 @@ function project(id, startDate, endDate) {
 function read(relativePath) {
   return fs.readFileSync(path.join(repoRoot, relativePath), "utf8");
 }
+
+const calendarClockMessageContract = new Set([
+  "CALENDAR_CLOCK_AUDIO_STORAGE_ACK",
+  "CALENDAR_CLOCK_AUDIO_STORAGE_CONNECT",
+  "CALENDAR_CLOCK_AUDIO_STORAGE_READY",
+  "CALENDAR_CLOCK_CLEAR_EVENT_HIGHLIGHT",
+  "CALENDAR_CLOCK_CLEAR_EVENTS",
+  "CALENDAR_CLOCK_CLEAR_STORED_EVENTS",
+  "CALENDAR_CLOCK_COLLECT_EVENTS",
+  "CALENDAR_CLOCK_CREATE_AUDIO_BRIDGE_TOKEN",
+  "CALENDAR_CLOCK_EVENTS",
+  "CALENDAR_CLOCK_EVENT_HOVER",
+  "CALENDAR_CLOCK_EVENT_LEAVE",
+  "CALENDAR_CLOCK_EVENT_TOOLTIP_ENTER",
+  "CALENDAR_CLOCK_EVENT_TOOLTIP_LEAVE",
+  "CALENDAR_CLOCK_FACE_AVAILABILITY",
+  "CALENDAR_CLOCK_HARD_REFRESH_EVENTS",
+  "CALENDAR_CLOCK_HIDE_EVENT_TOOLTIP",
+  "CALENDAR_CLOCK_HIGHLIGHT_EVENT",
+  "CALENDAR_CLOCK_LAUNCH_AUTO_MAGNIFIER",
+  "CALENDAR_CLOCK_MOVE_EVENT_TOOLTIP",
+  "CALENDAR_CLOCK_PAGE_OWNED_INIT",
+  "CALENDAR_CLOCK_REBUILD",
+  "CALENDAR_CLOCK_RELOAD_EVENTS",
+  "CALENDAR_CLOCK_SET_24_HOUR_RADIAL",
+  "CALENDAR_CLOCK_SET_CONSOLE_LOGS",
+  "CALENDAR_CLOCK_SET_DENSITY",
+  "CALENDAR_CLOCK_SET_EVENT_LABELS",
+  "CALENDAR_CLOCK_SET_MAGNIFIER",
+  "CALENDAR_CLOCK_SET_MODE",
+  "CALENDAR_CLOCK_SET_WINDOW",
+  "CALENDAR_CLOCK_SET_WINDOW_START_MARKER",
+  "CALENDAR_CLOCK_SHOW_EVENT_TOOLTIP",
+  "CALENDAR_CLOCK_TASKS",
+  "CALENDAR_CLOCK_UPDATE_EVENT_TOOLTIP",
+  "CALENDAR_CLOCK_VALIDATE_AUDIO_BRIDGE_TOKEN"
+]);
+
+const sourceMessageTypes = new Set();
+fs.readdirSync(path.join(repoRoot, "src"), { recursive: true, withFileTypes: true })
+  .filter(entry => entry.isFile() && entry.name.endsWith(".js"))
+  .forEach(entry => {
+    const source = fs.readFileSync(path.join(entry.parentPath, entry.name), "utf8");
+    Array.from(source.matchAll(/["'](CALENDAR_CLOCK_[A-Z0-9_]+)["']/g), match => match[1])
+      .forEach(type => sourceMessageTypes.add(type));
+  });
+assert.deepStrictEqual([...sourceMessageTypes].sort(), [...calendarClockMessageContract].sort());
 
 function extractFunction(source, name) {
   const start = source.indexOf(`function ${name}(`);
@@ -55,8 +103,8 @@ function loadFunctions(relativePath, names, globals = {}) {
 }
 
 const background = loadFunctions("src/background/background.js", [
-  "getCalendarClockEventDateKey",
   "getCalendarClockEventIdentity",
+  "sortCalendarClockEvents",
   "getCalendarClockEventStartTimestamp",
   "compareCalendarClockEventsChronologically",
   "mergeCalendarClockEvents"
@@ -629,6 +677,8 @@ const clockAppStateSource = read("src/clock/scripts/app-state.js");
 const clockAppInitSource = read("src/clock/scripts/app-init.js");
 const clockBridgeSource = read("src/clock/scripts/calendar-bridge.js");
 const calendarDomReaderSource = read("src/content/calendar-dom-reader.js");
+const actionPopupHtmlSource = read("src/action-popup/action-popup.html");
+const clockPopupHtmlSource = read("src/clock/popup.html");
 const rootTemplateSource = read("src/content/overlay/templates/root.html");
 assert.doesNotMatch(backgroundSource, /chrome\.action\.onClicked/);
 assert.doesNotMatch(calendarContentEntrySource, /CALENDAR_CLOCK_TOGGLE_OVERLAY/);
@@ -637,6 +687,8 @@ assert.doesNotMatch(clockBridgeSource, /IS_ACTION_POPUP\s*\?\s*true/);
 assert.match(clockBridgeSource, /displayWindowStartEl\.value\s*=\s*state\.windowStart/);
 assert.match(clockBridgeSource, /displayWindowEndEl\.value\s*=\s*state\.windowEnd/);
 assert.match(clockBridgeSource, /if \(chromeApi\?\.storage\?\.onChanged\)/);
+assert.match(clockBridgeSource, /else if \(changes\.calendarClockSource\) \{\s*loadStoredCalendarEvents\(\)/);
+assert.match(clockBridgeSource, /CALENDAR_CLOCK_HARD_REFRESH_FALLBACK_MS[\s\S]*hardReset && response\.ok === true[\s\S]*setTimeout[\s\S]*loadStoredCalendarEvents\(\)/);
 assert.match(clockBridgeSource, /data\.type === "CALENDAR_CLOCK_CLEAR_EVENTS"[\s\S]*applyCalendarEvents\(\[\], null\)/);
 assert.match(clockBridgeSource, /data\.type === "CALENDAR_CLOCK_RELOAD_EVENTS"[\s\S]*loadStoredCalendarEvents\(\)/);
 assert.match(clockBridgeSource, /function applyCalendarEvents[\s\S]*hideRenderedCalendarEventVisuals\(\)[\s\S]*buildClock\(\)/);
@@ -644,10 +696,14 @@ assert.match(clockBridgeSource, /chromeApi\.runtime\.sendMessage\(\{[\s\S]*type:
 assert.match(clockBridgeSource, /chromeApi\.tabs\.sendMessage\(tab\.id, \{[\s\S]*type: "CALENDAR_CLOCK_COLLECT_EVENTS"/);
 assert.match(clockBridgeSource, /refreshCalendarButtonEl\.addEventListener\("click", \(\) => \{[\s\S]*hardReset: true/);
 assert.doesNotMatch(clockBridgeSource, /applyCalendarEvents\(response\.events/);
-assert.match(backgroundSource, /CALENDAR_CLOCK_EVENT_STORAGE_KEYS[\s\S]*function hardRefreshCalendarClockEvents[\s\S]*storage\.local\.remove[\s\S]*sendResponse\(\{ ok: true, reloading: true \}\)[\s\S]*tabs\.reload/);
+assert.match(backgroundSource, /function clearCalendarClockStoredEvents[\s\S]*storage\.local\.remove\(CALENDAR_CLOCK_EVENT_STORAGE_KEYS/);
+assert.match(backgroundSource, /response\.ok && reloadTabId !== null[\s\S]*tabs\.reload/);
 assert.match(backgroundSource, /message\?\.type === "CALENDAR_CLOCK_HARD_REFRESH_EVENTS"[\s\S]*hardRefreshCalendarClockEvents/);
 assert.match(calendarDomReaderSource, /if \(!displayDateRange\)[\s\S]*?return calendarClockEvents;/);
 assert.match(calendarDomReaderSource, /response\.events\.length === 0[\s\S]*clearCalendarClockFrameEvents\(\)[\s\S]*reloadCalendarClockFrameEvents\(\)/);
+assert.match(calendarDomReaderSource, /calendarClockEvents = limitCalendarClockEvents\(response\.calendarEvents, captureLimit\)/);
+assert.ok(actionPopupHtmlSource.indexOf("temporal-projection.js") < actionPopupHtmlSource.indexOf("action-popup.js"));
+assert.ok(clockPopupHtmlSource.indexOf("temporal-projection.js") < clockPopupHtmlSource.indexOf("calendar-bridge.js"));
 assert.doesNotMatch(calendarDomReaderSource, /return \{ startDate: new Date\(NaN\), endDate: new Date\(NaN\) \}/);
 assert.match(calendarContentStateSource, /timePanelOpen:\s*false/);
 assert.match(calendarContentStateSource, /eventLabelDefaultVersion:\s*3/);
@@ -682,11 +738,17 @@ assert.match(
   /#calendar-clock-root\.cc-mode-hidden \.cc-clock-surface\s*\{[^}]*display:\s*none/s
 );
 assert.match(overlaySource, /fontSize:\s*getCalendarClockEventLabelFontSizeForMode\(\)/);
-assert.match(overlaySource, /function wipeCalendarClockStoredEvents[\s\S]*clearCalendarClockFrameEvents\(\)[\s\S]*chrome\.storage\.local\.remove[\s\S]*reloadCalendarClockFrameEvents\(\)/);
+assert.match(overlaySource, /function wipeCalendarClockStoredEvents[\s\S]*clearCalendarClockFrameEvents\(\)[\s\S]*requestCalendarClockStoredEventClear[\s\S]*reloadCalendarClockFrameEvents\(\)/);
 assert.match(overlaySource, /function wipeCalendarClockAppSettingsToDefault[\s\S]*wipeCalendarClockStoredEvents[\s\S]*location\.reload\(\)/);
 assert.match(overlaySource, /data-cc-action='refresh'[\s\S]*hardRefreshCalendarClockEventsFromToolbar/);
 assert.match(overlaySource, /function hardRefreshCalendarClockEventsFromToolbar[\s\S]*CALENDAR_CLOCK_HARD_REFRESH_EVENTS/);
 assert.match(rootTemplateSource, /data-cc-action="refresh"[^>]*title="Clear cached events, reload this Google Calendar tab/);
+[
+  "src/temporal-projection/temporal-projection.js",
+  "src/content/main-world-early-deletions.js",
+  "src/content/page-owned-info/main-world-hook.js",
+  "src/content/optional-module-loader.js"
+].forEach(relativePath => assert.doesNotMatch(read(relativePath), /module\.exports/));
 
 const mechanicalClockSoundPath = path.join(repoRoot, "src/content/sound/mechanical-clock/mechanical-clock.ogg");
 assert.ok(fs.existsSync(mechanicalClockSoundPath), "Mechanical clock sound asset is missing");

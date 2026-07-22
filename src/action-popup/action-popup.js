@@ -1,10 +1,6 @@
 const STORAGE_KEYS = [
     "calendarClockEvents",
-    "calendarClockCalendarEvents",
-    "calendarClockTaskEvents",
-    "calendarClockSource",
-    "calendarClockCalendarSource",
-    "calendarClockTaskSource"
+    "calendarClockSource"
 ];
 
 const snapshotStatusEl = document.getElementById("snapshotStatus");
@@ -18,12 +14,11 @@ const openCalendarButtonEl = document.getElementById("openCalendarButton");
 function getSafeEvents(value, source = {}) {
     if (!Array.isArray(value)) return [];
     const context = source?.temporalContext;
+    const temporal = globalThis.CalendarClockTemporalProjection;
     return value.filter(event => {
         if (event?.capturedFrom === "google-tasks-dom") return true;
-        return event?.temporal?.contractVersion === context?.contractVersion
-            && event?.temporal?.projectionPolicyVersion === context?.projectionPolicyVersion
-            && event?.temporal?.contextFingerprint === context?.fingerprint
-            && event.temporal.contextFingerprint === source?.contextFingerprint;
+        return temporal?.validateEvent?.(event, context) === true
+            && context?.fingerprint === source?.contextFingerprint;
     });
 }
 
@@ -259,7 +254,16 @@ function loadSnapshot() {
         return;
     }
 
-    chromeApi.storage.local.get(STORAGE_KEYS, renderSnapshot);
+    chromeApi.storage.local.get(STORAGE_KEYS, result => {
+        const runtimeError = chromeApi.runtime?.lastError;
+        if (runtimeError) {
+            renderSnapshot({});
+            snapshotStatusEl.textContent = "Stored snapshot unavailable";
+            snapshotStatusEl.title = String(runtimeError.message || runtimeError);
+            return;
+        }
+        renderSnapshot(result);
+    });
 }
 
 openCalendarButtonEl.addEventListener("click", () => {

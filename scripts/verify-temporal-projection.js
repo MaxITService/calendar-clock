@@ -7,8 +7,10 @@ const vm = require("vm");
 const repoRoot = path.resolve(__dirname, "..");
 const temporalPath = path.join(repoRoot, "src/temporal-projection/temporal-projection.js");
 const backgroundPath = path.join(repoRoot, "src/background/background.js");
-const temporal = require(temporalPath);
-const pageOwnedHook = require(path.join(repoRoot, "src/content/page-owned-info/main-world-hook.js"));
+require(temporalPath);
+require(path.join(repoRoot, "src/content/page-owned-info/main-world-hook.js"));
+const temporal = globalThis.CalendarClockTemporalProjection;
+const pageOwnedHook = globalThis.CalendarClockPageOwnedHook;
 
 function value(result) {
   assert.equal(result.ok, true, result.diagnostic?.message);
@@ -53,6 +55,43 @@ function checkProjectionEdges() {
   );
   assert.equal(temporal.overlapsDateKeys(helsinkiCrossMidnight, ["2026-07-21"]), true);
   assert.equal(temporal.overlapsDateKeys(helsinkiCrossMidnight, ["2026-07-21", "2026-07-22"]), true);
+
+  const helsinkiAllDay = allDay("all-day", "2026-07-21", "2026-07-22", "Europe/Helsinki");
+  assert.equal(temporal.overlapsInstantRange(
+    helsinkiAllDay,
+    "2026-07-20T21:00:00.000Z",
+    "2026-07-21T21:00:00.000Z",
+    []
+  ), true);
+  assert.equal(temporal.overlapsInstantRange(
+    helsinkiAllDay,
+    "2026-07-19T21:00:00.000Z",
+    "2026-07-20T21:00:00.000Z",
+    []
+  ), false);
+  assert.equal(temporal.getInstantRangeOverlapMinutes(
+    helsinkiAllDay,
+    "2026-07-20T21:00:00.000Z",
+    "2026-07-21T21:00:00.000Z",
+    []
+  ), 24 * 60);
+  assert.equal(temporal.isCaptureViewDateScopeTrusted({
+    mode: "week",
+    visibleDateKeys: ["2026-07-21"],
+    dateKeySource: "dated-url"
+  }), true);
+  assert.equal(temporal.canCaptureViewPurgeMissingDates({
+    mode: "week",
+    visibleDateKeys: ["2026-07-21"],
+    dateKeySource: "dated-url",
+    canClearMissingDates: true
+  }), true);
+  assert.equal(temporal.canCaptureViewPurgeMissingDates({
+    mode: "month",
+    visibleDateKeys: ["2026-07-21"],
+    dateKeySource: "dated-url",
+    canClearMissingDates: true
+  }), false);
 
   const losAngelesCrossMidnight = timed(
     "la-cross-midnight",
@@ -385,7 +424,7 @@ async function checkSerializedFeedSavesAndReadFailure() {
     "UTC"
   );
   const projectionContext = context("UTC");
-  const calendarSave = send({
+  const calendarMessage = {
     type: "CALENDAR_CLOCK_EVENTS",
     events: [event],
     displayEvents: [event],
@@ -402,7 +441,8 @@ async function checkSerializedFeedSavesAndReadFailure() {
     temporalContext: projectionContext,
     feedMode: "dom",
     effectiveSource: { activeSource: "google-calendar-dom" }
-  });
+  };
+  const calendarSave = send(calendarMessage);
   const taskSave = send({
     type: "CALENDAR_CLOCK_TASKS",
     tasks: [{
@@ -426,6 +466,16 @@ async function checkSerializedFeedSavesAndReadFailure() {
   );
   assert.deepEqual(state.calendarClockTaskEvents.map(item => item.id), ["serialized-task"]);
   assert.deepEqual(state.calendarClockEvents.map(item => item.id), ["serialized-calendar", "serialized-task"]);
+
+  const resetResponse = await send({
+    ...calendarMessage,
+    effectiveSource: { activeSource: "google-page-owned" }
+  });
+  assert.equal(resetResponse.ok, true, JSON.stringify(resetResponse));
+  assert.deepEqual(state.calendarClockTaskEvents, []);
+  assert.equal(state.calendarClockTaskSource, null);
+  assert.equal(state.calendarClockCaptureMeta.task, null);
+  assert.equal(state.calendarClockSource.taskCount, 0);
 }
 
 function checkStoreAndBoundary() {

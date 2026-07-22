@@ -1,15 +1,15 @@
 // Loads the isolated Calendar sync watcher without making the DOM reader depend on it.
 (function initializeCalendarClockOptionalModules(root, factory) {
   const bridge = factory();
-  if (typeof module === "object" && module.exports && typeof process === "object" && process.versions?.node) {
-    module.exports = bridge;
-    return;
-  }
+  root.CalendarClockOptionalModuleLoader = bridge;
   bridge.install(root);
 })(globalThis, () => {
+  // Isolated-world only: the MAIN-world hook cannot access chrome.storage.
   const STATE_KEY = "calendarClockOverlayState";
   const MODULE_PATH = "src/content/page-owned-info/main-world-hook.js";
   const TEMPORAL_MODULE_PATH = "src/temporal-projection/temporal-projection.js";
+  // Cross-world protocol invariant: keep these byte-for-byte in sync with
+  // page-owned-info/main-world-hook.js. Separate JS worlds cannot share a binding.
   const MAX_RECORDS = 200;
   const MAX_TEXT = 500;
   const TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
@@ -209,7 +209,7 @@
         status = {
           ...status,
           phase: port ? "ready" : status.phase,
-          reason: enabled ? "waiting for a relevant Calendar sync response" : "disabled; wrappers are dormant",
+          reason: enabled ? "waiting for a relevant Calendar sync response" : "disabled; network observer is dormant",
           extractedRecords: 0
         };
         configureMainWorld();
@@ -244,7 +244,7 @@
       port.onmessage = event => {
         const message = event.data;
         if (isPlainObject(message) && message.type === "ready" && message.channelId === channelId) {
-          status = { ...status, phase: "ready", reason: enabled ? "waiting for a relevant Calendar sync response" : "disabled; wrappers are dormant" };
+          status = { ...status, phase: "ready", reason: enabled ? "waiting for a relevant Calendar sync response" : "disabled; network observer is dormant" };
           configureMainWorld();
           notify();
           return;

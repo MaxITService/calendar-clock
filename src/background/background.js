@@ -19,6 +19,10 @@ const CALENDAR_CLOCK_EVENT_STORAGE_KEYS = [
   "calendarClockFeedMode",
   "calendarClockActiveSource"
 ];
+const CALENDAR_CLOCK_FEED_READ_KEYS = [
+  ...CALENDAR_CLOCK_EVENT_STORAGE_KEYS,
+  "calendarClockOverlayState"
+];
 const CALENDAR_CLOCK_CAPTURE_DATE_KEY_SOURCES = new Set([
   "dated-url",
   "visible-dom",
@@ -26,7 +30,6 @@ const CALENDAR_CLOCK_CAPTURE_DATE_KEY_SOURCES = new Set([
   "today-fallback",
   "source-conflict"
 ]);
-const CALENDAR_CLOCK_PURGE_DATE_KEY_SOURCES = new Set(["dated-url", "visible-dom"]);
 let calendarClockTemporalProjection = null;
 let calendarClockTemporalProjectionDiagnostic = "temporal projection module was not loaded";
 try {
@@ -40,6 +43,12 @@ try {
 }
 const calendarClockAudioBridgeTokens = new Map();
 let calendarClockFeedSaveQueue = Promise.resolve();
+
+function enqueueCalendarClockFeedMutation(operation) {
+  const queuedMutation = calendarClockFeedSaveQueue.then(operation);
+  calendarClockFeedSaveQueue = queuedMutation.catch(() => undefined);
+  return queuedMutation;
+}
 
 function removeExpiredCalendarClockAudioBridgeTokens(now = Date.now()) {
   calendarClockAudioBridgeTokens.forEach((record, token) => {
@@ -104,33 +113,45 @@ function normalizeCalendarClockCaptureLimit(value) {
     : CALENDAR_CLOCK_CAPTURE_LIMIT;
 }
 
+function clearCalendarClockStoredEvents(options, sendResponse) {
+  const reloadTabId = Number.isInteger(options?.reloadTabId) ? options.reloadTabId : null;
+  enqueueCalendarClockFeedMutation(() => new Promise(resolve => {
+    const complete = response => {
+      try {
+        sendResponse(response);
+        if (response.ok && reloadTabId !== null) {
+          chrome.tabs.reload(reloadTabId, () => {
+            // Storage is already clean if the tab closed during the reset.
+            void chrome.runtime.lastError;
+          });
+        }
+      } finally {
+        resolve();
+      }
+    };
+
+    try {
+      chrome.storage.local.remove(CALENDAR_CLOCK_EVENT_STORAGE_KEYS, () => {
+        const storageError = chrome.runtime.lastError;
+        if (storageError) {
+          complete({ ok: false, error: storageError.message || "Calendar event cache could not be cleared." });
+          return;
+        }
+        clearCalendarClockBadge();
+        complete({ ok: true, reloading: reloadTabId !== null });
+      });
+    } catch (error) {
+      complete({ ok: false, error: String(error?.message || error) });
+    }
+  }));
+}
+
 function hardRefreshCalendarClockEvents(tabId, sendResponse) {
   if (!Number.isInteger(tabId) || tabId < 0) {
     sendResponse({ ok: false, error: "Active Google Calendar tab is unavailable." });
     return;
   }
-
-  chrome.storage.local.remove(CALENDAR_CLOCK_EVENT_STORAGE_KEYS, () => {
-    const storageError = chrome.runtime.lastError;
-    if (storageError) {
-      sendResponse({ ok: false, error: storageError.message || "Calendar event cache could not be cleared." });
-      return;
-    }
-
-    clearCalendarClockBadge();
-    // Reply before navigation destroys an embedded clock frame.
-    sendResponse({ ok: true, reloading: true });
-    chrome.tabs.reload(tabId, () => {
-      // Consume lastError when the tab closed during the reset. Storage is
-      // already clean, so a later normal Calendar load remains self-healing.
-      void chrome.runtime.lastError;
-    });
-  });
-}
-
-function getCalendarClockEventDateKey(event) {
-  if (calendarClockTemporalProjection?.validateEvent?.(event)) return event.temporal.firstDateKey;
-  return "";
+  clearCalendarClockStoredEvents({ reloadTabId: tabId }, sendResponse);
 }
 
 function getCalendarClockEventIdentity(event) {
@@ -186,13 +207,13 @@ function compareCalendarClockEventsChronologically(a, b) {
     return leftTimestamp - rightTimestamp;
   }
 
-  const leftDateKey = getCalendarClockEventDateKey(a);
-  const rightDateKey = getCalendarClockEventDateKey(b);
+  const leftDateKey = calendarClockTemporalProjection?.validateEvent?.(a) ? a.temporal.firstDateKey : "";
+  const rightDateKey = calendarClockTemporalProjection?.validateEvent?.(b) ? b.temporal.firstDateKey : "";
   const dateDelta = leftDateKey && rightDateKey ? leftDateKey.localeCompare(rightDateKey) : 0;
   return dateDelta
-    || String(a.start || "").localeCompare(String(b.start || ""))
-    || String(a.end || "").localeCompare(String(b.end || ""))
-    || String(a.title || "").localeCompare(String(b.title || ""));
+    || String(a?.start || "").localeCompare(String(b?.start || ""))
+    || String(a?.end || "").localeCompare(String(b?.end || ""))
+    || String(a?.title || "").localeCompare(String(b?.title || ""));
 }
 
 function mergeCalendarClockEvents(calendarEvents, taskEvents) {
@@ -310,10 +331,7 @@ function getCaptureViewDateKeys(captureView) {
 }
 
 function canCalendarClockCaptureViewPurgeMissingDates(captureView) {
-  if (captureView?.canClearMissingDates !== true
-      || !CALENDAR_CLOCK_PURGE_DATE_KEY_SOURCES.has(captureView?.dateKeySource)
-      || !getCaptureViewDateKeys(captureView).length) return false;
-  return captureView.dateKeySource !== "dated-url" || /^(day|week)$/.test(String(captureView?.mode || ""));
+  return calendarClockTemporalProjection?.canCaptureViewPurgeMissingDates?.(captureView) === true;
 }
 
 function filterCalendarEventsToCaptureView(events, captureView, expectedContext) {
@@ -455,14 +473,7 @@ function getEffectiveCalendarEvents(freshDisplayEvents, store, displayDateKeys, 
     const stableId = getCalendarClockStableEventId(event);
     return !stableId || !freshStableIds.has(stableId);
   });
-  return sortCalendarClockEvents(mergeCalendarClockEvents(freshDisplayEvents, reconciledStoredEvents));
-}
-
-function getCalendarClockEffectiveEventsForSource(_activeSource, freshDisplayEvents, store, displayDateKeys, windowStartDate, windowEndDate, expectedContext) {
-  // The fresh page-owned snapshot is authoritative only for Google Calendar's
-  // visible dates. The clock window can cross into an adjacent, hidden week,
-  // so keep relevant occurrences from the bounded canonical store as well.
-  return getEffectiveCalendarEvents(freshDisplayEvents, store, displayDateKeys, windowStartDate, windowEndDate, expectedContext);
+  return mergeCalendarClockEvents(freshDisplayEvents, reconciledStoredEvents);
 }
 
 function shouldResetCalendarClockEventStore(previousFeedMode, nextFeedMode, previousActiveSource, nextActiveSource, hasCalendarEvents = true) {
@@ -574,7 +585,7 @@ function saveCalendarClockFeed(partial, sender, sendResponse) {
     return;
   }
 
-  const queuedSave = calendarClockFeedSaveQueue.then(() => new Promise(resolve => {
+  enqueueCalendarClockFeedMutation(() => new Promise(resolve => {
     let completed = false;
     const complete = response => {
       if (completed) return;
@@ -595,24 +606,9 @@ function saveCalendarClockFeed(partial, sender, sendResponse) {
       });
     }
   }));
-  calendarClockFeedSaveQueue = queuedSave.catch(() => undefined);
 }
 
 function saveCalendarClockFeedTransaction(partial, sender, sendResponse, hasCalendarEvents, temporalFeed) {
-  const storageKeys = [
-    "calendarClockCalendarEvents",
-    "calendarClockTaskEvents",
-    "calendarClockEvents",
-    "calendarClockSource",
-    "calendarClockCalendarSource",
-    "calendarClockTaskSource",
-    "calendarClockCaptureMeta",
-    "calendarClockCalendarEventStore",
-    "calendarClockFeedMode",
-    "calendarClockActiveSource",
-    "calendarClockOverlayState"
-  ];
-
   const failRead = error => {
     const storageStatus = {
       kind: "read-failed",
@@ -622,7 +618,7 @@ function saveCalendarClockFeedTransaction(partial, sender, sendResponse, hasCale
   };
 
   try {
-    chrome.storage.local.get(storageKeys, result => {
+    chrome.storage.local.get(CALENDAR_CLOCK_FEED_READ_KEYS, result => {
       const storageError = chrome.runtime.lastError;
       if (storageError) {
         failRead(storageError);
@@ -705,8 +701,7 @@ function saveCalendarClockFeedTransaction(partial, sender, sendResponse, hasCale
         )
         : normalizeCalendarClockEventStore(result.calendarClockCalendarEventStore);
       const effectiveCalendarEvents = hasCalendarEvents
-        ? getCalendarClockEffectiveEventsForSource(
-          activeSource,
+        ? getEffectiveCalendarEvents(
           freshWindowCalendarEvents,
           calendarEventStore,
           partial.displayDateKeys,
@@ -727,11 +722,12 @@ function saveCalendarClockFeedTransaction(partial, sender, sendResponse, hasCale
       const taskEvents = feedMode === "page-owned"
         ? []
         : partial.taskEvents ?? (resetCalendarEventStore ? [] : (Array.isArray(result.calendarClockTaskEvents) ? result.calendarClockTaskEvents : []));
+      const resetTaskFeed = resetCalendarEventStore && !hasTaskEvents;
       const events = mergeCalendarClockEvents(calendarEvents, taskEvents);
       const previousCalendarSource = getFeedSource(result.calendarClockCalendarSource, previousSource?.calendarCapturedAt
         ? { url: previousSource.calendarUrl || previousSource.url, capturedAt: previousSource.calendarCapturedAt, count: previousSource.calendarCount, captureMeta: previousCaptureMeta.calendar }
         : null);
-      const previousTaskSource = feedMode === "page-owned" ? null : getFeedSource(result.calendarClockTaskSource, previousSource?.taskCapturedAt
+      const previousTaskSource = feedMode === "page-owned" || resetTaskFeed ? null : getFeedSource(result.calendarClockTaskSource, previousSource?.taskCapturedAt
         ? { url: previousSource.taskUrl || previousSource.url, capturedAt: previousSource.taskCapturedAt, count: previousSource.taskCount, captureMeta: previousCaptureMeta.task }
         : null);
       const calendarMeta = hasCalendarEvents
@@ -744,6 +740,8 @@ function saveCalendarClockFeedTransaction(partial, sender, sendResponse, hasCale
         }, partial.calendarCaptureMeta?.source || "google-calendar-dom", calendarEvents.length)
         : (previousCalendarSource?.captureMeta || previousCaptureMeta.calendar || null);
       const taskMeta = feedMode === "page-owned"
+        ? null
+        : resetTaskFeed
         ? null
         : hasTaskEvents
         ? normalizeCaptureMetaEntry(partial.taskCaptureMeta, "google-tasks-dom", taskEvents.length)
@@ -767,6 +765,8 @@ function saveCalendarClockFeedTransaction(partial, sender, sendResponse, hasCale
         }
         : previousCalendarSource;
       const taskSource = feedMode === "page-owned"
+        ? null
+        : resetTaskFeed
         ? null
         : hasTaskEvents
         ? { url: sourceUrl, capturedAt, count: taskEvents.length, captureMeta: taskMeta }
@@ -853,6 +853,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const requestedTabId = Number(message.tabId);
     const tabId = Number.isInteger(requestedTabId) ? requestedTabId : sender?.tab?.id;
     hardRefreshCalendarClockEvents(tabId, sendResponse);
+    return true;
+  }
+
+  if (message?.type === "CALENDAR_CLOCK_CLEAR_STORED_EVENTS") {
+    clearCalendarClockStoredEvents({}, sendResponse);
     return true;
   }
 

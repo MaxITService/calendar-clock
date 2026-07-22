@@ -1,13 +1,12 @@
 // MAIN-world Calendar sync observer. It never exposes extension APIs or unsanitized payloads.
 (function initializeCalendarClockPageOwnedHook(root, factory) {
   const moduleApi = factory();
-  if (typeof module === "object" && module.exports && typeof process === "object" && process.versions?.node) {
-    module.exports = moduleApi;
-    return;
-  }
+  root.CalendarClockPageOwnedHook = moduleApi;
   moduleApi.install(root);
 })(typeof window === "undefined" ? globalThis : window, () => {
   const MAX_RESPONSE_CHARS = 2 * 1024 * 1024;
+  // Cross-world protocol invariant: keep these byte-for-byte in sync with
+  // ../optional-module-loader.js. STATE_KEY stays isolated-world only.
   const MAX_RECORDS = 200;
   const MAX_VISITED_NODES = 50000;
   const TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
@@ -72,16 +71,7 @@
         minute: "2-digit"
       });
     } catch (_error) {
-      timeZone = "UTC";
-      formatter = new Intl.DateTimeFormat("en-CA", {
-        timeZone,
-        hourCycle: "h23",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit"
-      });
+      return null;
     }
     const parts = Object.fromEntries(formatter.formatToParts(new Date(milliseconds))
       .filter(part => part.type !== "literal")
@@ -112,7 +102,9 @@
       : endMilliseconds === startPoint.milliseconds ? "point" : "range";
     if (durationKind === "range" && endMilliseconds <= startPoint.milliseconds) return null;
     const zonedStart = startPoint.allDay ? null : formatZoned(startPoint.milliseconds, startPoint.timeZone || endPoint?.timeZone || "UTC");
-    const zonedEnd = startPoint.allDay ? null : formatZoned(endMilliseconds, endPoint?.timeZone || zonedStart.timeZone);
+    if (!startPoint.allDay && !zonedStart) return null;
+    const zonedEnd = startPoint.allDay ? null : formatZoned(endMilliseconds, endPoint?.timeZone || zonedStart?.timeZone || "UTC");
+    if (!startPoint.allDay && !zonedEnd) return null;
     const occurrenceAnchor = startPoint.allDay ? startPoint.civilDateKey : new Date(startPoint.milliseconds).toISOString();
 
     return {
@@ -160,6 +152,7 @@
     const standaloneId = `task:${taskId}`;
     const id = relatedEventId || standaloneId;
     const zonedStart = formatZoned(startPoint.milliseconds, startPoint.timeZone);
+    if (!zonedStart) return null;
 
     return {
       id,
@@ -236,49 +229,6 @@
     } catch (_error) {
       return false;
     }
-  }
-
-  function isCalendarSyncMutationRequest(url, method, baseUrl) {
-    if (String(method || "GET").toUpperCase() !== "POST") return false;
-    try {
-      const parsed = new URL(url, baseUrl);
-      return parsed.origin === "https://calendar.google.com"
-        && /^\/calendar\/u\/\d+\/sync\.sync$/.test(parsed.pathname);
-    } catch (_error) {
-      return false;
-    }
-  }
-
-  function extractDeletedCalendarEventIdsFromRequest(url, method, body, baseUrl) {
-    if (!isCalendarSyncMutationRequest(url, method, baseUrl) || typeof body !== "string") return [];
-
-    const rawRequest = new URLSearchParams(body).get("f.req");
-    if (!rawRequest || rawRequest.length > MAX_RESPONSE_CHARS) return [];
-    let data;
-    try {
-      data = JSON.parse(rawRequest);
-    } catch (_error) {
-      return [];
-    }
-
-    const operations = data?.[0]?.[4];
-    if (!Array.isArray(operations)) return [];
-    return Array.from(new Set(operations
-      .map(operation => {
-        const eventStub = operation?.[2]?.[0]?.[1];
-        const deletionPatch = eventStub?.[3]?.[0];
-        const isDeletionPatch = Array.isArray(deletionPatch)
-          && deletionPatch.length > 0
-          && deletionPatch.every(value => value === null || (Array.isArray(value) && value.length === 0));
-        if (!Array.isArray(eventStub)
-            || eventStub.length !== 5
-            || eventStub[1] !== null
-            || eventStub[2] !== null
-            || eventStub[4] !== 0
-            || !isDeletionPatch) return "";
-        return normalizeCalendarEventId(eventStub[0]);
-      })
-      .filter(Boolean)));
   }
 
   function recordConfirmedCalendarDeletions(cache, tombstones, deletedIds, requestSequence, confirmedAt, limit = MAX_RECORDS) {
@@ -367,32 +317,23 @@
 
   function install(scope) {
     const marker = Symbol.for("calendarClock.pageOwnedHook.v1");
-    if (!scope || scope[marker]) return;
+    if (!scope?.location || typeof scope.addEventListener !== "function" || scope[marker]) return;
     Object.defineProperty(scope, marker, { value: true, configurable: false });
 
     let enabled = false;
     let token = "";
     let bridgePort = null;
-    let requestSequence = 0;
     const recordCache = new Map();
     const deletionTombstones = new Map();
-    const xhrRequests = new WeakMap();
-    const observedXhrs = new WeakSet();
     const status = {
       phase: "ready",
       transport: "",
       endpoint: "",
-      reason: "disabled; wrappers are dormant",
+      reason: "disabled; network observer is dormant",
       capturedResponses: 0,
       extractedRecords: 0,
       lastCapturedAt: 0
     };
-
-    function getNextRelevantRequestSequence(url) {
-      if (!enabled || !isRelevantResponseUrl(url, scope.location.href)) return 0;
-      requestSequence += 1;
-      return requestSequence;
-    }
 
     function publish(records, transport, endpoint, responseSequence = 0) {
       mergeLatestRecordCache(recordCache, records, MAX_RECORDS, {
@@ -451,16 +392,9 @@
         deletedIds,
         String(message.transport || "early").slice(0, 20),
         String(message.endpoint || "").slice(0, 100),
-        requestSequence
+        Math.max(0, Number(message.requestSequence) || 0)
       );
     });
-
-    function inspectRequest(body, url, method) {
-      if (!enabled || !isCalendarSyncMutationRequest(url, method, scope.location.href)) return [];
-      const text = typeof body === "string" ? body : body?.toString?.();
-      if (typeof text !== "string" || text.length > MAX_RESPONSE_CHARS) return [];
-      return extractDeletedCalendarEventIdsFromRequest(url, method, text, scope.location.href);
-    }
 
     function inspectText(text, url, transport, responseSequence = 0) {
       if (!enabled || typeof text !== "string" || text.length > MAX_RESPONSE_CHARS) return;
@@ -474,115 +408,38 @@
       publish(extractCalendarRecords(payload), transport, endpoint, responseSequence);
     }
 
-    const fetchDescriptor = Object.getOwnPropertyDescriptor(scope, "fetch");
-    if (typeof scope.fetch === "function") {
-      const nativeFetch = scope.fetch;
-      const wrappedFetch = new Proxy(nativeFetch, {
-        apply(target, thisArg, argumentsList) {
-          const input = argumentsList[0];
-          const init = argumentsList[1];
-          const url = typeof input === "string" || input instanceof URL ? String(input) : input?.url || "";
-          const method = init?.method || input?.method || "GET";
-          const responseSequence = getNextRelevantRequestSequence(url);
-          let deletedIdsPromise = Promise.resolve([]);
-          if (enabled && isCalendarSyncMutationRequest(url, method, scope.location.href) && init?.body !== undefined) {
-            deletedIdsPromise = Promise.resolve(inspectRequest(init.body, url, method));
-          } else if (enabled
-              && isCalendarSyncMutationRequest(url, method, scope.location.href)
-              && input?.clone
-              && typeof input.clone === "function") {
-            try {
-              deletedIdsPromise = input.clone().text()
-                .then(body => inspectRequest(body, url, method), () => []);
-            } catch (_error) {
-              deletedIdsPromise = Promise.resolve([]);
-            }
-          }
-          const result = Reflect.apply(target, thisArg, argumentsList);
-          if (enabled) {
-            Promise.resolve(result).then(response => {
-              if (!response || !isRelevantResponseUrl(response.url, scope.location.href)) return;
-              deletedIdsPromise.then(deletedIds => {
-                if (response.ok === true && deletedIds.length) {
-                  const endpoint = new URL(url, scope.location.href).pathname;
-                  publishDeletedRecords(deletedIds, "fetch", endpoint, responseSequence);
-                }
-                const length = Number(response.headers?.get?.("content-length"));
-                if (Number.isFinite(length) && length > MAX_RESPONSE_CHARS) return;
-                response.clone().text()
-                  .then(text => inspectText(text, response.url, "fetch", responseSequence), () => {});
-              }, () => {});
-            }, () => {});
-          }
-          return result;
+    earlyDeletionObserver?.subscribeResponses?.(message => {
+      if (!enabled) return;
+      const responseSequence = Math.max(0, Number(message?.requestSequence) || 0);
+      if (message?.transport === "fetch") {
+        const response = message.response;
+        const url = response?.url || message.url || "";
+        if (!response || !isRelevantResponseUrl(url, scope.location.href)) return;
+        const length = Number(response.headers?.get?.("content-length"));
+        if (Number.isFinite(length) && length > MAX_RESPONSE_CHARS) return;
+        try {
+          response.clone().text()
+            .then(text => inspectText(text, url, "fetch", responseSequence), () => {});
+        } catch (_error) {
+          // An unreadable response clone fails closed.
         }
-      });
-      Object.defineProperty(scope, "fetch", fetchDescriptor ? { ...fetchDescriptor, value: wrappedFetch } : {
-        value: wrappedFetch, configurable: true, writable: true
-      });
-    }
+        return;
+      }
 
-    const xhrPrototype = scope.XMLHttpRequest?.prototype;
-    if (xhrPrototype) {
-      const openDescriptor = Object.getOwnPropertyDescriptor(xhrPrototype, "open");
-      const sendDescriptor = Object.getOwnPropertyDescriptor(xhrPrototype, "send");
-      if (typeof openDescriptor?.value === "function") {
-        const wrappedOpen = new Proxy(openDescriptor.value, {
-          apply(target, thisArg, argumentsList) {
-            const url = String(argumentsList[1] || "");
-            xhrRequests.set(thisArg, {
-              method: String(argumentsList[0] || "GET"),
-              url,
-              responseSequence: 0,
-              deletedIds: []
-            });
-            return Reflect.apply(target, thisArg, argumentsList);
-          }
-        });
-        Object.defineProperty(xhrPrototype, "open", { ...openDescriptor, value: wrappedOpen });
+      if (message?.transport !== "xhr") return;
+      const xhr = message.xhr;
+      const url = xhr?.responseURL || message.url || "";
+      if (!xhr || !isRelevantResponseUrl(url, scope.location.href)) return;
+      try {
+        if (xhr.responseType === "" || xhr.responseType === "text") {
+          inspectText(xhr.responseText, url, "xhr", responseSequence);
+        } else if (xhr.responseType === "json") {
+          inspectText(JSON.stringify(xhr.response), url, "xhr", responseSequence);
+        }
+      } catch (_error) {
+        // Cross-origin or unsupported response types fail closed.
       }
-      if (typeof sendDescriptor?.value === "function") {
-        const wrappedSend = new Proxy(sendDescriptor.value, {
-          apply(target, thisArg, argumentsList) {
-            const request = xhrRequests.get(thisArg) || { method: "GET", url: "" };
-            request.responseSequence = getNextRelevantRequestSequence(request.url);
-            request.deletedIds = inspectRequest(argumentsList[0], request.url, request.method);
-            xhrRequests.set(thisArg, request);
-            if (!observedXhrs.has(thisArg)) {
-              observedXhrs.add(thisArg);
-              thisArg.addEventListener("loadend", () => {
-                if (!enabled) return;
-                const completedRequest = xhrRequests.get(thisArg) || request;
-                const url = thisArg.responseURL || completedRequest.url || "";
-                if (!isRelevantResponseUrl(url, scope.location.href)) return;
-                const statusCode = Number(thisArg.status) || 0;
-                if (statusCode >= 200 && statusCode < 300 && completedRequest.deletedIds?.length) {
-                  const endpoint = new URL(completedRequest.url, scope.location.href).pathname;
-                  publishDeletedRecords(
-                    completedRequest.deletedIds,
-                    "xhr",
-                    endpoint,
-                    completedRequest.responseSequence
-                  );
-                }
-                try {
-                  if (thisArg.responseType === "" || thisArg.responseType === "text") {
-                    inspectText(thisArg.responseText, url, "xhr", completedRequest.responseSequence);
-                  } else if (thisArg.responseType === "json") {
-                    const text = JSON.stringify(thisArg.response);
-                    inspectText(text, url, "xhr", completedRequest.responseSequence);
-                  }
-                } catch (_error) {
-                  // Cross-origin or unsupported response types fail closed.
-                }
-              });
-            }
-            return Reflect.apply(target, thisArg, argumentsList);
-          }
-        });
-        Object.defineProperty(xhrPrototype, "send", { ...sendDescriptor, value: wrappedSend });
-      }
-    }
+    });
 
     function acceptBridge(event) {
       const message = event.data;
@@ -599,9 +456,8 @@
         enabled = config.enabled;
         recordCache.clear();
         deletionTombstones.clear();
-        requestSequence = 0;
         status.phase = "ready";
-        status.reason = enabled ? "waiting for a relevant Calendar sync response" : "disabled; wrappers are dormant";
+        status.reason = enabled ? "waiting for a relevant Calendar sync response" : "disabled; network observer is dormant";
         status.extractedRecords = 0;
       };
       bridgePort.start();
@@ -620,8 +476,6 @@
     extractCalendarRecords,
     parseJsonResponse,
     isRelevantResponseUrl,
-    isCalendarSyncMutationRequest,
-    extractDeletedCalendarEventIdsFromRequest,
     recordConfirmedCalendarDeletions,
     isTrustedBridgeInit,
     mergeLatestRecordCache,

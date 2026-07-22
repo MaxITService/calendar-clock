@@ -325,6 +325,13 @@ function cloneCalendarClockWarningRow(type) {
 function renderCalendarClockWarningRows(container, rows) {
   container.replaceChildren();
 
+  if (rows.publicationError) {
+    const row = cloneCalendarClockWarningRow("publication-error");
+    const message = row.querySelector("[data-cc-publication-error-message]");
+    if (message) message.textContent = rows.publicationError;
+    container.appendChild(row);
+  }
+
   if (rows.storageStatus?.kind === "history-trimmed") {
     const row = cloneCalendarClockWarningRow("storage-limit");
     const message = row.querySelector("[data-cc-storage-limit-message]");
@@ -332,10 +339,11 @@ function renderCalendarClockWarningRows(container, rows) {
       message.textContent = `Local storage was full, so Calendar Clock removed ${rows.storageStatus.removedEventCount} oldest saved event(s). The newest ${rows.storageStatus.retainedEventCount} event(s) remain.`;
     }
     container.appendChild(row);
-  } else if (rows.storageStatus?.kind === "write-failed") {
+  } else if (["write-failed", "read-failed", "clear-failed"].includes(rows.storageStatus?.kind)) {
     const row = cloneCalendarClockWarningRow("storage-limit");
     const message = row.querySelector("[data-cc-storage-limit-message]");
-    if (message) message.textContent = "Calendar Clock could not save this snapshot. Existing saved data was left unchanged.";
+    if (message) message.textContent = rows.storageStatus.message
+      || "Calendar Clock could not update its saved snapshot. Existing saved data was left unchanged.";
     container.appendChild(row);
   }
 
@@ -1445,19 +1453,20 @@ function applyPanelPosition(panel, xKey, yKey) {
   return changed;
 }
 
-const CALENDAR_CLOCK_EVENT_STORAGE_KEYS = [
-  "calendarClockCalendarEvents",
-  "calendarClockTaskEvents",
-  "calendarClockEvents",
-  "calendarClockSource",
-  "calendarClockCalendarSource",
-  "calendarClockTaskSource",
-  "calendarClockCaptureMeta",
-  "calendarClockStorageStatus",
-  "calendarClockCalendarEventStore",
-  "calendarClockFeedMode",
-  "calendarClockActiveSource"
-];
+function requestCalendarClockStoredEventClear(callback) {
+  const sent = sendCalendarClockRuntimeMessage({ type: "CALENDAR_CLOCK_CLEAR_STORED_EVENTS" }, response => {
+    if (response?.ok !== true) {
+      const message = String(response?.error || "Calendar event cache could not be cleared.");
+      calendarClockStorageStatus = { kind: "clear-failed", message };
+      calendarClockWarn("failed to clear stored events", message);
+      updatePanelStats();
+      callback?.(false);
+      return;
+    }
+    callback?.(true);
+  });
+  if (!sent) callback?.(false);
+}
 
 function setCalendarClockPageOwnedMode(enabled) {
   calendarClockState.pageOwnedInfo = enabled === true;
@@ -1489,14 +1498,7 @@ function setCalendarClockPageOwnedMode(enabled) {
         markCalendarClockExtensionContextInvalidated(runtimeError);
         return;
       }
-      chrome.storage.local.remove(CALENDAR_CLOCK_EVENT_STORAGE_KEYS, () => {
-        const removeError = getCalendarClockRuntimeLastError();
-        if (removeError) {
-          markCalendarClockExtensionContextInvalidated(removeError);
-          return;
-        }
-        finish();
-      });
+      requestCalendarClockStoredEventClear(() => finish());
     });
   } catch (error) {
     if (!markCalendarClockExtensionContextInvalidated(error)) calendarClockWarn("failed to switch event source", error);
@@ -1538,13 +1540,8 @@ function wipeCalendarClockStoredEvents(callback) {
   }
 
   try {
-    chrome.storage.local.remove(CALENDAR_CLOCK_EVENT_STORAGE_KEYS, () => {
-      const runtimeError = getCalendarClockRuntimeLastError();
-      if (runtimeError) {
-        markCalendarClockExtensionContextInvalidated(runtimeError);
-        return;
-      }
-      reloadCalendarClockFrameEvents();
+    requestCalendarClockStoredEventClear(cleared => {
+      if (cleared) reloadCalendarClockFrameEvents();
       callback?.();
     });
   } catch (error) {
@@ -2103,6 +2100,10 @@ function updatePanelStats() {
   const omittedCaptureCount = getCalendarClockCaptureOmittedCount();
   const captureLimitNotice = getCalendarClockCaptureLimitNotice();
   const storageStatus = calendarClockStorageStatus;
+  const captureStatus = calendarClockEffectiveEventSource?.captureStatus;
+  const publicationError = ["error", "unavailable"].includes(captureStatus?.phase)
+    ? String(captureStatus.reason || calendarClockEffectiveEventSource?.status || "Calendar event publication is unavailable").slice(0, 300)
+    : "";
   const stats = calendarClockRoot.querySelector("[data-cc-stats]");
   const summary = calendarClockRoot.querySelector("[data-cc-window-summary]");
   const warning = calendarClockRoot.querySelector("[data-cc-parser-warning]");
@@ -2123,8 +2124,10 @@ function updatePanelStats() {
     warning.hidden = failedDateEvents.length === 0
       && hiddenUndatedTasks.length === 0
       && omittedCaptureCount === 0
-      && !storageStatus;
+      && !storageStatus
+      && !publicationError;
     renderCalendarClockWarningRows(warning, {
+      publicationError,
       storageStatus,
       omittedCaptureCount,
       captureLimitNotice,
@@ -2206,7 +2209,6 @@ function syncClockFrame(options = {}) {
     calendarClockWarn("clock frame sync skipped: Calendar temporal context is unavailable");
     return;
   }
-  calendarClockLastWindowDateRangeKey = `${startDate.getTime()}-${endDate.getTime()}`;
   if (!postCalendarClockFrameMessage({
     type: "CALENDAR_CLOCK_SET_WINDOW",
     mode: calendarClockState.mode,

@@ -227,19 +227,25 @@ function buildClock() {
             });
         }
 
-        function setTime() {
-            const now = new Date();
+        function getCurrentClockHandAngles(now = new Date()) {
             const parts = getClockZonedParts(now);
             const secs = parts.second + now.getMilliseconds() / 1000;
             const mins = parts.minute + secs / 60;
             const hrs = use24HourRadial
                 ? parts.hour + mins / 60
                 : (parts.hour % 12) + mins / 60;
-            const hourDegrees = use24HourRadial ? hrs * 15 : hrs * 30;
+            return {
+                hour: use24HourRadial ? hrs * 15 : hrs * 30,
+                minute: mins * 6,
+                second: secs * 6
+            };
+        }
 
-            document.querySelectorAll(".hour-hand").forEach(h => h.style.transform = `rotate(${hourDegrees}deg)`);
-            document.querySelectorAll(".minute-hand").forEach(m => m.style.transform = `rotate(${mins * 6}deg)`);
-            document.querySelectorAll(".second-hand").forEach(s => s.style.transform = `rotate(${secs * 6}deg)`);
+        function setTime() {
+            const angles = getCurrentClockHandAngles();
+            document.querySelectorAll(".hour-hand").forEach(h => h.style.transform = `rotate(${angles.hour}deg)`);
+            document.querySelectorAll(".minute-hand").forEach(m => m.style.transform = `rotate(${angles.minute}deg)`);
+            document.querySelectorAll(".second-hand").forEach(s => s.style.transform = `rotate(${angles.second}deg)`);
         }
 
         function pointOnClockArc(cx, cy, radius, angleDeg) {
@@ -295,31 +301,11 @@ function buildClock() {
         }
 
         function getCurrentClockAngle() {
-            const now = new Date();
-            const parts = getClockZonedParts(now);
-            const secs = parts.second + now.getMilliseconds() / 1000;
-            const mins = parts.minute + secs / 60;
-            const hours = use24HourRadial
-                ? parts.hour + mins / 60
-                : (parts.hour % 12) + mins / 60;
-            return normalizeClockAngle(hours * (use24HourRadial ? 15 : 30));
-        }
-
-        function parseEventDateRange(event) {
-            const startInstant = event?.temporal?.kind === "all-day" ? event?.startDate : event?.temporal?.startInstant;
-            const endInstant = event?.temporal?.kind === "all-day" ? event?.endDate : event?.temporal?.endInstant;
-            const startDate = startInstant ? new Date(startInstant) : null;
-            const endDate = endInstant ? new Date(endInstant) : null;
-            if (!startDate || !endDate || Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
-                return null;
-            }
-            if (!isPointCalendarEvent(event) && endDate <= startDate) return null;
-            if (isPointCalendarEvent(event) && endDate < startDate) return null;
-            return { startDate, endDate };
+            return normalizeClockAngle(getCurrentClockHandAngles().hour);
         }
 
         function getDatedVisibleEventSegment(event, displayWindow) {
-            const eventRange = parseEventDateRange(event);
+            const eventRange = getEventDateRange(event);
             if (!eventRange) return null;
 
             const { startDate, endDate } = getWindowDateRange();

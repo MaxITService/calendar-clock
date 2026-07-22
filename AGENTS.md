@@ -1,5 +1,6 @@
 # Local platform instructions
 - At the start of work, read `.agents/.untracked/agents-platform.md` if it exists and follow it together with this file. It contains machine- and platform-specific instructions and is intentionally untracked.
+# CRITICAL: DO NOT USE REMOTE !! NO PUSHING!!!
 
 # Testing Instructions
 - code editing tasks do not require  browser testing.  
@@ -9,6 +10,7 @@
 - After the browser connection is ready, open Google Calendar and switch Calendar Clock to its `Full` display mode before testing. `Full` means the extension clock mode, not browser fullscreen.
 - After testing, leave one Google Calendar tab open so the user can inspect the result.
 - If extension files need to be refreshed, reloaded, or updated in the browser, try to do it in the allowed test browser/profile first. Some browsers/profiles can reload an unpacked extension programmatically, and some cannot; always verify whether the loaded extension actually updated. After an extension reload/update, refresh Google Calendar pages before testing content scripts again.
+- For stale or unresponsive CFT state, follow [[.agents/.untracked/Browser Harness CFT Recovery.md]].
 
 ## Calendar test events
 

@@ -63,6 +63,9 @@
 | `src/clock/faces/sterling-sector/sterling-sector-builder.js` | Builds the Sterling Sector steel dress-watch clock face. |
 | `src/clock/faces/sterling-sector/sterling-sector-face.css` | Muted silver sunburst, sector, and steel marker styling for Sterling Sector. |
 | `src/clock/faces/sterling-sector/sterling-sector-face.js` | Registers Sterling Sector and arc render tuning. |
+| `src/clock/faces/graphite-regulator/graphite-regulator-builder.js` | Builds the Graphite Regulator architectural instrument clock face. |
+| `src/clock/faces/graphite-regulator/graphite-regulator-face.css` | Matte ceramic, graphite index, and vermilion seconds styling. |
+| `src/clock/faces/graphite-regulator/graphite-regulator-face.js` | Registers Graphite Regulator and its arc render tuning. |
 | `src/clock/faces/rhodium-reserve/rhodium-reserve-builder.js` | Builds the Rhodium Reserve lacquer-and-rhodium mechanical clock face. |
 | `src/clock/faces/rhodium-reserve/rhodium-reserve-face.css` | Anthracite lacquer, faceted rhodium markers, and restrained green seconds styling. |
 | `src/clock/faces/rhodium-reserve/rhodium-reserve-face.js` | Registers Rhodium Reserve and its arc render tuning. |

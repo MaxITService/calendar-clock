@@ -55,6 +55,15 @@ const CLOCK_FACE_MODULES = [
         ],
     },
     {
+        id: "graphite-regulator",
+        name: "Graphite Regulator",
+        styles: ["faces/graphite-regulator/graphite-regulator-face.css"],
+        scripts: [
+            "faces/graphite-regulator/graphite-regulator-builder.js",
+            "faces/graphite-regulator/graphite-regulator-face.js",
+        ],
+    },
+    {
         id: "rhodium-reserve",
         name: "Rhodium Reserve",
         styles: ["faces/rhodium-reserve/rhodium-reserve-face.css"],

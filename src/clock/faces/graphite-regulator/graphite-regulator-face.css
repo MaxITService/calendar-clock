@@ -1,0 +1,466 @@
+/* Graphite Regulator: a flat architectural dial with a vermilion seconds hand. */
+.clock {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    border: var(--rim-width, clamp(7px, 1.75vmin, 16px)) solid transparent;
+    border-radius: 50%;
+    background:
+        linear-gradient(#deded8, #deded8) padding-box,
+        linear-gradient(145deg, #777b7d 0%, #292d30 38%, #5b6063 68%, #1f2326 100%) border-box;
+    box-shadow:
+        inset 0 0 0 clamp(2px, .38vmin, 4px) #b4b5b0,
+        inset 0 0 0 clamp(4px, .74vmin, 8px) #e7e7e1,
+        inset 0 0 3.2vmin rgba(35, 38, 40, .18),
+        0 1.4vmin 3.4vmin rgba(30, 33, 35, .26);
+}
+
+.clock::before {
+    content: "";
+    position: absolute;
+    inset: 5.8%;
+    z-index: 1;
+    border: max(1px, .14vmin) solid rgba(38, 41, 43, .52);
+    border-radius: 50%;
+    box-shadow:
+        0 0 0 max(1px, .20vmin) rgba(232, 232, 225, .72),
+        inset 0 0 0 max(1px, .14vmin) rgba(109, 112, 113, .22);
+    pointer-events: none;
+}
+
+.clock::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+    border-radius: 50%;
+    background:
+        linear-gradient(134deg, rgba(245, 245, 238, .18) 0 20%, transparent 38%),
+        radial-gradient(circle at 50% 118%, rgba(34, 37, 39, .10), transparent 43%);
+    pointer-events: none;
+}
+
+.gr-dial,
+.gr-axes,
+.gr-chapter-ring,
+.gr-inner-register,
+.gr-ticks,
+.gr-time-arcs,
+.gr-numbers,
+.gr-hands {
+    position: absolute;
+    inset: 0;
+}
+
+.gr-dial,
+.gr-axes,
+.gr-chapter-ring,
+.gr-inner-register,
+.gr-ticks,
+.gr-tick,
+.gr-numbers,
+.gr-number,
+.gr-hands,
+.gr-hand,
+.gr-center {
+    pointer-events: none;
+}
+
+.gr-dial {
+    z-index: 0;
+    background:
+        repeating-conic-gradient(from .25deg, rgba(31, 34, 36, .018) 0deg .35deg, transparent .35deg 1.2deg),
+        radial-gradient(circle at 48% 45%, #e9e9e3 0%, #deded8 67%, #cbccc7 100%);
+}
+
+.gr-axes {
+    z-index: 0;
+    opacity: .34;
+    background:
+        linear-gradient(90deg, transparent calc(50% - .5px), #636668 calc(50% - .5px) calc(50% + .5px), transparent calc(50% + .5px)),
+        linear-gradient(0deg, transparent calc(50% - .5px), #636668 calc(50% - .5px) calc(50% + .5px), transparent calc(50% + .5px));
+    mask-image: radial-gradient(circle, transparent 0 17%, #202326 17.3% 43%, transparent 43.3% 100%);
+}
+
+.gr-chapter-ring {
+    z-index: 0;
+    background:
+        radial-gradient(circle, transparent 0 76.2%, rgba(36, 39, 41, .66) 76.35% 76.65%, transparent 76.8%),
+        radial-gradient(circle, transparent 0 91.4%, rgba(36, 39, 41, .32) 91.55% 91.8%, transparent 91.95%);
+}
+
+.gr-inner-register {
+    z-index: 0;
+    background:
+        radial-gradient(circle, transparent 0 35.7%, rgba(36, 39, 41, .19) 35.9% 36.15%, transparent 36.35%),
+        radial-gradient(circle, transparent 0 17.2%, rgba(36, 39, 41, .36) 17.4% 17.75%, transparent 17.95%);
+}
+
+.gr-ticks {
+    z-index: 1;
+}
+
+.gr-time-arcs {
+    z-index: 2;
+}
+
+.gr-numbers {
+    z-index: 3;
+}
+
+.gr-hands {
+    z-index: 4;
+}
+
+.gr-tick {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    background: rgba(46, 49, 51, .54);
+    transform-origin: center center;
+}
+
+.gr-tick-medium {
+    background: rgba(39, 42, 44, .70);
+}
+
+.gr-tick-major {
+    background: #373a3c;
+}
+
+.gr-tick-reference {
+    background: #202326;
+    box-shadow: inset 0 0 0 1px rgba(230, 230, 224, .16);
+}
+
+.time-arcs {
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.time-arc {
+    fill: none;
+    stroke-linecap: butt;
+    stroke-linejoin: round;
+    opacity: .80;
+    filter: drop-shadow(0 .10vmin .12vmin rgba(30, 33, 35, .24));
+    pointer-events: stroke;
+    cursor: help;
+}
+
+.time-point {
+    opacity: .88;
+    stroke-width: max(1.5px, .24vmin);
+    filter: drop-shadow(0 .10vmin .12vmin rgba(30, 33, 35, .24));
+    pointer-events: visiblePainted;
+    cursor: help;
+}
+
+.time-arc-separator {
+    display: none;
+    opacity: .96;
+    filter: drop-shadow(0 .10vmin .10vmin rgba(30, 33, 35, .30));
+    pointer-events: none;
+}
+
+.time-arc-separator-shadow,
+.time-arc-separator-cut {
+    fill: none;
+    stroke-linecap: butt;
+}
+
+.time-arc-separator-shadow {
+    stroke: rgba(35, 38, 40, .72);
+}
+
+.time-arc-separator-cut {
+    stroke: rgba(232, 232, 226, .96);
+}
+
+.time-point-callout {
+    color: currentColor;
+    opacity: .92;
+    pointer-events: none;
+}
+
+.time-point-callout-line {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: max(1px, .15vmin);
+    stroke-linecap: square;
+    stroke-linejoin: miter;
+    opacity: .64;
+}
+
+.time-point-callout-dot {
+    fill: currentColor;
+    stroke: #e5e5df;
+    stroke-width: max(.8px, .11vmin);
+    opacity: .88;
+}
+
+.time-point-callout-label {
+    font-size: 12px;
+}
+
+.time-arc:hover,
+.time-arc.is-arc-hovered,
+.time-point:hover,
+.time-point.is-arc-hovered {
+    opacity: 1;
+    filter: drop-shadow(0 .14vmin .18vmin rgba(30, 33, 35, .34));
+}
+
+.time-arc-label {
+    dominant-baseline: central;
+    font-family: "Arial Narrow", "Aptos Narrow", "Segoe UI", sans-serif;
+    font-weight: 720;
+    letter-spacing: .01em;
+    opacity: .94;
+    pointer-events: none;
+    user-select: none;
+}
+
+.time-arc-label textPath {
+    text-anchor: middle;
+}
+
+.time-arc-label--glass {
+    fill: rgba(239, 239, 233, .97);
+    stroke: rgba(31, 34, 36, .58);
+    stroke-width: 1px;
+    paint-order: stroke;
+}
+
+.time-arc-label--ink {
+    fill: rgba(31, 34, 36, .96);
+    stroke: rgba(235, 235, 229, .90);
+    stroke-width: 1.3px;
+    paint-order: stroke;
+}
+
+.time-arc-label--glow {
+    fill: #edede7;
+    stroke: rgba(31, 34, 36, .62);
+    stroke-width: 1px;
+    paint-order: stroke;
+}
+
+.time-arc-label--color {
+    fill: var(--event-color);
+    stroke: rgba(239, 239, 233, .96);
+    stroke-width: 1.25px;
+    paint-order: stroke;
+}
+
+.time-arc-label--custom {
+    fill: var(--custom-label-color);
+    stroke: rgba(239, 239, 233, .92);
+    stroke-width: 1.2px;
+    paint-order: stroke;
+}
+
+.window-start-marker {
+    stroke: var(--window-start-marker-color, #a64335);
+    stroke-width: var(--window-start-marker-width, max(3px, .50vmin));
+    stroke-linecap: square;
+    stroke-dasharray: var(--window-start-marker-dasharray, .01 11);
+    opacity: var(--window-start-marker-opacity, 1);
+    pointer-events: none;
+}
+
+.window-start-marker-pulse-group {
+    color: var(--window-start-marker-pulse-color, #a64335);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.window-start-marker-pulse-radial,
+.window-start-marker-pulse-orbit {
+    stroke: var(--window-start-marker-pulse-color, currentColor);
+    stroke-linecap: square;
+    stroke-linejoin: miter;
+    vector-effect: non-scaling-stroke;
+}
+
+.window-start-marker-pulse-radial,
+.window-start-marker-pulse-orbit {
+    opacity: 0;
+}
+
+.window-start-marker-pulse-orbit {
+    stroke-dasharray: .44 .56;
+    stroke-dashoffset: .2;
+}
+
+.window-start-marker-pulse-group.is-pulsing {
+    animation: gr-window-marker-shell 560ms ease-out both;
+}
+
+.window-start-marker-pulse-group.is-pulsing .window-start-marker-pulse-radial {
+    animation: gr-window-marker-radial 560ms ease-out both;
+}
+
+.window-start-marker-pulse-group.is-pulsing .window-start-marker-pulse-orbit {
+    animation: gr-window-marker-orbit 560ms cubic-bezier(.2, .72, .25, 1) both;
+}
+
+@keyframes gr-window-marker-shell {
+    0% { opacity: 0; }
+    18% { opacity: var(--window-start-marker-pulse-opacity, .20); }
+    100% { opacity: 0; }
+}
+
+@keyframes gr-window-marker-radial {
+    0% { opacity: 0; }
+    20% { opacity: .18; }
+    100% { opacity: 0; }
+}
+
+@keyframes gr-window-marker-orbit {
+    0% { opacity: 0; stroke-dashoffset: .26; }
+    24% { opacity: .26; }
+    100% { opacity: 0; stroke-dashoffset: -.02; }
+}
+
+.window-start-marker-emoji {
+    dominant-baseline: middle;
+    fill: var(--window-start-marker-color, #a64335);
+    opacity: var(--window-start-marker-opacity, 1);
+    paint-order: stroke;
+    pointer-events: none;
+    stroke: rgba(239, 239, 233, .90);
+    stroke-width: 2px;
+    text-anchor: middle;
+    user-select: none;
+}
+
+.window-start-marker-boundary-label {
+    dominant-baseline: middle;
+    fill: var(--window-start-marker-color, #a64335);
+    font-family: "Arial Narrow", "Aptos Narrow", "Segoe UI", sans-serif;
+    font-size: clamp(.62rem, 1.8vmin, 1rem);
+    font-weight: 760;
+    letter-spacing: .04em;
+    opacity: var(--window-start-marker-opacity, 1);
+    paint-order: stroke;
+    pointer-events: none;
+    stroke: rgba(239, 239, 233, .92);
+    stroke-width: 2px;
+    text-anchor: middle;
+    text-transform: uppercase;
+    user-select: none;
+}
+
+.gr-number {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 2.3em;
+    height: 2.3em;
+    display: grid;
+    place-items: center;
+    color: #343739;
+    font-family: "Arial Narrow", "Aptos Narrow", "Segoe UI", sans-serif;
+    font-size: clamp(1rem, 3.85vmin, 3rem);
+    font-stretch: condensed;
+    font-weight: 520;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.045em;
+    line-height: 1;
+    text-align: center;
+    transform-origin: center center;
+    user-select: none;
+}
+
+.gr-number-reference {
+    color: #1f2224;
+    font-weight: 780;
+}
+
+.clock.is-24-hour .gr-number {
+    color: #4b4e50;
+    font-size: clamp(.76rem, 2.72vmin, 2rem);
+    font-weight: 560;
+    letter-spacing: -.035em;
+}
+
+.clock.is-24-hour .gr-number-reference {
+    color: #1f2224;
+    font-weight: 800;
+}
+
+.gr-hand {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    border-radius: 1px;
+    filter: drop-shadow(.18vmin .25vmin .20vmin rgba(30, 33, 35, .28));
+    transform-origin: center bottom;
+}
+
+.gr-hour-hand {
+    background: #232628;
+    clip-path: polygon(50% 0%, 82% 9%, 69% 86%, 100% 86%, 100% 100%, 0 100%, 0 86%, 31% 86%, 18% 9%);
+}
+
+.gr-minute-hand {
+    background: #303335;
+    clip-path: polygon(50% 0%, 76% 6%, 61% 91%, 100% 91%, 100% 100%, 0 100%, 0 91%, 39% 91%, 24% 6%);
+}
+
+.gr-second-hand {
+    background: #a64335;
+    box-shadow: 0 0 0 max(.5px, .06vmin) rgba(112, 42, 32, .28);
+}
+
+.gr-second-hand::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: calc(100% - 1px);
+    width: max(5px, 1.15vmin);
+    height: 23%;
+    border: max(1px, .18vmin) solid #a64335;
+    border-radius: 50%;
+    transform: translateX(-50%);
+}
+
+.gr-center {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 5;
+    border: max(1px, .16vmin) solid #8a3930;
+    border-radius: 50%;
+    background: #a64335;
+    box-shadow:
+        0 .22vmin .32vmin rgba(30, 33, 35, .30),
+        inset 0 0 0 max(1px, .12vmin) rgba(233, 230, 222, .24);
+    transform: translate(-50%, -50%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .window-start-marker-pulse-group.is-pulsing,
+    .window-start-marker-pulse-group.is-pulsing .window-start-marker-pulse-radial,
+    .window-start-marker-pulse-group.is-pulsing .window-start-marker-pulse-orbit {
+        animation-duration: 180ms;
+    }
+
+    .window-start-marker-pulse-group.is-pulsing .window-start-marker-pulse-orbit {
+        stroke-dashoffset: 0;
+    }
+}
+
+:root {
+    --page-bg: #cbccc7;
+    --face: #deded8;
+    --rim-width: clamp(7px, 1.75vmin, 16px);
+}
+
+body {
+    background: #cbccc7;
+    background-image: radial-gradient(circle at center, #e5e5df 0%, #bcbeba 64%, #8b8f90 100%);
+}

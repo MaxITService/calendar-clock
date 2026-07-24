@@ -35,7 +35,7 @@
       <div class="cc-settings-page">
         <div class="cc-panel-header cc-panel-time-header">
           <span class="cc-drag-indicator">⋮⋮</span>
-          <span class="cc-panel-title">Time Window Settings <span class="cc-panel-version" data-cc-extension-version></span></span>
+          <span class="cc-panel-title">Calendar Clock Settings <span class="cc-panel-version" data-cc-extension-version></span></span>
           <div class="cc-header-actions">
             <button type="button" class="cc-btn-secondary" data-cc-action="whats-new" title="Open update notes. You will see a short list of recent Calendar Clock changes inside this panel.">What's new</button>
             <button type="button" class="cc-btn-secondary" data-cc-action="help" title="Open help. You will see concise notes about controls, events, tasks, refresh, and debug.">Help</button>
@@ -45,54 +45,67 @@
           </div>
         </div>
 
+        <div class="cc-settings-tabs" role="tablist" aria-label="Settings sections">
+          <button id="cc-settings-tab-window" type="button" role="tab" data-cc-settings-tab="window" aria-controls="cc-settings-panel-window" aria-selected="true">Time Window</button>
+          <button id="cc-settings-tab-other" type="button" role="tab" data-cc-settings-tab="other" aria-controls="cc-settings-panel-other" aria-selected="false" tabindex="-1">Other Settings</button>
+        </div>
+
         <div class="cc-settings-body">
-          <div class="cc-panel-section cc-panel-section-clock-range">
-            <div class="cc-section-title">What time should the clock show?</div>
-            <div class="cc-window-follow-row">
-              <div class="cc-toggle-row">
-                <label class="cc-toggle" data-cc-follow-label title="Keep the visible clock range moving with the current time. You will see Window Start stay the configured number of hours behind the current hour hand.">
-                  <input data-cc-follow-now type="checkbox">
-                  <span class="cc-toggle-slider"></span>
-                  <span class="cc-toggle-label">Follow Now</span>
-                </label>
-                <div class="cc-follow-hours-group">
-                  <input data-cc-follow-radius type="number" min="-23.5" max="0" step="0.5" value="-3" title="Set where Window Start sits inside the moving clock window. Negative values show that many past hours before now; 0 starts at now.">
-                  <span>hrs</span>
+          <div id="cc-settings-panel-window" class="cc-settings-tab-panel" role="tabpanel" data-cc-settings-tab-panel="window" aria-labelledby="cc-settings-tab-window">
+            <div class="cc-panel-section cc-panel-section-clock-range">
+              <div class="cc-section-title">What time should the clock show?</div>
+              <div class="cc-window-follow-row">
+                <div class="cc-toggle-row">
+                  <label class="cc-toggle" data-cc-follow-label title="Keep the visible clock range moving with the current time. You will see Window Start stay the configured number of hours behind the current hour hand.">
+                    <input data-cc-follow-now type="checkbox">
+                    <span class="cc-toggle-slider"></span>
+                    <span class="cc-toggle-label">Follow Now</span>
+                  </label>
+                  <div class="cc-follow-hours-group">
+                    <input data-cc-follow-radius type="number" min="-23.5" max="0" step="0.5" value="-3" title="Set where Window Start sits inside the moving clock window. Negative values show that many past hours before now; 0 starts at now.">
+                    <span>hrs</span>
+                  </div>
+                </div>
+                <div class="cc-follow-help" data-cc-follow-help>Clock keeps 12 hours visible, showing the last 3 hours before now and the next 9 hours after now.</div>
+              </div>
+              <label class="cc-toggle" title="Map 24 hours around the dial. With Follow Now on, the configured offset shows past hours and the remaining hours look forward.">
+                <input data-cc-24-hour-radial type="checkbox">
+                <span class="cc-toggle-slider"></span>
+                <span class="cc-toggle-label">24h radial (minute arrow works as before).</span>
+              </label>
+              <div class="cc-window-row">
+                <label class="cc-field-label" for="cc-window-preset" title="This chooses which 12 hours are drawn around the dial. You will see events inside that time range as arcs on the clock.">Show events from</label>
+                <select id="cc-window-preset" data-cc-window-preset title="Choose the time range mapped around the clock. You will see only events that overlap that range drawn as arcs on the dial. Follow Now disables this manual selector.">
+                  <option value="08:00-20:00" title="Show daytime hours from 08:00 to 20:00. Events in that range appear around the dial, while events outside it are counted as outside.">Day (08:00-20:00)</option>
+                  <option value="20:00-08:00" title="Show overnight hours from 20:00 to 08:00 the next day. Evening and early morning events appear around the dial.">Night (20:00-08:00)</option>
+                  <option value="00:00-12:00" title="Show the first half of the day from midnight to noon. You will see morning events mapped across the clock face.">Morning half (00:00-12:00)</option>
+                  <option value="12:00-00:00" title="Show the second half of the day from noon to midnight. You will see afternoon and evening events mapped across the clock face.">Afternoon half (12:00-00:00)</option>
+                  <option value="custom" title="Choose any divider hour for a custom 12-hour window. You will see the clock show the 12 hours after that divider.">Custom</option>
+                  <option value="generated" title="Show the current automatic range. You will see this when Follow Now, Try to fit now, or Jump chooses a range that is not one of the fixed presets." hidden>Automatic range</option>
+                </select>
+              </div>
+              <div class="cc-custom-window-row" data-cc-custom-window-row hidden>
+                <label class="cc-field-label" for="cc-custom-divider-time" title="Set the divider hour that starts the manual 12-hour window. You will see the selected hour become the left edge of the shown timeframe.">Custom divider</label>
+                <div class="cc-custom-divider-grid">
+                  <input id="cc-custom-divider-time" data-cc-custom-divider-time type="time" step="1800" value="08:00" title="Type the divider time. You will see a fixed 12-hour window starting at this time.">
+                  <div class="cc-slider-control cc-custom-divider-slider">
+                    <input data-cc-custom-divider-slider type="range" min="0" max="23.5" step="0.5" value="8" title="Slide the divider hour around the day. You will see the custom 12-hour window move in half-hour steps.">
+                    <output data-cc-custom-divider-output>08:00</output>
+                  </div>
                 </div>
               </div>
-              <div class="cc-follow-help" data-cc-follow-help>Clock keeps 12 hours visible, showing the last 3 hours before now and the next 9 hours after now.</div>
-            </div>
-            <div class="cc-window-row">
-              <label class="cc-field-label" for="cc-window-preset" title="This chooses which 12 hours are drawn around the dial. You will see events inside that time range as arcs on the clock.">Show events from</label>
-              <select id="cc-window-preset" data-cc-window-preset title="Choose the time range mapped around the clock. You will see only events that overlap that range drawn as arcs on the dial. Follow Now disables this manual selector.">
-                <option value="08:00-20:00" title="Show daytime hours from 08:00 to 20:00. Events in that range appear around the dial, while events outside it are counted as outside.">Day (08:00-20:00)</option>
-                <option value="20:00-08:00" title="Show overnight hours from 20:00 to 08:00 the next day. Evening and early morning events appear around the dial.">Night (20:00-08:00)</option>
-                <option value="00:00-12:00" title="Show the first half of the day from midnight to noon. You will see morning events mapped across the clock face.">Morning half (00:00-12:00)</option>
-                <option value="12:00-00:00" title="Show the second half of the day from noon to midnight. You will see afternoon and evening events mapped across the clock face.">Afternoon half (12:00-00:00)</option>
-                <option value="custom" title="Choose any divider hour for a custom 12-hour window. You will see the clock show the 12 hours after that divider.">Custom</option>
-                <option value="generated" title="Show the current automatic range. You will see this when Follow Now, Try to fit now, or Jump chooses a range that is not one of the fixed presets." hidden>Automatic range</option>
-              </select>
-            </div>
-            <div class="cc-custom-window-row" data-cc-custom-window-row hidden>
-              <label class="cc-field-label" for="cc-custom-divider-time" title="Set the divider hour that starts the manual 12-hour window. You will see the selected hour become the left edge of the shown timeframe.">Custom divider</label>
-              <div class="cc-custom-divider-grid">
-                <input id="cc-custom-divider-time" data-cc-custom-divider-time type="time" step="1800" value="08:00" title="Type the divider time. You will see a fixed 12-hour window starting at this time.">
-                <div class="cc-slider-control cc-custom-divider-slider">
-                  <input data-cc-custom-divider-slider type="range" min="0" max="23.5" step="0.5" value="8" title="Slide the divider hour around the day. You will see the custom 12-hour window move in half-hour steps.">
-                  <output data-cc-custom-divider-output>08:00</output>
-                </div>
+              <div class="cc-window-summary" data-cc-window-summary title="Shows the exact date and hour boundaries currently drawn on the clock. Use this to confirm whether Follow Now, Try to fit now, Jump, or Custom selected the range you expected.">Showing window</div>
+              <div class="cc-window-action-buttons">
+                <button type="button" class="cc-btn-action" data-cc-action="fit" title="Try to choose a one-time 12-hour range that fits the events currently available to Calendar Clock. This is best effort: events outside the current capture may not be considered. It will not keep following time afterward.">Try to fit now</button>
+                <button type="button" class="cc-btn-action" data-cc-action="jump" title="Move to the first captured event outside the current range. Example: if the clock shows 07:30-19:30 and an event starts at 20:30, Jump moves the window toward that event and highlights it in Calendar.">Jump</button>
               </div>
-            </div>
-            <div class="cc-window-summary" data-cc-window-summary title="Shows the exact date and hour boundaries currently drawn on the clock. Use this to confirm whether Follow Now, Try to fit now, Jump, or Custom selected the range you expected.">Showing window</div>
-            <div class="cc-window-action-buttons">
-              <button type="button" class="cc-btn-action" data-cc-action="fit" title="Try to choose a one-time 12-hour range that fits the events currently available to Calendar Clock. This is best effort: events outside the current capture may not be considered. It will not keep following time afterward.">Try to fit now</button>
-              <button type="button" class="cc-btn-action" data-cc-action="jump" title="Move to the first captured event outside the current range. Example: if the clock shows 07:30-19:30 and an event starts at 20:30, Jump moves the window toward that event and highlights it in Calendar.">Jump</button>
             </div>
           </div>
 
-          <div class="cc-panel-section cc-panel-section-visuals">
-            <div class="cc-section-title">Visuals</div>
-            <div class="cc-visuals-grid">
+          <div id="cc-settings-panel-other" class="cc-settings-tab-panel" role="tabpanel" data-cc-settings-tab-panel="other" aria-labelledby="cc-settings-tab-other" hidden>
+            <div class="cc-panel-section cc-panel-section-visuals">
+              <div class="cc-section-title">Visuals</div>
+              <div class="cc-visuals-grid">
               <div class="cc-divider-settings-row">
                 <label class="cc-row-label" for="cc-clock-face-design" title="Choose the clock face design used by the overlay and mini clock.">Clock Design</label>
                 <select id="cc-clock-face-design" data-cc-clock-face title="Choose the clock face design." disabled>
@@ -175,12 +188,6 @@
                   </div>
                 </div>
               </div>
-
-              <label class="cc-toggle" title="Map 24 hours around the dial. With Follow Now on, the configured offset shows past hours and the remaining hours look forward.">
-                <input data-cc-24-hour-radial type="checkbox">
-                <span class="cc-toggle-slider"></span>
-                <span class="cc-toggle-label">24h radial (minute arrow works as before).</span>
-              </label>
 
               <div class="cc-toggle-with-settings">
                 <label class="cc-toggle" title="Enable the clock magnifier and event reminders. Open settings to choose when the lens appears, glows, or plays a sound.">
@@ -452,12 +459,13 @@
                 <span class="cc-toggle-slider"></span>
                 <span class="cc-toggle-label">Dark theme for menus</span>
               </label>
+              </div>
             </div>
-          </div>
 
-          <div class="cc-panel-footer">
-            <div class="cc-parser-warning" data-cc-parser-warning hidden></div>
-            <div class="cc-stats" data-cc-stats title="Shows how many captured events are currently visible on the clock. You will see outside events counted here when they fall beyond the current time range.">0 captured</div>
+            <div class="cc-panel-footer">
+              <div class="cc-parser-warning" data-cc-parser-warning hidden></div>
+              <div class="cc-stats" data-cc-stats title="Shows how many captured events are currently visible on the clock. You will see outside events counted here when they fall beyond the current time range.">0 captured</div>
+            </div>
           </div>
         </div>
       </div>
@@ -466,7 +474,7 @@
         <div class="cc-panel-header cc-panel-whats-new-header">
           <span class="cc-drag-indicator">⋮⋮</span>
           <span class="cc-panel-title">What's new</span>
-          <button type="button" class="cc-btn-secondary" data-cc-action="whats-new-back" title="Return to settings. You will see the Time Window Settings panel again.">Back</button>
+          <button type="button" class="cc-btn-secondary" data-cc-action="whats-new-back" title="Return to Calendar Clock Settings.">Back</button>
         </div>
         <div class="cc-whats-new-body">
           <div class="cc-section-title">Latest update</div>

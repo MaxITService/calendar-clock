@@ -916,6 +916,9 @@ function applyLoadedCalendarClockState(savedState = {}) {
   calendarClockState.followRadiusHours = clampFollowRadiusHours(calendarClockState.followRadiusHours);
   calendarClockState.timePanelOpen = calendarClockState.timePanelOpen !== false;
   calendarClockState.timePanelCollapsed = calendarClockState.timePanelCollapsed === true;
+  calendarClockState.settingsTab = CALENDAR_CLOCK_SETTINGS_TABS.includes(calendarClockState.settingsTab)
+    ? calendarClockState.settingsTab
+    : CALENDAR_CLOCK_PANEL_DEFAULT.settingsTab;
   calendarClockState.debugCollapsed = calendarClockState.debugCollapsed === true;
   calendarClockState.helpCollapsed = calendarClockState.helpCollapsed === true;
   calendarClockTimePanelNeedsInitialSize = (Number(savedState.timePanelInitialSizeVersion) || 0)

@@ -152,6 +152,53 @@
       scrollbar-gutter: stable;
     }
 
+    #calendar-clock-root .cc-settings-tabs {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 3px;
+      padding: 3px;
+      border: 1px solid rgba(110, 85, 61, 0.12);
+      border-radius: 8px;
+      background: rgba(184, 141, 90, 0.06);
+    }
+
+    #calendar-clock-root .cc-settings-tabs button {
+      height: 26px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      box-shadow: none;
+      color: rgba(110, 85, 61, 0.7);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    #calendar-clock-root .cc-settings-tabs button:hover {
+      background: rgba(255, 255, 255, 0.44);
+      color: #2c221a;
+    }
+
+    #calendar-clock-root .cc-settings-tabs button[aria-selected="true"] {
+      background: rgba(255, 255, 255, 0.72);
+      color: #8f6840;
+      box-shadow: inset 0 -2px 0 #b88d5a;
+    }
+
+    #calendar-clock-root .cc-settings-tab-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    #calendar-clock-root .cc-settings-tab-panel[hidden] {
+      display: none;
+    }
+
+    #calendar-clock-root .cc-settings-tab-panel > .cc-panel-section-visuals {
+      padding-top: 0;
+      border-top: 0;
+    }
+
     #calendar-clock-root .cc-settings-body::-webkit-scrollbar,
     #calendar-clock-root .cc-whats-new-body::-webkit-scrollbar {
       width: 9px;
@@ -175,6 +222,10 @@
     }
 
     #calendar-clock-root.cc-time-panel-collapsed .cc-settings-body {
+      display: none;
+    }
+
+    #calendar-clock-root.cc-time-panel-collapsed .cc-settings-tabs {
       display: none;
     }
 

@@ -380,6 +380,27 @@ function bindPanelControls() {
     button.addEventListener("click", () => setClockMode(button.dataset.ccMode));
   });
 
+  const settingsTabButtons = Array.from(calendarClockRoot.querySelectorAll("[data-cc-settings-tab]"));
+  settingsTabButtons.forEach(button => {
+    button.addEventListener("click", () => {
+      setCalendarClockSettingsTab(button.dataset.ccSettingsTab);
+    });
+    button.addEventListener("keydown", event => {
+      const currentIndex = CALENDAR_CLOCK_SETTINGS_TABS.indexOf(button.dataset.ccSettingsTab);
+      let nextIndex = currentIndex;
+      if (event.key === "ArrowRight") nextIndex = (currentIndex + 1) % CALENDAR_CLOCK_SETTINGS_TABS.length;
+      else if (event.key === "ArrowLeft") nextIndex = (currentIndex - 1 + CALENDAR_CLOCK_SETTINGS_TABS.length) % CALENDAR_CLOCK_SETTINGS_TABS.length;
+      else if (event.key === "Home") nextIndex = 0;
+      else if (event.key === "End") nextIndex = CALENDAR_CLOCK_SETTINGS_TABS.length - 1;
+      else return;
+
+      event.preventDefault();
+      const nextTab = CALENDAR_CLOCK_SETTINGS_TABS[nextIndex];
+      setCalendarClockSettingsTab(nextTab);
+      settingsTabButtons.find(candidate => candidate.dataset.ccSettingsTab === nextTab)?.focus();
+    });
+  });
+
   calendarClockRoot.querySelector("[data-cc-action='refresh']").addEventListener("click", event => {
     hardRefreshCalendarClockEventsFromToolbar(event.currentTarget);
   });
@@ -1712,6 +1733,38 @@ function updateRootClasses() {
   calendarClockRoot.classList.toggle("cc-help-collapsed", calendarClockState.helpCollapsed);
   calendarClockRoot.classList.toggle("cc-menu-theme-dark", calendarClockState.menuDarkTheme);
   calendarClockRoot.classList.toggle("cc-whats-new-open", calendarClockWhatsNewOpen);
+  calendarClockRoot.querySelectorAll("[data-cc-mode]").forEach(button => {
+    button.setAttribute("aria-pressed", String(button.dataset.ccMode === calendarClockState.mode));
+  });
+}
+
+function updateCalendarClockSettingsTabs() {
+  const selectedTab = CALENDAR_CLOCK_SETTINGS_TABS.includes(calendarClockState.settingsTab)
+    ? calendarClockState.settingsTab
+    : CALENDAR_CLOCK_PANEL_DEFAULT.settingsTab;
+  calendarClockState.settingsTab = selectedTab;
+
+  calendarClockRoot.querySelectorAll("[data-cc-settings-tab]").forEach(button => {
+    const selected = button.dataset.ccSettingsTab === selectedTab;
+    button.setAttribute("aria-selected", String(selected));
+    button.tabIndex = selected ? 0 : -1;
+  });
+  calendarClockRoot.querySelectorAll("[data-cc-settings-tab-panel]").forEach(panel => {
+    panel.hidden = panel.dataset.ccSettingsTabPanel !== selectedTab;
+  });
+}
+
+function setCalendarClockSettingsTab(tab) {
+  const selectedTab = CALENDAR_CLOCK_SETTINGS_TABS.includes(tab)
+    ? tab
+    : CALENDAR_CLOCK_PANEL_DEFAULT.settingsTab;
+  if (calendarClockState.settingsTab === selectedTab) return;
+
+  calendarClockState.settingsTab = selectedTab;
+  const settingsBody = calendarClockRoot.querySelector(".cc-settings-body");
+  if (settingsBody) settingsBody.scrollTop = 0;
+  updateCalendarClockSettingsTabs();
+  saveCalendarClockState();
 }
 
 function updatePanelPosition() {
@@ -1774,6 +1827,7 @@ function updateEventLabelFontControls(fontFamily) {
 function updatePanelControls() {
   if (!calendarClockRoot) return;
 
+  updateCalendarClockSettingsTabs();
   const presetEl = calendarClockRoot.querySelector("[data-cc-window-preset]");
   const generatedEl = presetEl.querySelector("option[value='generated']");
   const selectedPreset = getSelectableWindowPreset();

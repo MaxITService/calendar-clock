@@ -27,6 +27,7 @@ const CALENDAR_CLOCK_MINI_SIZE = 520;
 const CALENDAR_CLOCK_MINI_MARGIN = 24;
 const CALENDAR_CLOCK_CAPTURE_LIMIT = 50;
 const CALENDAR_CLOCK_CAPTURE_LIMIT_OPTIONS = [50, 100, 200];
+const CALENDAR_CLOCK_SETTINGS_TABS = Object.freeze(["window", "other"]);
 const CALENDAR_CLOCK_STATE_SAVE_DEBOUNCE_MS = 200;
 const CALENDAR_CLOCK_TIME_PANEL_INITIAL_SIZE_VERSION = 5;
 const CALENDAR_CLOCK_TIME_PANEL_INITIAL_WIDTH = 560;
@@ -49,6 +50,7 @@ const CALENDAR_CLOCK_PANEL_DEFAULT = {
   timePanelInitialSizeVersion: CALENDAR_CLOCK_TIME_PANEL_INITIAL_SIZE_VERSION,
   timePanelOpen: false,
   timePanelCollapsed: false,
+  settingsTab: "window",
   miniX: null,
   miniY: null,
   windowStart: "08:00",

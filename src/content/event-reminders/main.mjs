@@ -28,6 +28,19 @@ function setStateSound(state, settings) {
 function saveState(runtime, nextState) {
   return new Promise((resolve, reject) => {
     try {
+      if (nextState?.perTabState === true) {
+        runtime.sendMessage({
+          type: "CALENDAR_CLOCK_SAVE_TAB_STATE",
+          state: nextState
+        }, response => {
+          const error = runtime.lastError;
+          if (error) reject(new Error(error.message));
+          else if (response?.ok !== true) reject(new Error(response?.error || "Tab-specific reminder state could not be saved."));
+          else resolve();
+        });
+        return;
+      }
+
       chrome.storage.local.set({ [STATE_KEY]: nextState }, () => {
         const error = chrome.runtime.lastError;
         if (error) reject(new Error(error.message)); else resolve();

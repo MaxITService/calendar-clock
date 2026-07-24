@@ -22,6 +22,7 @@
 | `scripts/verify-popup-snapshot-sort.js` | Verifies date-aware popup ordering, including midnight crossings and undated Task fallback behavior. |
 | `scripts/verify-clock-safe-fixes.js` | Verifies isolated clock fixes for chronological ordering, source labels, interval clamping, tooltip reset, persisted warnings, and hidden-mode timers. |
 | `src/background/background.js` | Service worker that receives captured calendar events and stores them. |
+| `src/background/tab-state/tab-state.js` | Optional service-worker module that stores and cleans up tab-specific clock state. |
 | `src/action-popup/action-popup.html` | Toolbar popup shell for the stored Calendar Clock snapshot preview. |
 | `src/action-popup/action-popup.css` | Toolbar popup styling for the mini clock, stale warning, metadata, and item list. |
 | `src/action-popup/action-popup.js` | Reads stored Calendar and Tasks snapshot data for the toolbar popup. |

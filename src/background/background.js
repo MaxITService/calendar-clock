@@ -6,6 +6,7 @@ const CALENDAR_CLOCK_CAPTURE_LIMIT_OPTIONS = [50, 100, 200];
 const CALENDAR_CLOCK_STORAGE_RETRY_EVENT_LIMITS = [1000, 800, 600, 400, 300, 200, 100, 50, 25, 10, 5, 1, 0];
 const CALENDAR_CLOCK_AUDIO_BRIDGE_TOKEN_TTL_MS = 15000;
 const CALENDAR_CLOCK_AUDIO_STORAGE_FRAME_PATH = "src/content/event-reminders/storage-frame.html";
+const CALENDAR_CLOCK_OVERLAY_STATE_KEY = "calendarClockOverlayState";
 const CALENDAR_CLOCK_EVENT_STORAGE_KEYS = [
   "calendarClockCalendarEvents",
   "calendarClockTaskEvents",
@@ -21,7 +22,7 @@ const CALENDAR_CLOCK_EVENT_STORAGE_KEYS = [
 ];
 const CALENDAR_CLOCK_FEED_READ_KEYS = [
   ...CALENDAR_CLOCK_EVENT_STORAGE_KEYS,
-  "calendarClockOverlayState"
+  CALENDAR_CLOCK_OVERLAY_STATE_KEY
 ];
 const CALENDAR_CLOCK_CAPTURE_DATE_KEY_SOURCES = new Set([
   "dated-url",
@@ -40,6 +41,13 @@ try {
   if (calendarClockTemporalProjection) calendarClockTemporalProjectionDiagnostic = "";
 } catch (error) {
   calendarClockTemporalProjectionDiagnostic = `temporal projection unavailable: ${String(error?.message || error)}`;
+}
+try {
+  if (typeof importScripts === "function") {
+    importScripts(chrome.runtime.getURL("src/background/tab-state/tab-state.js"));
+  }
+} catch (_error) {
+  // Optional tab-specific state is unavailable; shared clock state still works.
 }
 const calendarClockAudioBridgeTokens = new Map();
 let calendarClockFeedSaveQueue = Promise.resolve();

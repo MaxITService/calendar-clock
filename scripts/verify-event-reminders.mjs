@@ -197,6 +197,7 @@ check("reminder module follows replaced state and wipe cleanup", () => {
   const module = fs.readFileSync(path.join(root, "src/content/event-reminders/main.mjs"), "utf8");
   assert.match(entry, /getState:\s*\(\) => calendarClockState/);
   assert.match(module, /const currentState = getState\(\);[\s\S]*setStateSound\(currentState, settings\)/);
+  assert.match(module, /nextState\?\.perTabState === true[\s\S]*CALENDAR_CLOCK_SAVE_TAB_STATE/);
   assert.match(module, /syncState\(\{ clearCustomBlob = false \} = \{\}\) \{[\s\S]*selectedSoundIdToClear[\s\S]*refreshControls\(\)[\s\S]*clearSelectedSoundAndCleanup\(storage, selectedSoundIdToClear, warn\)/);
   assert.match(overlay, /applyLoadedCalendarClockState\([\s\S]*calendarClockEventReminders\?\.syncState\?\.\(\{ clearCustomBlob: true \}\)/);
 });

@@ -360,6 +360,8 @@ window.addEventListener("resize", () => {
 
 loadCalendarClockState().then(async () => {
   if (calendarClockExtensionContextInvalidated) return;
+  registerCalendarClockStateStorageListener();
+  globalThis.calendarClockPageOwnedInfo?.setEnabled?.(calendarClockState.pageOwnedInfo);
   calendarClockLastNavigationKey = getCalendarClockNavigationKey();
   await ensureCalendarClockUi();
   await initializeCalendarClockEventReminders();

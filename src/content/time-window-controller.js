@@ -901,6 +901,10 @@ function getCalendarClockDefaultMenuDarkTheme() {
   }
 }
 
+function isCalendarClockStateRecord(state) {
+  return Boolean(state && typeof state === "object" && !Array.isArray(state));
+}
+
 function getKnownCalendarClockState(savedState = {}) {
   const nextState = { ...CALENDAR_CLOCK_PANEL_DEFAULT };
   Object.keys(CALENDAR_CLOCK_PANEL_DEFAULT).forEach(key => {
@@ -916,6 +920,7 @@ function applyLoadedCalendarClockState(savedState = {}) {
   calendarClockState.followRadiusHours = clampFollowRadiusHours(calendarClockState.followRadiusHours);
   calendarClockState.timePanelOpen = calendarClockState.timePanelOpen !== false;
   calendarClockState.timePanelCollapsed = calendarClockState.timePanelCollapsed === true;
+  calendarClockState.perTabState = calendarClockState.perTabState === true;
   calendarClockState.settingsTab = CALENDAR_CLOCK_SETTINGS_TABS.includes(calendarClockState.settingsTab)
     ? calendarClockState.settingsTab
     : CALENDAR_CLOCK_PANEL_DEFAULT.settingsTab;
@@ -1046,36 +1051,69 @@ function applyLoadedCalendarClockState(savedState = {}) {
   normalizeMiniClockPosition();
 }
 
-function persistCalendarClockState() {
-  if (!canUseCalendarClockExtensionApi()) return;
+function persistCalendarClockState(onComplete) {
+  if (!canUseCalendarClockExtensionApi()) {
+    onComplete?.(false);
+    return;
+  }
 
   try {
-    chrome.storage.local.set({ [CALENDAR_CLOCK_STATE_KEY]: calendarClockState }, () => {
+    if (calendarClockState.perTabState) {
+      chrome.runtime.sendMessage({
+        type: "CALENDAR_CLOCK_SAVE_TAB_STATE",
+        state: { ...calendarClockState }
+      }, response => {
+        const runtimeError = getCalendarClockRuntimeLastError();
+        if (runtimeError) {
+          if (markCalendarClockExtensionContextInvalidated(runtimeError)) {
+            onComplete?.(false);
+            return;
+          }
+          calendarClockState.perTabState = false;
+          if (calendarClockRoot) updatePanelControls();
+          persistCalendarClockState(onComplete);
+          return;
+        }
+        const saved = response?.ok === true;
+        if (!saved) calendarClockWarn("failed to save tab-specific overlay state", response?.error || "unknown error");
+        onComplete?.(saved);
+      });
+      return;
+    }
+
+    chrome.storage.local.set({ [CALENDAR_CLOCK_STATE_KEY]: { ...calendarClockState } }, () => {
       const runtimeError = getCalendarClockRuntimeLastError();
-      if (runtimeError) markCalendarClockExtensionContextInvalidated(runtimeError);
+      if (runtimeError) {
+        markCalendarClockExtensionContextInvalidated(runtimeError);
+        onComplete?.(false);
+        return;
+      }
+      onComplete?.(true);
     });
   } catch (error) {
     if (!markCalendarClockExtensionContextInvalidated(error)) {
       calendarClockWarn("failed to save overlay state", error);
     }
+    onComplete?.(false);
   }
 }
 
 function saveCalendarClockState(options = {}) {
   const debounceMs = Math.max(0, Math.round(Number(options.debounceMs) || 0));
+  const onComplete = typeof options.onComplete === "function" ? options.onComplete : null;
   if (calendarClockStateSaveTimer) {
     clearTimeout(calendarClockStateSaveTimer);
     calendarClockStateSaveTimer = null;
   }
 
   if (!debounceMs) {
-    persistCalendarClockState();
+    persistCalendarClockState(onComplete);
     return;
   }
 
   calendarClockStateSaveTimer = setTimeout(() => {
     calendarClockStateSaveTimer = null;
-    persistCalendarClockState();
+    persistCalendarClockState(onComplete);
   }, debounceMs);
 }
 
@@ -1083,6 +1121,93 @@ onCalendarClockContextInvalidated(() => {
   if (calendarClockStateSaveTimer) clearTimeout(calendarClockStateSaveTimer);
   calendarClockStateSaveTimer = null;
 });
+
+function setCalendarClockPerTabState(enabled) {
+  const nextEnabled = enabled === true;
+  const previousEnabled = calendarClockState.perTabState === true;
+  if (nextEnabled === previousEnabled) return;
+
+  calendarClockState.perTabState = nextEnabled;
+  updatePanelControls();
+  if (!canUseCalendarClockExtensionApi()) return;
+
+  try {
+    chrome.runtime.sendMessage({
+      type: "CALENDAR_CLOCK_SET_PER_TAB_STATE",
+      enabled: nextEnabled,
+      state: { ...calendarClockState }
+    }, response => {
+      const runtimeError = getCalendarClockRuntimeLastError();
+      if (runtimeError) {
+        if (markCalendarClockExtensionContextInvalidated(runtimeError)) return;
+        calendarClockState.perTabState = false;
+        updatePanelControls();
+        persistCalendarClockState();
+        return;
+      }
+      if (response?.ok === true) return;
+
+      calendarClockState.perTabState = previousEnabled;
+      updatePanelControls();
+      calendarClockWarn("failed to change per-tab overlay state", response?.error || "unknown error");
+    });
+  } catch (error) {
+    calendarClockState.perTabState = previousEnabled;
+    updatePanelControls();
+    if (!markCalendarClockExtensionContextInvalidated(error)) {
+      calendarClockWarn("failed to change per-tab overlay state", error);
+    }
+  }
+}
+
+function applyCalendarClockSharedStateChange(sharedState) {
+  const previousPageOwnedInfo = calendarClockState.pageOwnedInfo;
+  const previousCaptureLimit = calendarClockState.captureLimit;
+  applyLoadedCalendarClockState(sharedState);
+  globalThis.calendarClockPageOwnedInfo?.setEnabled?.(calendarClockState.pageOwnedInfo);
+  globalThis.calendarClockEventReminders?.updateSettings?.();
+
+  if (calendarClockRoot) {
+    updatePanelControls();
+    updateRootClasses();
+    syncClockFrame({ rebuild: true });
+    renderDebugPanel();
+  }
+  if (previousPageOwnedInfo !== calendarClockState.pageOwnedInfo
+      || previousCaptureLimit !== calendarClockState.captureLimit) {
+    queuePublishCalendarEvents();
+  }
+}
+
+function registerCalendarClockStateStorageListener() {
+  if (!canUseCalendarClockExtensionApi() || !chrome.storage?.onChanged) return;
+
+  const listener = (changes, areaName) => {
+    if (areaName !== "local" || !changes[CALENDAR_CLOCK_STATE_KEY]) return;
+    const sharedState = changes[CALENDAR_CLOCK_STATE_KEY].newValue;
+    if (!isCalendarClockStateRecord(sharedState)) return;
+
+    const nextEnabled = sharedState.perTabState === true;
+    if (calendarClockState.perTabState === nextEnabled) return;
+    if (!nextEnabled) {
+      applyCalendarClockSharedStateChange(sharedState);
+      return;
+    }
+
+    calendarClockState.perTabState = true;
+    persistCalendarClockState();
+    if (calendarClockRoot) updatePanelControls();
+  };
+
+  chrome.storage.onChanged.addListener(listener);
+  onCalendarClockContextInvalidated(() => {
+    try {
+      chrome.storage.onChanged.removeListener(listener);
+    } catch (_error) {
+      // The invalidated extension context will release the listener.
+    }
+  });
+}
 
 function loadCalendarClockState() {
   return new Promise(resolve => {
@@ -1102,9 +1227,35 @@ function loadCalendarClockState() {
           return;
         }
 
-        applyLoadedCalendarClockState(result[CALENDAR_CLOCK_STATE_KEY] || {});
+        const sharedState = isCalendarClockStateRecord(result[CALENDAR_CLOCK_STATE_KEY])
+          ? result[CALENDAR_CLOCK_STATE_KEY]
+          : {};
         calendarClockStorageStatus = result.calendarClockStorageStatus || null;
-        resolve();
+        if (sharedState.perTabState !== true) {
+          applyLoadedCalendarClockState(sharedState);
+          resolve();
+          return;
+        }
+
+        chrome.runtime.sendMessage({ type: "CALENDAR_CLOCK_LOAD_TAB_STATE" }, response => {
+          const tabStateError = getCalendarClockRuntimeLastError();
+          if (tabStateError) {
+            const invalidated = markCalendarClockExtensionContextInvalidated(tabStateError);
+            applyLoadedCalendarClockState({
+              ...sharedState,
+              perTabState: invalidated ? true : false
+            });
+            if (!invalidated) persistCalendarClockState();
+            resolve();
+            return;
+          }
+
+          const tabState = response?.ok === true && isCalendarClockStateRecord(response.state)
+            ? response.state
+            : sharedState;
+          applyLoadedCalendarClockState({ ...tabState, perTabState: true });
+          resolve();
+        });
       });
     } catch (error) {
       if (!markCalendarClockExtensionContextInvalidated(error)) {

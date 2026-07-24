@@ -534,6 +534,7 @@ function bindPanelControls() {
   const followRadiusEl = calendarClockRoot.querySelector("[data-cc-follow-radius]");
   const customDividerTimeEl = calendarClockRoot.querySelector("[data-cc-custom-divider-time]");
   const customDividerSliderEl = calendarClockRoot.querySelector("[data-cc-custom-divider-slider]");
+  const perTabStateEl = calendarClockRoot.querySelector("[data-cc-per-tab-state]");
   const windowStartMarkerEl = calendarClockRoot.querySelector("[data-cc-window-start-marker]");
   const dividerSettingsToggleEl = calendarClockRoot.querySelector("[data-cc-action='divider-settings-toggle']");
   const dividerSettingsPanelEl = calendarClockRoot.querySelector("[data-cc-divider-settings-panel]");
@@ -600,6 +601,10 @@ function bindPanelControls() {
   const captureLimitEl = calendarClockRoot.querySelector("[data-cc-capture-limit]");
   const arcSameLevelNonOverlappingEl = calendarClockRoot.querySelector("[data-cc-arc-same-level-non-overlapping]");
   const longDurationArcsVisibleEl = calendarClockRoot.querySelector("[data-cc-long-duration-arcs-visible]");
+
+  perTabStateEl.addEventListener("change", () => {
+    setCalendarClockPerTabState(perTabStateEl.checked);
+  });
 
   presetEl.addEventListener("change", () => {
     if (presetEl.value === "generated") return;
@@ -1531,33 +1536,65 @@ function setCalendarClockPageOwnedMode(enabled) {
     renderDebugPanel();
   };
 
-  try {
-    chrome.storage.local.set({ [CALENDAR_CLOCK_STATE_KEY]: calendarClockState }, () => {
-      const runtimeError = getCalendarClockRuntimeLastError();
-      if (runtimeError) {
-        markCalendarClockExtensionContextInvalidated(runtimeError);
+  saveCalendarClockState({
+    onComplete: saved => {
+      if (!saved) {
+        finish();
         return;
       }
       requestCalendarClockStoredEventClear(() => finish());
-    });
-  } catch (error) {
-    if (!markCalendarClockExtensionContextInvalidated(error)) calendarClockWarn("failed to switch event source", error);
-    finish();
-  }
+    }
+  });
 }
 
-function saveDefaultCalendarClockAppSettings(settings = CALENDAR_CLOCK_PANEL_DEFAULT) {
-  if (!canUseCalendarClockExtensionApi()) return;
+function saveDefaultCalendarClockAppSettings(settings = CALENDAR_CLOCK_PANEL_DEFAULT, onComplete) {
+  if (!canUseCalendarClockExtensionApi()) {
+    onComplete?.(false);
+    return;
+  }
+
+  const defaultState = { ...settings, perTabState: false };
+  const saveSharedFallback = () => {
+    try {
+      chrome.storage.local.set({ [CALENDAR_CLOCK_STATE_KEY]: defaultState }, () => {
+        const fallbackError = getCalendarClockRuntimeLastError();
+        if (fallbackError) markCalendarClockExtensionContextInvalidated(fallbackError);
+        onComplete?.(!fallbackError);
+      });
+    } catch (fallbackError) {
+      if (!markCalendarClockExtensionContextInvalidated(fallbackError)) {
+        calendarClockWarn("failed to wipe shared overlay state", fallbackError);
+      }
+      onComplete?.(false);
+    }
+  };
 
   try {
-    chrome.storage.local.set({ [CALENDAR_CLOCK_STATE_KEY]: { ...settings } }, () => {
+    chrome.runtime.sendMessage({
+      type: "CALENDAR_CLOCK_SET_PER_TAB_STATE",
+      enabled: false,
+      state: defaultState
+    }, response => {
       const runtimeError = getCalendarClockRuntimeLastError();
-      if (runtimeError) markCalendarClockExtensionContextInvalidated(runtimeError);
+      if (runtimeError) {
+        if (markCalendarClockExtensionContextInvalidated(runtimeError)) {
+          onComplete?.(false);
+          return;
+        }
+        saveSharedFallback();
+        return;
+      }
+      const saved = response?.ok === true;
+      if (!saved) calendarClockWarn("failed to wipe overlay state", response?.error || "unknown error");
+      onComplete?.(saved);
     });
   } catch (error) {
-    if (!markCalendarClockExtensionContextInvalidated(error)) {
-      calendarClockWarn("failed to wipe overlay state", error);
+    if (markCalendarClockExtensionContextInvalidated(error)) {
+      onComplete?.(false);
+      return;
     }
+    calendarClockWarn("failed to wipe overlay state", error);
+    saveSharedFallback();
   }
 }
 
@@ -1603,7 +1640,6 @@ function wipeCalendarClockAppSettingsToDefault() {
   globalThis.calendarClockEventReminders?.syncState?.({ clearCustomBlob: true });
   calendarClockWhatsNewOpen = false;
   applyInitialTimePanelSize({ force: true });
-  saveDefaultCalendarClockAppSettings({ ...calendarClockState, debugOpen: false });
   updatePanelControls();
   updateRootClasses();
   updatePanelPosition();
@@ -1611,13 +1647,16 @@ function wipeCalendarClockAppSettingsToDefault() {
   syncClockFrame({ rebuild: true });
   renderDebugPanel();
   updatePanelStats();
-  setCalendarClockDebugStatus("App settings wiped; clearing stored events");
-  wipeCalendarClockStoredEvents(() => {
-    if (calendarClockExtensionContextInvalidated) return;
-    setCalendarClockDebugStatus("Stored events wiped; reloading Calendar");
-    setTimeout(() => {
-      if (!calendarClockExtensionContextInvalidated) location.reload();
-    }, 50);
+  setCalendarClockDebugStatus("Wiping app settings");
+  saveDefaultCalendarClockAppSettings({ ...calendarClockState, debugOpen: false }, () => {
+    setCalendarClockDebugStatus("App settings wiped; clearing stored events");
+    wipeCalendarClockStoredEvents(() => {
+      if (calendarClockExtensionContextInvalidated) return;
+      setCalendarClockDebugStatus("Stored events wiped; reloading Calendar");
+      setTimeout(() => {
+        if (!calendarClockExtensionContextInvalidated) location.reload();
+      }, 50);
+    });
   });
 }
 
@@ -2059,6 +2098,7 @@ function updatePanelControls() {
   calendarClockRoot.querySelector("[data-cc-event-label-opacity-output]").textContent = `${labelOpacity}%`;
   calendarClockRoot.querySelector("[data-cc-event-label-arc-distance]").value = String(labelArcDistance);
   calendarClockRoot.querySelector("[data-cc-event-label-arc-distance-output]").textContent = `${labelArcDistance}px`;
+  calendarClockRoot.querySelector("[data-cc-per-tab-state]").checked = calendarClockState.perTabState === true;
   calendarClockRoot.querySelector("[data-cc-menu-dark-theme]").checked = calendarClockState.menuDarkTheme;
   const densityLevel = clampPercentLevel(calendarClockState.densityLevel, CALENDAR_CLOCK_PANEL_DEFAULT.densityLevel);
   const arcThicknessLevel = clampPercentLevel(calendarClockState.arcThicknessLevel, CALENDAR_CLOCK_PANEL_DEFAULT.arcThicknessLevel);

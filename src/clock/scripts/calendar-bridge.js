@@ -686,7 +686,10 @@ function setDisplayWindow(start, end, options = {}) {
                 chromeApi.storage.onChanged.addListener((changes, areaName) => {
                     if (areaName !== "local") return;
                     if (changes.calendarClockOverlayState) {
-                        applyClockOverlayState(changes.calendarClockOverlayState.newValue);
+                        const nextOverlayState = changes.calendarClockOverlayState.newValue;
+                        if (IS_ACTION_POPUP || nextOverlayState?.perTabState !== true) {
+                            applyClockOverlayState(nextOverlayState);
+                        }
                     }
                     if (changes.calendarClockEvents) {
                         applyCalendarEvents(

@@ -194,7 +194,7 @@
       display: none;
     }
 
-    #calendar-clock-root .cc-settings-tab-panel > .cc-panel-section-visuals {
+    #calendar-clock-root .cc-settings-tab-panel > .cc-panel-section:first-child {
       padding-top: 0;
       border-top: 0;
     }

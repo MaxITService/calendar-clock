@@ -54,16 +54,19 @@ const calendarClockMessageContract = new Set([
   "CALENDAR_CLOCK_HIDE_EVENT_TOOLTIP",
   "CALENDAR_CLOCK_HIGHLIGHT_EVENT",
   "CALENDAR_CLOCK_LAUNCH_AUTO_MAGNIFIER",
+  "CALENDAR_CLOCK_LOAD_TAB_STATE",
   "CALENDAR_CLOCK_MOVE_EVENT_TOOLTIP",
   "CALENDAR_CLOCK_PAGE_OWNED_INIT",
   "CALENDAR_CLOCK_REBUILD",
   "CALENDAR_CLOCK_RELOAD_EVENTS",
+  "CALENDAR_CLOCK_SAVE_TAB_STATE",
   "CALENDAR_CLOCK_SET_24_HOUR_RADIAL",
   "CALENDAR_CLOCK_SET_CONSOLE_LOGS",
   "CALENDAR_CLOCK_SET_DENSITY",
   "CALENDAR_CLOCK_SET_EVENT_LABELS",
   "CALENDAR_CLOCK_SET_MAGNIFIER",
   "CALENDAR_CLOCK_SET_MODE",
+  "CALENDAR_CLOCK_SET_PER_TAB_STATE",
   "CALENDAR_CLOCK_SET_WINDOW",
   "CALENDAR_CLOCK_SET_WINDOW_START_MARKER",
   "CALENDAR_CLOCK_SHOW_EVENT_TOOLTIP",
@@ -142,6 +145,83 @@ assert.deepStrictEqual(
   Array.from(background.api.mergeCalendarClockEvents([lateToday], [earlyTomorrow]), event => event.id),
   ["late", "early"]
 );
+
+function makeMemoryStorageArea(values) {
+  return {
+    get(keys, callback) {
+      if (keys === null) {
+        callback({ ...values });
+        return;
+      }
+      const requested = Array.isArray(keys) ? keys : [keys];
+      callback(Object.fromEntries(requested
+        .filter(key => Object.prototype.hasOwnProperty.call(values, key))
+        .map(key => [key, values[key]])));
+    },
+    set(nextValues, callback) {
+      Object.assign(values, nextValues);
+      callback?.();
+    },
+    remove(keys, callback) {
+      (Array.isArray(keys) ? keys : [keys]).forEach(key => delete values[key]);
+      callback?.();
+    }
+  };
+}
+
+const localTabStateValues = {};
+const sessionTabStateValues = {};
+const tabStateChrome = {
+  runtime: { lastError: null },
+  storage: {
+    local: makeMemoryStorageArea(localTabStateValues),
+    session: makeMemoryStorageArea(sessionTabStateValues)
+  }
+};
+const tabStateBackground = loadFunctions("src/background/tab-state/tab-state.js", [
+  "isTrustedCalendarClockTabStateSender",
+  "getCalendarClockTabStateKey",
+  "isCalendarClockStateRecord",
+  "getCalendarClockSessionStorage",
+  "loadCalendarClockTabState",
+  "saveCalendarClockTabState",
+  "clearCalendarClockTabStates",
+  "setCalendarClockPerTabState"
+], {
+  URL,
+  chrome: tabStateChrome,
+  CALENDAR_CLOCK_OVERLAY_STATE_KEY: "calendarClockOverlayState",
+  CALENDAR_CLOCK_TAB_STATE_KEY_PREFIX: "calendarClockOverlayTabState:"
+});
+const calendarTabSender = { url: "https://calendar.google.com/calendar/u/0/r", tab: { id: 42 } };
+let tabStateResponse = null;
+tabStateBackground.api.setCalendarClockPerTabState(
+  { enabled: true, state: { mode: "mini", perTabState: true } },
+  calendarTabSender,
+  response => { tabStateResponse = response; }
+);
+assert.strictEqual(tabStateResponse.ok, true);
+assert.strictEqual(localTabStateValues.calendarClockOverlayState.perTabState, true);
+assert.strictEqual(sessionTabStateValues["calendarClockOverlayTabState:42"].mode, "mini");
+tabStateBackground.api.saveCalendarClockTabState(
+  { mode: "hidden", perTabState: true },
+  calendarTabSender,
+  response => { tabStateResponse = response; }
+);
+assert.strictEqual(tabStateResponse.ok, true);
+tabStateBackground.api.loadCalendarClockTabState(
+  calendarTabSender,
+  response => { tabStateResponse = response; }
+);
+assert.strictEqual(tabStateResponse.state.mode, "hidden");
+tabStateBackground.api.setCalendarClockPerTabState(
+  { enabled: false, state: { mode: "full", perTabState: false } },
+  calendarTabSender,
+  response => { tabStateResponse = response; }
+);
+assert.strictEqual(tabStateResponse.ok, true);
+assert.strictEqual(localTabStateValues.calendarClockOverlayState.perTabState, false);
+assert.strictEqual(Object.keys(sessionTabStateValues).length, 0);
 
 const clock = loadFunctions("src/clock/scripts/calendar-bridge.js", [
   "normalizeCalendarEvents",
@@ -685,6 +765,7 @@ const overlaySource = read("src/content/overlay/overlay-menu.js");
 const calendarContentStateSource = read("src/content/calendar-content-state.js");
 const calendarContentEntrySource = read("src/content/calendar-content-entry.js");
 const backgroundSource = read("src/background/background.js");
+const tabStateModuleSource = read("src/background/tab-state/tab-state.js");
 const clockAppStateSource = read("src/clock/scripts/app-state.js");
 const clockAppInitSource = read("src/clock/scripts/app-init.js");
 const clockBridgeSource = read("src/clock/scripts/calendar-bridge.js");
@@ -699,6 +780,7 @@ assert.doesNotMatch(clockBridgeSource, /IS_ACTION_POPUP\s*\?\s*true/);
 assert.match(clockBridgeSource, /displayWindowStartEl\.value\s*=\s*state\.windowStart/);
 assert.match(clockBridgeSource, /displayWindowEndEl\.value\s*=\s*state\.windowEnd/);
 assert.match(clockBridgeSource, /if \(chromeApi\?\.storage\?\.onChanged\)/);
+assert.match(clockBridgeSource, /IS_ACTION_POPUP \|\| nextOverlayState\?\.perTabState !== true/);
 assert.match(clockBridgeSource, /else if \(changes\.calendarClockSource\) \{\s*loadStoredCalendarEvents\(\)/);
 assert.match(clockBridgeSource, /CALENDAR_CLOCK_HARD_REFRESH_FALLBACK_MS[\s\S]*hardReset && response\.ok === true[\s\S]*setTimeout[\s\S]*loadStoredCalendarEvents\(\)/);
 assert.match(clockBridgeSource, /data\.type === "CALENDAR_CLOCK_CLEAR_EVENTS"[\s\S]*applyCalendarEvents\(\[\], null\)/);
@@ -711,6 +793,13 @@ assert.doesNotMatch(clockBridgeSource, /applyCalendarEvents\(response\.events/);
 assert.match(backgroundSource, /function clearCalendarClockStoredEvents[\s\S]*storage\.local\.remove\(CALENDAR_CLOCK_EVENT_STORAGE_KEYS/);
 assert.match(backgroundSource, /response\.ok && reloadTabId !== null[\s\S]*tabs\.reload/);
 assert.match(backgroundSource, /message\?\.type === "CALENDAR_CLOCK_HARD_REFRESH_EVENTS"[\s\S]*hardRefreshCalendarClockEvents/);
+assert.match(backgroundSource, /src\/background\/tab-state\/tab-state\.js/);
+assert.match(tabStateModuleSource, /message\?\.type === "CALENDAR_CLOCK_LOAD_TAB_STATE"[\s\S]*loadCalendarClockTabState/);
+assert.match(tabStateModuleSource, /message\?\.type === "CALENDAR_CLOCK_SAVE_TAB_STATE"[\s\S]*saveCalendarClockTabState/);
+assert.match(tabStateModuleSource, /message\?\.type === "CALENDAR_CLOCK_SET_PER_TAB_STATE"[\s\S]*setCalendarClockPerTabState/);
+assert.match(tabStateModuleSource, /chrome\.storage\?\.session/);
+assert.match(tabStateModuleSource, /chrome\.tabs\.onRemoved\.addListener/);
+assert.match(tabStateModuleSource, /chrome\.tabs\.onReplaced\.addListener/);
 assert.match(calendarDomReaderSource, /if \(!displayDateRange\)[\s\S]*?return calendarClockEvents;/);
 assert.match(calendarDomReaderSource, /response\.events\.length === 0[\s\S]*clearCalendarClockFrameEvents\(\)[\s\S]*reloadCalendarClockFrameEvents\(\)/);
 assert.match(calendarDomReaderSource, /calendarClockEvents = limitCalendarClockEvents\(response\.calendarEvents, captureLimit\)/);
@@ -718,8 +807,13 @@ assert.ok(actionPopupHtmlSource.indexOf("temporal-projection.js") < actionPopupH
 assert.ok(clockPopupHtmlSource.indexOf("temporal-projection.js") < clockPopupHtmlSource.indexOf("calendar-bridge.js"));
 assert.doesNotMatch(calendarDomReaderSource, /return \{ startDate: new Date\(NaN\), endDate: new Date\(NaN\) \}/);
 assert.match(calendarContentStateSource, /timePanelOpen:\s*false/);
-assert.match(calendarContentStateSource, /CALENDAR_CLOCK_SETTINGS_TABS\s*=\s*Object\.freeze\(\["window", "other"\]\)/);
+assert.match(calendarContentStateSource, /CALENDAR_CLOCK_SETTINGS_TABS\s*=\s*Object\.freeze\(\["window", "clock"\]\)/);
 assert.match(calendarContentStateSource, /settingsTab:\s*"window"/);
+assert.match(calendarContentStateSource, /perTabState:\s*false/);
+assert.match(timeWindowSource, /type:\s*"CALENDAR_CLOCK_SAVE_TAB_STATE"/);
+assert.match(timeWindowSource, /type:\s*"CALENDAR_CLOCK_SET_PER_TAB_STATE"/);
+assert.match(timeWindowSource, /type:\s*"CALENDAR_CLOCK_LOAD_TAB_STATE"/);
+assert.match(calendarContentEntrySource, /registerCalendarClockStateStorageListener\(\)/);
 assert.match(calendarContentStateSource, /eventLabelDefaultVersion:\s*3/);
 assert.match(calendarContentStateSource, /eventLabelFontSizeFull:\s*22/);
 assert.match(calendarContentStateSource, /eventLabelFontSizeMini:\s*18/);
@@ -733,10 +827,14 @@ assert.match(rootTemplateSource, /data-cc-event-label-font-size-mini[^>]*value="
 assert.equal((rootTemplateSource.match(/data-cc-settings-tab="/g) || []).length, 2);
 assert.equal((rootTemplateSource.match(/data-cc-settings-tab-panel="/g) || []).length, 2);
 const settingsWindowPanelIndex = rootTemplateSource.indexOf('data-cc-settings-tab-panel="window"');
-const settingsOtherPanelIndex = rootTemplateSource.indexOf('data-cc-settings-tab-panel="other"');
+const settingsClockPanelIndex = rootTemplateSource.indexOf('data-cc-settings-tab-panel="clock"');
 const radial24HourIndex = rootTemplateSource.indexOf("data-cc-24-hour-radial");
-assert.ok(settingsWindowPanelIndex >= 0 && settingsOtherPanelIndex > settingsWindowPanelIndex);
-assert.ok(radial24HourIndex > settingsWindowPanelIndex && radial24HourIndex < settingsOtherPanelIndex);
+const perTabStateIndex = rootTemplateSource.indexOf("data-cc-per-tab-state");
+assert.ok(settingsWindowPanelIndex >= 0 && settingsClockPanelIndex > settingsWindowPanelIndex);
+assert.ok(radial24HourIndex > settingsWindowPanelIndex && radial24HourIndex < settingsClockPanelIndex);
+assert.ok(perTabStateIndex > settingsClockPanelIndex);
+assert.match(rootTemplateSource, /data-cc-settings-tab="clock"[^>]*>Clock Settings<\/button>/);
+assert.match(rootTemplateSource, /Separate clock in each browser tab/);
 const eventLabelFontSelect = rootTemplateSource.match(/<select[^>]*data-cc-event-label-font-preset[\s\S]*?<\/select>/)?.[0] || "";
 assert.ok(eventLabelFontSelect, "event label font presets use a select");
 assert.equal((eventLabelFontSelect.match(/<option\b/g) || []).length, 9);

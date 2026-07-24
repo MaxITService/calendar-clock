@@ -47,7 +47,7 @@
 
         <div class="cc-settings-tabs" role="tablist" aria-label="Settings sections">
           <button id="cc-settings-tab-window" type="button" role="tab" data-cc-settings-tab="window" aria-controls="cc-settings-panel-window" aria-selected="true">Time Window</button>
-          <button id="cc-settings-tab-other" type="button" role="tab" data-cc-settings-tab="other" aria-controls="cc-settings-panel-other" aria-selected="false" tabindex="-1">Other Settings</button>
+          <button id="cc-settings-tab-clock" type="button" role="tab" data-cc-settings-tab="clock" aria-controls="cc-settings-panel-clock" aria-selected="false" tabindex="-1">Clock Settings</button>
         </div>
 
         <div class="cc-settings-body">
@@ -102,7 +102,7 @@
             </div>
           </div>
 
-          <div id="cc-settings-panel-other" class="cc-settings-tab-panel" role="tabpanel" data-cc-settings-tab-panel="other" aria-labelledby="cc-settings-tab-other" hidden>
+          <div id="cc-settings-panel-clock" class="cc-settings-tab-panel" role="tabpanel" data-cc-settings-tab-panel="clock" aria-labelledby="cc-settings-tab-clock" hidden>
             <div class="cc-panel-section cc-panel-section-visuals">
               <div class="cc-section-title">Visuals</div>
               <div class="cc-visuals-grid">
@@ -460,6 +460,16 @@
                 <span class="cc-toggle-label">Dark theme for menus</span>
               </label>
               </div>
+            </div>
+
+            <div class="cc-panel-section cc-panel-section-tab-state">
+              <div class="cc-section-title">Browser tabs</div>
+              <label class="cc-toggle" title="Off: all Calendar tabs show the same clock, and changes in one tab apply to every tab. On: each tab keeps its own mode and settings, for example Full in one tab and Mini in another.">
+                <input data-cc-per-tab-state type="checkbox">
+                <span class="cc-toggle-slider"></span>
+                <span class="cc-toggle-label">Separate clock in each browser tab</span>
+              </label>
+              <div class="cc-divider-help">Off: all Calendar tabs are synced. Switching Full, Mini, or Hidden, or changing a setting, in one tab changes every tab.<br>On: each tab keeps its own mode and settings, for example Full in one tab and Mini in another. New tabs start from the settings you had when you turned this on. Turning it off applies this tab's clock to all tabs.</div>
             </div>
 
             <div class="cc-panel-footer">

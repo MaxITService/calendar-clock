@@ -12,12 +12,6 @@
 - If extension files need to be refreshed, reloaded, or updated in the browser, try to do it in the allowed test browser/profile first. Some browsers/profiles can reload an unpacked extension programmatically, and some cannot; always verify whether the loaded extension actually updated. After an extension reload/update, refresh Google Calendar pages before testing content scripts again.
 - For stale or unresponsive CFT state, follow [[.agents/.untracked/Browser Harness CFT Recovery.md]].
 
-## Calendar test events
-
-- Read [[test/calendar-fixtures/README]] before populating Google Calendar with test events.
-- The default fixture config intentionally tests overlaps, short events, and an overnight event. For a specialized one-off schedule, use a separate untracked config; do not rewrite the default config.
-- Fixture cleanup is limited to the exact `[CC FIXTURE v1 YYYY-MM-DD]` title marker. Never remove real-looking calendar events.
-
 # Documentation and help
 
 - AI Documentation language is English and documentation must be as short as possible.

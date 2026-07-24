@@ -21,12 +21,6 @@
 | `scripts/verify-debug-payload-privacy.js` | Verifies safe debug exports omit private event data while the private export retains it. |
 | `scripts/verify-popup-snapshot-sort.js` | Verifies date-aware popup ordering, including midnight crossings and undated Task fallback behavior. |
 | `scripts/verify-clock-safe-fixes.js` | Verifies isolated clock fixes for chronological ordering, source labels, interval clamping, tooltip reset, persisted warnings, and hidden-mode timers. |
-| `test/calendar-fixtures/Invoke-TodayCalendarFixtures.ps1` | Runs safe add/list/remove/reset fixture commands through the logged-in CFT Calendar page. |
-| `test/calendar-fixtures/fixture-driver.py` | Browser Harness workflow that bootstraps fresh Calendar mutation templates and verifies fixture results. |
-| `test/calendar-fixtures/page-owned-fixture-hook.js` | Test-only MAIN-world hook that captures and safely clones Calendar create/delete mutations. |
-| `test/calendar-fixtures/fixtures.json` | Deterministic event ranges used to fill a Calendar day with clock edge cases. |
-| `test/calendar-fixtures/verify-fixture-hook.js` | Verifies fixture mutation parsing, batching, ID decoding, and delete safeguards. |
-| `test/calendar-fixtures/README.md` | Short usage and safety notes for Calendar fixture scripts. |
 | `src/background/background.js` | Service worker that receives captured calendar events and stores them. |
 | `src/action-popup/action-popup.html` | Toolbar popup shell for the stored Calendar Clock snapshot preview. |
 | `src/action-popup/action-popup.css` | Toolbar popup styling for the mini clock, stale warning, metadata, and item list. |

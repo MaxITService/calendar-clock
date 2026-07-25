@@ -1,10 +1,11 @@
-// Defines shared state and constants used by the Google Calendar content-script modules.
+// Defines shared state and constants used by the calendar content-script modules.
 const CALENDAR_CLOCK_SELECTOR = [
   "[data-eventid]",
   "[data-eventchip]",
   "[data-eid]",
   "[data-taskid]",
   "[data-task-id]",
+  "[data-calitemid]",
   "[role='button'][aria-label*='Task']",
   "[role='button'][aria-label*='task']"
 ].join(",");
@@ -155,9 +156,10 @@ let calendarClockWhatsNewOpen = false;
 let calendarClockEvents = [];
 let calendarClockCaptureMeta = { calendar: null, task: null };
 let calendarClockStorageStatus = null;
+const initialCalendarClockProvider = globalThis.getCalendarClockProvider?.() || {};
 let calendarClockEffectiveEventSource = {
   requestedMode: "dom",
-  activeSource: "google-calendar-dom",
+  activeSource: initialCalendarClockProvider.sourceId || "google-calendar-dom",
   status: "DOM text parser active",
   fallback: false
 };

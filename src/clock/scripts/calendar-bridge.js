@@ -24,7 +24,7 @@ function normalizeClockCaptureMetaEntry(entry, fallbackSource) {
         function getClockCaptureMetaEntries(source) {
             const captureMeta = source?.captureMeta || null;
             return [
-                normalizeClockCaptureMetaEntry(captureMeta?.calendar, "google-calendar-dom"),
+                normalizeClockCaptureMetaEntry(captureMeta?.calendar, `${CALENDAR_CLOCK_PROVIDER_ID}-calendar-dom`),
                 normalizeClockCaptureMetaEntry(captureMeta?.task, "google-tasks-dom")
             ].filter(Boolean);
         }
@@ -113,7 +113,7 @@ function setDisplayWindow(start, end, options = {}) {
 
         function isTrustedCalendarPageMessage(event) {
             if (!IS_EMBEDDED || IS_ACTION_POPUP || window.parent === window) return true;
-            return event.source === window.parent && event.origin === "https://calendar.google.com";
+            return event.source === window.parent && event.origin === CALENDAR_CLOCK_PROVIDER.origin;
         }
 
         let clockFaceAvailabilityAnnounced = false;
@@ -230,6 +230,8 @@ function setDisplayWindow(start, end, options = {}) {
                 startAutoMagnifier();
             } else if (data.type === "CALENDAR_CLOCK_SET_CONSOLE_LOGS") {
                 setClockConsoleLogs(data.enabled);
+            } else if (data.type === "CALENDAR_CLOCK_SET_EVENTS") {
+                applyCalendarEvents(data.events || [], data.source || null);
             } else if (data.type === "CALENDAR_CLOCK_CLEAR_EVENTS") {
                 applyCalendarEvents([], null);
             } else if (data.type === "CALENDAR_CLOCK_RELOAD_EVENTS") {
@@ -328,9 +330,12 @@ function setDisplayWindow(start, end, options = {}) {
 
         function getClockCalendarSourceLabel(source) {
             const activeSource = String(source?.effectiveSource?.activeSource || "");
-            return activeSource === "google-page-owned"
-                ? "Google Calendar structured data"
-                : "Google Calendar DOM";
+            if (activeSource === "google-page-owned") return "Google Calendar structured data";
+            if (activeSource === "outlook-page-owned") return "Outlook Calendar structured data";
+            const providerName = typeof CALENDAR_CLOCK_PROVIDER === "object"
+                ? CALENDAR_CLOCK_PROVIDER.displayName
+                : "Google Calendar";
+            return `${providerName} DOM`;
         }
 
         function saveDisplayWindowSettings() {
@@ -417,7 +422,7 @@ function setDisplayWindow(start, end, options = {}) {
                     : hiddenLongArcCount
                         ? `${visibleCount} visible · ${hiddenLongArcCount} long arc hidden · ${outsideCount} outside`
                         : `${visibleCount} visible · ${outsideCount} outside`
-                : "Open Google Calendar";
+                : `Open ${CALENDAR_CLOCK_PROVIDER.displayName}`;
             calendarStatusEl.textContent = omittedCaptureCount ? `${baseStatus} · ${omittedCaptureCount} omitted` : baseStatus;
 
             const rows = calendarEvents.slice(0, 18).map(createCalendarEventRow);
@@ -595,7 +600,11 @@ function setDisplayWindow(start, end, options = {}) {
             }
 
             try {
-                chromeApi.storage.local.get(["calendarClockEvents", "calendarClockSource", "calendarClockOverlayState"], result => {
+                chromeApi.storage.local.get([
+                    CALENDAR_CLOCK_PROVIDER.eventsStorageKey,
+                    CALENDAR_CLOCK_PROVIDER.sourceStorageKey,
+                    "calendarClockOverlayState"
+                ], result => {
                     const runtimeError = getClockRuntimeLastError(chromeApi);
                     if (runtimeError) {
                         markClockExtensionContextInvalidated(runtimeError);
@@ -604,7 +613,10 @@ function setDisplayWindow(start, end, options = {}) {
                     }
 
                     applyClockOverlayState(result.calendarClockOverlayState);
-                    applyCalendarEvents(result.calendarClockEvents || [], result.calendarClockSource || null);
+                    applyCalendarEvents(
+                        result[CALENDAR_CLOCK_PROVIDER.eventsStorageKey] || [],
+                        result[CALENDAR_CLOCK_PROVIDER.sourceStorageKey] || null
+                    );
                 });
             } catch (error) {
                 if (!markClockExtensionContextInvalidated(error)) {
@@ -630,7 +642,10 @@ function setDisplayWindow(start, end, options = {}) {
                     }
 
                     const tab = tabs[0];
-                    if (!tab?.id || !/^https:\/\/calendar\.google\.com\//.test(tab.url || "")) {
+                    if (!tab?.id || !globalThis.CalendarClockProviders?.matchesCalendarUrl?.(
+                        CALENDAR_CLOCK_PROVIDER_ID,
+                        tab.url || ""
+                    )) {
                         loadStoredCalendarEvents();
                         return;
                     }
@@ -645,7 +660,7 @@ function setDisplayWindow(start, end, options = {}) {
 
                         if (hardReset && response.ok === true) {
                             applyCalendarEvents([], null);
-                            calendarStatusEl.textContent = "Reloading Google Calendar";
+                            calendarStatusEl.textContent = `Reloading ${CALENDAR_CLOCK_PROVIDER.displayName}`;
                             calendarClockHardRefreshFallbackTimer = setTimeout(() => {
                                 calendarClockHardRefreshFallbackTimer = null;
                                 loadStoredCalendarEvents();
@@ -660,6 +675,7 @@ function setDisplayWindow(start, end, options = {}) {
                     if (hardReset) {
                         chromeApi.runtime.sendMessage({
                             type: "CALENDAR_CLOCK_HARD_REFRESH_EVENTS",
+                            provider: CALENDAR_CLOCK_PROVIDER_ID,
                             tabId: tab.id
                         }, handleResponse);
                     } else {
@@ -691,12 +707,14 @@ function setDisplayWindow(start, end, options = {}) {
                             applyClockOverlayState(nextOverlayState);
                         }
                     }
-                    if (changes.calendarClockEvents) {
+                    const eventChange = changes[CALENDAR_CLOCK_PROVIDER.eventsStorageKey];
+                    const sourceChange = changes[CALENDAR_CLOCK_PROVIDER.sourceStorageKey];
+                    if (eventChange) {
                         applyCalendarEvents(
-                            changes.calendarClockEvents.newValue || [],
-                            changes.calendarClockSource?.newValue || calendarSource
+                            eventChange.newValue || [],
+                            sourceChange?.newValue || calendarSource
                         );
-                    } else if (changes.calendarClockSource) {
+                    } else if (sourceChange) {
                         loadStoredCalendarEvents();
                     }
                 });

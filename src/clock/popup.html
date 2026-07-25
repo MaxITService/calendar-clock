@@ -39,10 +39,10 @@
         <button id="manualAutoButton" type="button" aria-label="Preview automatic magnifier">Preview automatic magnifier</button>
     </div>
 
-    <div class="time-range-controls calendar-panel" aria-label="Google Calendar event feed">
+    <div class="time-range-controls calendar-panel" aria-label="Calendar event feed">
         <div class="calendar-panel-header">
-            <strong id="calendarStatus">Waiting for Google Calendar</strong>
-            <button id="refreshCalendarButton" type="button" aria-label="Clear cached events and reload the active Google Calendar tab" title="Clear cached events and reload the active Google Calendar tab">Refresh</button>
+            <strong id="calendarStatus">Waiting for Calendar</strong>
+            <button id="refreshCalendarButton" type="button" aria-label="Clear cached events and reload the active calendar tab" title="Clear cached events and reload the active calendar tab">Refresh</button>
         </div>
         <div class="display-window-controls" aria-label="Displayed 12 hour window">
             <label class="radial-clock-toggle" title="Map 24 hours around the dial. With Follow Now from the Calendar overlay, the configured offset shows past hours and the remaining hours look forward.">
@@ -62,6 +62,7 @@
         <div id="calendarEventList" class="calendar-event-list" aria-live="polite"></div>
     </div>
     <div class="arc-tooltip" id="arcTooltip" aria-hidden="true"></div>
+    <script src="../providers/provider-registry.js"></script>
     <script src="../temporal-projection/temporal-projection.js"></script>
     <script src="scripts/app-state.js"></script>
     <script src="scripts/face-registry.js"></script>

@@ -1,7 +1,21 @@
-const STORAGE_KEYS = [
-    "calendarClockEvents",
-    "calendarClockSource"
-];
+const POPUP_PROVIDER_STORAGE_KEY = "calendarClockPopupProvider";
+function createPopupProvider(providerId, copy) {
+    const definition = globalThis.CalendarClockProviders?.get?.(providerId);
+    return definition ? Object.freeze({ ...definition, ...copy }) : null;
+}
+
+const POPUP_PROVIDERS = Object.freeze({
+    google: createPopupProvider("google", {
+        warning: "This popup uses the last stored Google Calendar and Tasks snapshot. If either page has not been opened recently, these items may be outdated.",
+        listTitle: "Stored tasks and events",
+        emptyText: "Open Google Calendar with Tasks visible to capture timed items for this snapshot."
+    }),
+    outlook: createPopupProvider("outlook", {
+        warning: "This popup uses the last stored Outlook Calendar snapshot. Open Outlook Calendar to refresh it.",
+        listTitle: "Stored calendar events",
+        emptyText: "Open Outlook Calendar to capture timed events for this snapshot."
+    })
+});
 
 const snapshotStatusEl = document.getElementById("snapshotStatus");
 const snapshotCountEl = document.getElementById("snapshotCount");
@@ -10,6 +24,25 @@ const calendarCountEl = document.getElementById("calendarCount");
 const taskCountEl = document.getElementById("taskCount");
 const taskListEl = document.getElementById("taskList");
 const openCalendarButtonEl = document.getElementById("openCalendarButton");
+const calendarProviderEl = document.getElementById("calendarProvider");
+const clockPreviewFrameEl = document.getElementById("clockPreviewFrame");
+const snapshotWarningEl = document.getElementById("snapshotWarning");
+const snapshotListTitleEl = document.getElementById("snapshotListTitle");
+let activeProviderId = "google";
+let snapshotLoadSequence = 0;
+
+function getPopupProvider(providerId = activeProviderId) {
+    return POPUP_PROVIDERS[providerId] || POPUP_PROVIDERS.google || {
+        id: "unsupported",
+        displayName: "Calendar",
+        openUrl: "",
+        eventsStorageKey: "calendarClockEvents",
+        sourceStorageKey: "calendarClockSource",
+        warning: "Calendar provider metadata is unavailable.",
+        listTitle: "Stored calendar events",
+        emptyText: "Reload Calendar Clock to restore provider metadata."
+    };
+}
 
 function getSafeEvents(value, source = {}) {
     if (!Array.isArray(value)) return [];
@@ -218,16 +251,16 @@ function createSnapshotDateLabel(text) {
     return labelEl;
 }
 
-function createTaskListEmptyState() {
+function createTaskListEmptyState(provider = getPopupProvider()) {
     const emptyStateEl = document.createElement("div");
     emptyStateEl.className = "empty-state";
-    emptyStateEl.textContent = "Open Google Calendar with Tasks visible to capture timed items for this snapshot.";
+    emptyStateEl.textContent = provider.emptyText;
     return emptyStateEl;
 }
 
-function renderSnapshot(result) {
-    const source = result.calendarClockSource || {};
-    const events = getSafeEvents(result.calendarClockEvents, source);
+function renderSnapshot(result, provider = getPopupProvider()) {
+    const source = result[provider.sourceStorageKey] || {};
+    const events = getSafeEvents(result[provider.eventsStorageKey], source);
     const snapshotCapturedAt = Number(source.capturedAt);
     const { calendarCount, taskCount } = getSnapshotTypeCounts(events);
 
@@ -244,34 +277,77 @@ function renderSnapshot(result) {
         .map(entry => entry.type === "label"
             ? createSnapshotDateLabel(entry.text)
             : createSnapshotItemRow(entry.event));
-    taskListEl.replaceChildren(...(rows.length ? rows : [createTaskListEmptyState()]));
+    taskListEl.replaceChildren(...(rows.length ? rows : [createTaskListEmptyState(provider)]));
 }
 
-function loadSnapshot() {
+function updateProviderUi(provider) {
+    activeProviderId = provider.id;
+    calendarProviderEl.value = provider.id;
+    snapshotWarningEl.textContent = provider.warning;
+    snapshotListTitleEl.textContent = provider.listTitle;
+    openCalendarButtonEl.textContent = `Open ${provider.displayName}`;
+
+    const chromeApi = getChromeApi();
+    if (!chromeApi?.runtime?.getURL) return;
+    const previewUrl = new URL(chromeApi.runtime.getURL("src/clock/popup.html"));
+    previewUrl.searchParams.set("embedded", "1");
+    previewUrl.searchParams.set("actionPopup", "1");
+    previewUrl.searchParams.set("provider", provider.id);
+    if (clockPreviewFrameEl.src !== previewUrl.href) clockPreviewFrameEl.src = previewUrl.href;
+}
+
+function loadSnapshot(providerId = activeProviderId, options = {}) {
+    const provider = getPopupProvider(providerId);
+    const loadSequence = ++snapshotLoadSequence;
+    updateProviderUi(provider);
     const chromeApi = getChromeApi();
     if (!chromeApi?.storage?.local) {
-        renderSnapshot({});
+        renderSnapshot({}, provider);
         return;
     }
 
-    chromeApi.storage.local.get(STORAGE_KEYS, result => {
+    if (options.persist === true) {
+        chromeApi.storage.local.set({ [POPUP_PROVIDER_STORAGE_KEY]: provider.id });
+    }
+    chromeApi.storage.local.get([provider.eventsStorageKey, provider.sourceStorageKey], result => {
+        if (loadSequence !== snapshotLoadSequence || provider.id !== activeProviderId) return;
         const runtimeError = chromeApi.runtime?.lastError;
         if (runtimeError) {
-            renderSnapshot({});
+            renderSnapshot({}, provider);
             snapshotStatusEl.textContent = "Stored snapshot unavailable";
             snapshotStatusEl.title = String(runtimeError.message || runtimeError);
             return;
         }
-        renderSnapshot(result);
+        snapshotStatusEl.title = "";
+        renderSnapshot(result, provider);
     });
 }
 
+calendarProviderEl.addEventListener("change", () => {
+    loadSnapshot(calendarProviderEl.value, { persist: true });
+});
+
 openCalendarButtonEl.addEventListener("click", () => {
     const chromeApi = getChromeApi();
-    if (chromeApi?.tabs?.create) {
-        chromeApi.tabs.create({ url: "https://calendar.google.com/" });
+    if (chromeApi?.tabs?.create && getPopupProvider().openUrl) {
+        chromeApi.tabs.create({ url: getPopupProvider().openUrl });
     }
     window.close();
 });
 
-loadSnapshot();
+const chromeApi = getChromeApi();
+if (chromeApi?.storage?.local) {
+    chromeApi.storage.local.get([POPUP_PROVIDER_STORAGE_KEY], result => {
+        const providerId = result?.[POPUP_PROVIDER_STORAGE_KEY];
+        loadSnapshot(providerId);
+    });
+    chromeApi.storage.onChanged?.addListener((changes, areaName) => {
+        if (areaName !== "local") return;
+        const provider = getPopupProvider();
+        if (changes[provider.eventsStorageKey] || changes[provider.sourceStorageKey]) {
+            loadSnapshot(provider.id);
+        }
+    });
+} else {
+    loadSnapshot();
+}

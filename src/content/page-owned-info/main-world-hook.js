@@ -311,6 +311,7 @@
     return event?.source === scope
       && event?.origin === scope?.location?.origin
       && message?.type === "CALENDAR_CLOCK_PAGE_OWNED_INIT"
+      && message?.providerId === "google"
       && TOKEN_PATTERN.test(message.channelId || "")
       && Boolean(event.ports?.[0]);
   }

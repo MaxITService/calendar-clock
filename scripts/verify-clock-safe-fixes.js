@@ -53,6 +53,7 @@ const calendarClockMessageContract = new Set([
   "CALENDAR_CLOCK_HARD_REFRESH_EVENTS",
   "CALENDAR_CLOCK_HIDE_EVENT_TOOLTIP",
   "CALENDAR_CLOCK_HIGHLIGHT_EVENT",
+  "CALENDAR_CLOCK_INSTALL_MAIN_PROVIDER",
   "CALENDAR_CLOCK_LAUNCH_AUTO_MAGNIFIER",
   "CALENDAR_CLOCK_LOAD_TAB_STATE",
   "CALENDAR_CLOCK_MOVE_EVENT_TOOLTIP",
@@ -63,6 +64,7 @@ const calendarClockMessageContract = new Set([
   "CALENDAR_CLOCK_SET_24_HOUR_RADIAL",
   "CALENDAR_CLOCK_SET_CONSOLE_LOGS",
   "CALENDAR_CLOCK_SET_DENSITY",
+  "CALENDAR_CLOCK_SET_EVENTS",
   "CALENDAR_CLOCK_SET_EVENT_LABELS",
   "CALENDAR_CLOCK_SET_MAGNIFIER",
   "CALENDAR_CLOCK_SET_MODE",
@@ -190,6 +192,11 @@ const tabStateBackground = loadFunctions("src/background/tab-state/tab-state.js"
 ], {
   URL,
   chrome: tabStateChrome,
+  CalendarClockProviders: {
+    fromHostname(hostname) {
+      return ["calendar.google.com", "outlook.live.com"].includes(hostname) ? { hostname } : null;
+    }
+  },
   CALENDAR_CLOCK_OVERLAY_STATE_KEY: "calendarClockOverlayState",
   CALENDAR_CLOCK_TAB_STATE_KEY_PREFIX: "calendarClockOverlayTabState:"
 });
@@ -771,17 +778,19 @@ const clockAppInitSource = read("src/clock/scripts/app-init.js");
 const clockBridgeSource = read("src/clock/scripts/calendar-bridge.js");
 const calendarDomReaderSource = read("src/content/calendar-dom-reader.js");
 const actionPopupHtmlSource = read("src/action-popup/action-popup.html");
+const clockTimeWindowSource = read("src/clock/scripts/time-window.js");
 const clockPopupHtmlSource = read("src/clock/popup.html");
 const rootTemplateSource = read("src/content/overlay/templates/root.html");
 assert.doesNotMatch(backgroundSource, /chrome\.action\.onClicked/);
 assert.doesNotMatch(calendarContentEntrySource, /CALENDAR_CLOCK_TOGGLE_OVERLAY/);
 assert.doesNotMatch(clockAppInitSource, /IS_ACTION_POPUP\)\s*use24HourRadial\s*=\s*true/);
 assert.doesNotMatch(clockBridgeSource, /IS_ACTION_POPUP\s*\?\s*true/);
+assert.match(clockTimeWindowSource, /!IS_EMBEDDED \|\| IS_ACTION_POPUP \|\| window\.parent === window/);
 assert.match(clockBridgeSource, /displayWindowStartEl\.value\s*=\s*state\.windowStart/);
 assert.match(clockBridgeSource, /displayWindowEndEl\.value\s*=\s*state\.windowEnd/);
 assert.match(clockBridgeSource, /if \(chromeApi\?\.storage\?\.onChanged\)/);
 assert.match(clockBridgeSource, /IS_ACTION_POPUP \|\| nextOverlayState\?\.perTabState !== true/);
-assert.match(clockBridgeSource, /else if \(changes\.calendarClockSource\) \{\s*loadStoredCalendarEvents\(\)/);
+assert.match(clockBridgeSource, /const sourceChange = changes\[CALENDAR_CLOCK_PROVIDER\.sourceStorageKey\][\s\S]*else if \(sourceChange\) \{\s*loadStoredCalendarEvents\(\)/);
 assert.match(clockBridgeSource, /CALENDAR_CLOCK_HARD_REFRESH_FALLBACK_MS[\s\S]*hardReset && response\.ok === true[\s\S]*setTimeout[\s\S]*loadStoredCalendarEvents\(\)/);
 assert.match(clockBridgeSource, /data\.type === "CALENDAR_CLOCK_CLEAR_EVENTS"[\s\S]*applyCalendarEvents\(\[\], null\)/);
 assert.match(clockBridgeSource, /data\.type === "CALENDAR_CLOCK_RELOAD_EVENTS"[\s\S]*loadStoredCalendarEvents\(\)/);
@@ -871,7 +880,7 @@ assert.match(overlaySource, /function wipeCalendarClockStoredEvents[\s\S]*clearC
 assert.match(overlaySource, /function wipeCalendarClockAppSettingsToDefault[\s\S]*wipeCalendarClockStoredEvents[\s\S]*location\.reload\(\)/);
 assert.match(overlaySource, /data-cc-action='refresh'[\s\S]*hardRefreshCalendarClockEventsFromToolbar/);
 assert.match(overlaySource, /function hardRefreshCalendarClockEventsFromToolbar[\s\S]*CALENDAR_CLOCK_HARD_REFRESH_EVENTS/);
-assert.match(rootTemplateSource, /data-cc-action="refresh"[^>]*title="Clear cached events, reload this Google Calendar tab/);
+assert.match(rootTemplateSource, /data-cc-action="refresh"[^>]*title="Clear cached events, reload this calendar tab/);
 [
   "src/temporal-projection/temporal-projection.js",
   "src/content/main-world-early-deletions.js",

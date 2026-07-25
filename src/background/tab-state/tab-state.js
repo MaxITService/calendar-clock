@@ -6,7 +6,7 @@
     try {
       const url = new URL(sender?.url || "");
       return url.protocol === "https:"
-        && url.hostname === "calendar.google.com"
+        && Boolean(globalThis.CalendarClockProviders?.fromHostname?.(url.hostname))
         && Number.isInteger(sender?.tab?.id);
     } catch (_error) {
       return false;

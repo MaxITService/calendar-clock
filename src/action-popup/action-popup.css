@@ -35,13 +35,14 @@ button {
     display: grid;
     grid-template-areas:
         "header"
+        "provider"
         "preview"
         "warning"
         "meta"
         "tasks"
         "footer";
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto auto auto auto auto;
+    grid-template-rows: auto auto auto auto auto auto auto;
     gap: 12px;
     width: 100%;
     min-height: 600px;
@@ -83,6 +84,44 @@ button {
     font-weight: 700;
     line-height: 1;
     text-align: center;
+}
+
+.provider-picker {
+    grid-area: provider;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    padding: 7px 9px;
+    border: 1px solid rgba(110, 85, 61, .14);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .54);
+}
+
+.provider-picker label {
+    color: rgba(110, 85, 61, .7);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .6px;
+    text-transform: uppercase;
+}
+
+.provider-picker select {
+    width: 100%;
+    height: 30px;
+    padding: 0 30px 0 9px;
+    border: 1px solid rgba(110, 85, 61, .2);
+    border-radius: 7px;
+    color: rgba(45, 33, 22, .94);
+    background: rgba(255, 255, 255, .78);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.provider-picker select:focus-visible {
+    outline: 2px solid rgba(184, 141, 90, .6);
+    outline-offset: 2px;
 }
 
 .clock-preview {

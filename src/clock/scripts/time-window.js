@@ -30,8 +30,8 @@ function parseTimeToDayMinutes(value) {
         }
 
         function postToCalendarPage(type, payload = {}) {
-            if (!IS_EMBEDDED || window.parent === window) return;
-            window.parent.postMessage({ type, ...payload }, "https://calendar.google.com");
+            if (!IS_EMBEDDED || IS_ACTION_POPUP || window.parent === window || !CALENDAR_CLOCK_PROVIDER.origin) return;
+            window.parent.postMessage({ type, ...payload }, CALENDAR_CLOCK_PROVIDER.origin);
         }
 
         function isValidClockTimeZone(value) {

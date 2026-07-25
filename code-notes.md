@@ -10,8 +10,10 @@
 | `.vscode/settings.json` | Workspace editor color customization settings. |
 | `CI-CD.ps1` | PowerShell deployment script that automates version incrementing, packaging, and git commits. |
 | `Clock Face Designs.md` | Agent checklist for adding modular clock face designs. |
+| `Calendar Providers.md` | Minimal contract and checklist for adding isolated calendar integrations. |
 | `README.md` | Project overview and usage notes for the Calendar Clock Chrome extension. |
-| `Privacy Policy.md` | Public privacy policy describing Calendar Clock's local-only handling of Calendar and Tasks data. |
+| `Privacy Policy.md` | Public privacy policy for local-only Google, Tasks, and Outlook data handling. |
+| `Outlook Calendar.md` | Notes Outlook structured-response capture, timezone handling, DOM fallback, and snapshot isolation. |
 | `code-notes.md` | One-line reference map for every file in this workspace. |
 | `glass clock.html` | Standalone prototype of the liquid-glass analog clock experience. |
 | `manifest.json` | Manifest V3 Chrome extension configuration, permissions, scripts, and assets. |
@@ -20,8 +22,11 @@
 | `scripts/verify-page-owned-info.js` | Verifies the experimental structured-response extractor, bridge, source selection, and task range replacement. |
 | `scripts/verify-debug-payload-privacy.js` | Verifies safe debug exports omit private event data while the private export retains it. |
 | `scripts/verify-popup-snapshot-sort.js` | Verifies date-aware popup ordering, including midnight crossings and undated Task fallback behavior. |
+| `scripts/verify-outlook-provider.mjs` | Verifies Outlook structured-response extraction, DOM fallback parsing, timezone conversion, and workweek dates. |
 | `scripts/verify-clock-safe-fixes.js` | Verifies isolated clock fixes for chronological ordering, source labels, interval clamping, tooltip reset, persisted warnings, and hidden-mode timers. |
 | `src/background/background.js` | Service worker that receives captured calendar events and stores them. |
+| `src/background/provider-main-world-installer.js` | Validates and injects optional provider parsers directly into a trusted calendar tab's MAIN world. |
+| `src/background/providers/outlook/outlook-snapshot.js` | Validates document-bound Outlook commits, persists fail-open snapshots, and returns page-local effective events. |
 | `src/background/tab-state/tab-state.js` | Optional service-worker module that stores and cleans up tab-specific clock state. |
 | `src/action-popup/action-popup.html` | Toolbar popup shell for the stored Calendar Clock snapshot preview. |
 | `src/action-popup/action-popup.css` | Toolbar popup styling for the mini clock, stale warning, metadata, and item list. |
@@ -29,7 +34,7 @@
 | `src/clock/popup.html` | Clock overlay document linking styles, scripts, controls, and event list markup. |
 | `src/clock/scripts/app-init.js` | Starts the clock app by wiring initialization, rendering, and timers. |
 | `src/clock/scripts/app-state.js` | Shared runtime state and DOM references for the clock page. |
-| `src/clock/scripts/calendar-bridge.js` | Connects the clock UI to stored Google Calendar events and page messages. |
+| `src/clock/scripts/calendar-bridge.js` | Connects the clock UI to provider storage and trusted page-local event/window messages. |
 | `src/clock/scripts/clock-controls.js` | Handles clock view buttons, lens controls, and user-triggered UI actions. |
 | `src/clock/scripts/clock-renderer.js` | Renders calendar event arcs and active time indicators on the clock. |
 | `src/clock/scripts/event-tooltip.js` | Shows, positions, and hides tooltips for hovered event arcs. |
@@ -80,23 +85,30 @@
 | `src/clock/styles/controls.css` | Styling for overlay buttons, sliders, time controls, and event panels. |
 | `src/clock/styles/event-tooltip.css` | Tooltip appearance for clock event arc hover details. |
 | `src/clock/styles/magnifier.css` | Magnifier lens, glass layers, shine, and motion-related presentation styles. |
-| `src/content/calendar-content-entry.js` | Content-script entrypoint that observes Google Calendar and publishes updates. |
+| `src/content/calendar-content-entry.js` | Content-script entrypoint that observes supported calendar pages and publishes updates. |
 | `src/content/calendar-content-state.js` | Shared content-script selectors, defaults, state variables, and event caches. |
 | `src/content/optional-module-loader.js` | Optionally loads and authenticates the experimental MAIN-world page-owned response module. |
+| `src/content/providers/provider-loader.js` | Dynamically discovers optional site providers while keeping missing modules non-fatal. |
+| `src/content/providers/outlook/outlook-provider.mjs` | Adapts Outlook views, visible dates, event DOM fallback, and provider metadata. |
+| `src/content/providers/outlook/appearance/outlook-appearance-contract.js` | Resolves bounded Outlook category and OOF appearance in isolated and MAIN worlds. |
+| `src/content/providers/outlook/presence-suppression/presence-policy.mjs` | Implements bounded, repeated, fail-open Outlook DOM-presence evidence without DOM access. |
+| `src/content/providers/outlook/outlook-main-world-hook.js` | Extracts sanitized structured Outlook events and timezone data from page-owned responses. |
+| `src/content/structured-capture/main-world-early-capture.js` | Buffers bounded provider-declared page responses before optional structured parsers load. |
+| `src/providers/provider-registry.js` | Defines the shared immutable contract for provider URLs, capabilities, sources, and storage keys. |
 | `src/content/main-world-early-deletions.js` | Captures confirmed Calendar deletion mutations before Google can cache native request methods. |
 | `src/content/event-reminders/*` | Optionally schedules page-local event sounds, edits trim settings, and stores custom audio in extension-origin IndexedDB. |
 | `src/content/event-reminders/sound-persistence.mjs` | Commits versioned custom-sound metadata and blobs in crash-safe order and cleans orphans. |
 | `src/content/event-reminders/dialog-controller.mjs` | Guards asynchronous uploads and enforces modal focus and inert background boundaries. |
 | `src/content/page-owned-info/main-world-hook.js` | Safely observes relevant Calendar fetch/XHR responses and extracts validated structured records. |
 | `src/content/sound/mechanical-clock/*` | Public-domain mechanical clock recording and its concise source/license record. |
-| `src/content/calendar-dom-reader.js` | Scrapes visible Google Calendar DOM nodes into normalized event records. |
+| `src/content/calendar-dom-reader.js` | Normalizes structured records or visible calendar DOM nodes into projected events. |
 | `src/content/tasks/tasks-content-entry.js` | Scrapes timed Google Tasks from the Tasks side-panel iframe. |
 | `src/content/time-window-controller.js` | Manages display-window presets, auto-fit, follow-now, persistence, and summaries. |
 | `src/temporal-projection/temporal-projection.js` | Defines the shared versioned Calendar-time projection, overlap, identity, and validation contract. |
 | `src/content/overlay/debug-panel.js` | Builds and updates the debug panel for captured event and window diagnostics. |
-| `src/content/overlay/overlay-menu.js` | Creates and controls the floating Google Calendar overlay menus and clock frame. |
+| `src/content/overlay/overlay-menu.js` | Creates and controls the floating calendar overlay menus and provider-aware clock frame. |
 | `src/content/overlay/overlay-styles.js` | Injects all CSS needed by the content-script overlay UI. |
 | `src/content/overlay/template-loader.js` | Loads packaged overlay HTML templates for content-script rendering. |
 | `src/content/overlay/styles/*.css` | Focused CSS chunks joined by the overlay style injector. |
-| `src/content/overlay/templates/*.html` | Static HTML templates used by the Google Calendar overlay UI. |
+| `src/content/overlay/templates/*.html` | Static HTML templates used by the calendar overlay UI. |
 | `Документация/Руководство пользователя.md` | Russian user guide for installing and using the Calendar Clock extension. |

@@ -16,14 +16,23 @@
             <span class="snapshot-pill" id="snapshotCount">0 items</span>
         </header>
 
+        <section class="provider-picker" aria-label="Calendar snapshot source">
+            <label for="calendarProvider">Calendar</label>
+            <select id="calendarProvider">
+                <option value="google">Google Calendar</option>
+                <option value="outlook">Outlook Calendar</option>
+            </select>
+        </section>
+
         <section class="clock-preview" aria-label="Miniature stored clock">
             <iframe
+                id="clockPreviewFrame"
                 title="Miniature Calendar Clock snapshot"
-                src="../clock/popup.html?embedded=1&amp;actionPopup=1"
+                src="../clock/popup.html?embedded=1&amp;actionPopup=1&amp;provider=google"
             ></iframe>
         </section>
 
-        <section class="snapshot-warning" aria-live="polite">
+        <section class="snapshot-warning" id="snapshotWarning" aria-live="polite">
             This popup uses the last stored Calendar and Tasks snapshot. If Google Calendar or Tasks has not been opened recently, these items may be outdated.
         </section>
 
@@ -43,7 +52,7 @@
         </section>
 
         <section class="task-section" aria-label="Stored tasks and events">
-            <div class="section-title">Stored tasks and events</div>
+            <div class="section-title" id="snapshotListTitle">Stored tasks and events</div>
             <div class="task-list" id="taskList"></div>
         </section>
 
@@ -51,6 +60,7 @@
             <button type="button" id="openCalendarButton">Open Google Calendar</button>
         </footer>
     </main>
+    <script src="../providers/provider-registry.js"></script>
     <script src="../temporal-projection/temporal-projection.js"></script>
     <script src="action-popup.js"></script>
 </body>

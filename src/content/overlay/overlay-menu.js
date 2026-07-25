@@ -265,7 +265,10 @@ async function buildCalendarClockUi() {
 
   document.documentElement.appendChild(calendarClockRoot);
   calendarClockFrame = requireCalendarClockElement(calendarClockRoot, "[data-cc-clock-frame]", "clock iframe");
-  calendarClockFrame.src = chrome.runtime.getURL("src/clock/popup.html?embedded=1");
+  const frameUrl = new URL(chrome.runtime.getURL("src/clock/popup.html"));
+  frameUrl.searchParams.set("embedded", "1");
+  frameUrl.searchParams.set("provider", globalThis.getCalendarClockProvider?.()?.id || "google");
+  calendarClockFrame.src = frameUrl.href;
   calendarClockPanel = calendarClockRoot.querySelector(".cc-panel-view");
   calendarClockTimePanel = calendarClockRoot.querySelector(".cc-panel-time");
   calendarClockDebug = calendarClockRoot.querySelector(".cc-debug");
@@ -1117,7 +1120,10 @@ function hardRefreshCalendarClockEventsFromToolbar(button) {
     button.disabled = false;
     button.textContent = previousText;
   };
-  const sent = sendCalendarClockRuntimeMessage({ type: "CALENDAR_CLOCK_HARD_REFRESH_EVENTS" }, response => {
+  const sent = sendCalendarClockRuntimeMessage({
+    type: "CALENDAR_CLOCK_HARD_REFRESH_EVENTS",
+    provider: globalThis.getCalendarClockProvider?.()?.id || "google"
+  }, response => {
     if (response?.ok === true) return;
     restoreButton();
     setCalendarClockDebugStatus(response?.error || "Calendar refresh failed before reload");
@@ -1499,7 +1505,10 @@ function applyPanelPosition(panel, xKey, yKey) {
 }
 
 function requestCalendarClockStoredEventClear(callback) {
-  const sent = sendCalendarClockRuntimeMessage({ type: "CALENDAR_CLOCK_CLEAR_STORED_EVENTS" }, response => {
+  const sent = sendCalendarClockRuntimeMessage({
+    type: "CALENDAR_CLOCK_CLEAR_STORED_EVENTS",
+    provider: globalThis.getCalendarClockProvider?.()?.id || "google"
+  }, response => {
     if (response?.ok !== true) {
       const message = String(response?.error || "Calendar event cache could not be cleared.");
       calendarClockStorageStatus = { kind: "clear-failed", message };
@@ -2349,6 +2358,12 @@ function syncClockFrame(options = {}) {
     systemTimeZone: typeof getCalendarClockSystemTimeZone === "function" ? getCalendarClockSystemTimeZone() : "",
     transient: calendarClockState.followNow
   }, targetOrigin)) return;
+  if (globalThis.getCalendarClockProvider?.()?.usesPageLocalEffectiveFeed === true
+      && !postCalendarClockFrameMessage({
+        type: "CALENDAR_CLOCK_SET_EVENTS",
+        events: calendarClockEvents,
+        source: calendarClockEffectiveEventSource
+      }, targetOrigin)) return;
   if (!postCalendarClockFrameMessage({
     type: "CALENDAR_CLOCK_SET_WINDOW_START_MARKER",
     visible: calendarClockState.windowStartMarker,

@@ -24,7 +24,7 @@
 > 3. Enable **Developer mode** in the top-right corner.
 > 4. Click **Load unpacked**.
 > 5. Select the downloaded `calendar-clock` folder.
-> 6. Open or refresh [Google Calendar](https://calendar.google.com/). Pin extension to the toolbar and click the icon to open the snapshot popup. Enable access to site if needed.
+> 6. Open or refresh [Google Calendar](https://calendar.google.com/) or [Outlook Calendar](https://outlook.live.com/calendar/view/workweek). Pin the extension and click its icon to open the snapshot popup. Enable site access if needed.
 
 Privacy: see [Privacy Policy](Privacy%20Policy.md).
 
@@ -35,13 +35,13 @@ This repo contains a Manifest V3 Chrome extension.
 Calendar Clock was built during OpenAI Build Week with Codex and GPT-5.6, primarily using the Sol model across a variety of reasoning levels.
 
 - Codex turned an initial single-page HTML clock prototype into a modular Manifest V3 extension and helped separate the overlay, background service, event pipeline, clock faces, reminders, and time projection into focused components.
-- A dedicated Chrome for Testing profile and Browser Harness let Codex work on the same live Google Calendar page as the developer: inspecting the DOM and page-owned structured sync data, creating deterministic fixture schedules, reproducing bugs, and checking the visible result after each fix.
+- A dedicated Chrome for Testing profile and Browser Harness let Codex inspect live Google and Outlook calendar pages, structured data, fallback DOM, and visible results.
 - Codex created regression checks for time-window projection, overlapping and overnight events, deleted and cached events, refresh behavior, stable event colors, privacy-safe diagnostics, and reminder storage and playback.
 - GPT-5.6 helped reason through Calendar's changing data and DOM behavior, event-lane layout, cross-week caching, and the modular architecture. Key decisions included keeping captured data local, preferring structured page-owned data with a resilient DOM fallback, and making clock-face modules independently removable.
 
-The toolbar icon opens a snapshot popup for the latest stored Calendar Clock data. On `calendar.google.com`, Calendar Clock watches the structured sync data already loaded by the page and falls back to visible event chips when that data is unavailable. It stores the resulting event ranges in `chrome.storage.local`; the clock turns them into arcs.
+The toolbar popup switches between separate Google and Outlook snapshots. On both sites, Calendar Clock prefers structured calendar data already loaded by the page and falls back to visible event chips when necessary. Snapshots stay in `chrome.storage.local`; the clock turns their event ranges into arcs.
 
-After the Google Calendar content script has added the overlay, use its floating panel to move controls around the page, open full clock view, switch to mini view, hide the clock, refresh events, toggle the Past/Future Divider, open debug, and choose which 12-hour span the arcs represent, such as `08:00-20:00` or `20:00-08:00`.
+After the calendar overlay appears, use its floating panel to open full or mini view, hide the clock, refresh events, open debug, and choose the displayed time span.
 
 ## Key features
 
@@ -51,11 +51,12 @@ After the Google Calendar content script has added the overlay, use its floating
 - **Flexible display:** Use full or mini mode, move the clock around the page, or hide it when you do not need it.
 - **Smart time window:** Follow the current hour, fit the view around your events, or jump to an event outside the visible range.
 - **Local by design:** Captured calendar data stays in your browser.
+- **Google and Outlook:** Keep independent snapshots and choose either calendar in the toolbar popup.
 
 Notes:
 
-- For the visual-text fallback, keep Google Calendar in day or week view where event chips include visible time labels.
-- Google Calendar DOM classes and its internal sync response format are not stable APIs. The fallback uses broader accessibility attributes such as `aria-label`, `title`, and common event data attributes.
+- For the visual-text fallback, use a day or week-style view where event chips include readable time labels.
+- Calendar page internals are not stable APIs. The fallback uses accessibility attributes and stable item data attributes where available.
 
 ---
 

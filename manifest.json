@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Calendar Clock",
-  "description": "Shows visible Google Calendar events as dynamic arches on a liquid glass clock.",
-  "version": "0.1.21",
+  "description": "Shows visible Google or Outlook Calendar events as dynamic arches on a liquid glass clock.",
+  "version": "0.1.22",
   "action": {
     "default_title": "Calendar Clock",
     "default_popup": "src/action-popup/action-popup.html",
@@ -24,10 +24,12 @@
   },
   "permissions": [
     "activeTab",
+    "scripting",
     "storage"
   ],
   "host_permissions": [
     "https://calendar.google.com/*",
+    "https://outlook.live.com/*",
     "https://tasks.google.com/*"
   ],
   "content_scripts": [
@@ -43,10 +45,22 @@
     },
     {
       "matches": [
+        "https://outlook.live.com/*"
+      ],
+      "js": [
+        "src/providers/provider-registry.js",
+        "src/content/structured-capture/main-world-early-capture.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
         "https://calendar.google.com/*",
         "https://tasks.google.com/embed/*"
       ],
       "js": [
+        "src/providers/provider-registry.js",
         "src/content/optional-module-loader.js"
       ],
       "run_at": "document_start",
@@ -54,9 +68,22 @@
     },
     {
       "matches": [
-        "https://calendar.google.com/*"
+        "https://outlook.live.com/*"
       ],
       "js": [
+        "src/providers/provider-registry.js",
+        "src/content/optional-module-loader.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://calendar.google.com/*",
+        "https://outlook.live.com/*"
+      ],
+      "js": [
+        "src/providers/provider-registry.js",
+        "src/content/providers/provider-loader.js",
         "src/content/calendar-content-state.js",
         "src/content/calendar-dom-reader.js",
         "src/content/time-window-controller.js",
@@ -92,11 +119,16 @@
         "src/content/page-owned-info/*.js",
         "src/temporal-projection/*.js",
         "src/content/event-reminders/*",
+        "src/content/providers/*/*.mjs",
+        "src/content/providers/*/*/*.mjs",
+        "src/content/providers/*/*/*.js",
+        "src/providers/*.js",
         "src/content/sound/mechanical-clock/*",
         "icons/*.png"
       ],
       "matches": [
         "https://calendar.google.com/*",
+        "https://outlook.live.com/*",
         "https://tasks.google.com/*"
       ]
     }

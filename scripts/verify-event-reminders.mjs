@@ -207,7 +207,7 @@ check("storage bridge requires background-authenticated token", () => {
   const client = fs.readFileSync(path.join(root, "src/content/event-reminders/storage-client.mjs"), "utf8");
   const frame = fs.readFileSync(path.join(root, "src/content/event-reminders/storage-frame.js"), "utf8");
   assert.match(background, /crypto\.getRandomValues/);
-  assert.match(background, /url\.hostname === "calendar\.google\.com"[\s\S]*Number\.isInteger\(sender\?\.tab\?\.id\)/);
+  assert.match(background, /CalendarClockProviders\?\.fromHostname\?\.\(url\.hostname\)[\s\S]*Number\.isInteger\(sender\?\.tab\?\.id\)/);
   assert.match(background, /sender\?\.url === chrome\.runtime\.getURL\(CALENDAR_CLOCK_AUDIO_STORAGE_FRAME_PATH\)/);
   assert.match(background, /sender\.tab\.id !== record\.tabId/);
   assert.match(background, /calendarClockAudioBridgeTokens\.delete\(token\)/);

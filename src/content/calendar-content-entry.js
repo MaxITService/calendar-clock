@@ -24,6 +24,32 @@ const CALENDAR_CLOCK_EVENT_REMINDERS_MODULE_PATH = "src/content/event-reminders/
 let calendarClockLastNavigationKey = "";
 let calendarClockNavigationPollIntervalId = null;
 let calendarClockNavigationRefreshTimerIds = [];
+let calendarClockProviderPresenceCleanup = null;
+
+function installCalendarClockProviderPresenceTracking(provider) {
+  if (calendarClockProviderPresenceCleanup || typeof provider?.installPresenceActivityTracking !== "function") return;
+  const cleanup = provider.installPresenceActivityTracking({
+    window,
+    document,
+    onActivity: () => {
+      invalidateCalendarClockPresenceOverlay();
+      queuePublishCalendarEvents();
+    },
+    isOwnNode: node => Boolean(node && (
+      node === calendarClockRoot
+      || calendarClockRoot?.contains?.(node)
+      || node.closest?.("#calendar-clock-root")
+      || String(node.id || "").startsWith("calendar-clock-")
+      || Array.from(node.classList || []).some(className => String(className).startsWith("cc-"))
+    ))
+  });
+  if (typeof cleanup !== "function") return;
+  calendarClockProviderPresenceCleanup = cleanup;
+  onCalendarClockContextInvalidated(() => {
+    calendarClockProviderPresenceCleanup?.();
+    calendarClockProviderPresenceCleanup = null;
+  });
+}
 
 async function initializeCalendarClockEventReminders() {
   if (globalThis.calendarClockEventReminders || !canUseCalendarClockExtensionApi()) return;
@@ -64,6 +90,7 @@ function clearCalendarClockNavigationRefreshTimers() {
 
 function scheduleCalendarClockNavigationRefresh(reason = "calendar navigation") {
   if (calendarClockExtensionContextInvalidated) return;
+  invalidateCalendarClockPresenceOverlay(reason);
   calendarClockLog("schedule refresh after", reason);
   if (!calendarClockNavigationPending) calendarClockNavigationPendingSinceMs = Date.now();
   calendarClockNavigationPending = true;
@@ -294,9 +321,13 @@ window.addEventListener("message", event => {
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message?.type !== "CALENDAR_CLOCK_COLLECT_EVENTS") return false;
 
-  publishCalendarEvents().then(events => {
+  Promise.resolve(globalThis.calendarClockProviderReady).then(provider => {
+    if (provider?.enabled === false) throw new Error(`${provider.displayName || "Calendar"} provider is unavailable.`);
+    return publishCalendarEvents();
+  }).then(events => {
     sendResponse({
       events,
+      provider: globalThis.getCalendarClockProvider?.()?.id || "google",
       capturedAt: Date.now(),
       captureMeta: calendarClockCaptureMeta,
       effectiveSource: calendarClockEffectiveEventSource,
@@ -337,7 +368,17 @@ calendarClockObserver.observe(document.documentElement, {
   childList: true,
   subtree: true,
   attributes: true,
-  attributeFilter: ["aria-label", "title", "data-eventid", "data-eventchip", "data-eid", "data-taskid", "data-task-id"]
+  attributeFilter: [
+    "aria-label",
+    "title",
+    "data-eventid",
+    "data-eventchip",
+    "data-eid",
+    "data-taskid",
+    "data-task-id",
+    "data-calitemid",
+    "data-column-date"
+  ]
 });
 onCalendarClockContextInvalidated(() => {
   if (calendarClockObserver) calendarClockObserver.disconnect();
@@ -358,12 +399,20 @@ window.addEventListener("resize", () => {
   }
 });
 
-loadCalendarClockState().then(async () => {
+Promise.resolve(globalThis.calendarClockProviderReady).then(provider => {
+  if (provider?.enabled === false) return null;
+  return loadCalendarClockState();
+}).then(async loadedState => {
+  if (loadedState === null) return;
   if (calendarClockExtensionContextInvalidated) return;
   registerCalendarClockStateStorageListener();
-  globalThis.calendarClockPageOwnedInfo?.setEnabled?.(calendarClockState.pageOwnedInfo);
+  const provider = globalThis.getCalendarClockProvider?.() || {};
+  if (provider.supportsPageOwned !== false) {
+    globalThis.calendarClockPageOwnedInfo?.setEnabled?.(calendarClockState.pageOwnedInfo);
+  }
   calendarClockLastNavigationKey = getCalendarClockNavigationKey();
   await ensureCalendarClockUi();
+  installCalendarClockProviderPresenceTracking(provider);
   await initializeCalendarClockEventReminders();
   applyFollowNowWindow({ skipSave: true });
   queuePublishCalendarEvents();
@@ -383,6 +432,7 @@ onCalendarClockContextInvalidated(() => {
 
 const unsubscribeCalendarClockPageOwnedInfo = globalThis.calendarClockPageOwnedInfo?.subscribe?.(snapshot => {
   if (calendarClockExtensionContextInvalidated) return;
+  invalidateCalendarClockPresenceOverlay("structured source changed");
   if (Array.isArray(snapshot?.deletedIds)) {
     snapshot.deletedIds.forEach(id => {
       const normalizedId = String(id || "").slice(0, 256).trim();

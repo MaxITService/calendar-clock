@@ -1,3 +1,11 @@
+try {
+  if (typeof importScripts === "function") {
+    importScripts(chrome.runtime.getURL("src/providers/provider-registry.js"));
+  }
+} catch (_error) {
+  // Provider-specific work fails closed if shared metadata is unavailable.
+}
+
 const CALENDAR_CLOCK_EVENT_STORE_VERSION = 2;
 const CALENDAR_CLOCK_EVENT_STORE_MAX_EVENTS = 1200;
 const CALENDAR_CLOCK_EVENT_STORE_MAX_DELETED_IDS = 200;
@@ -49,6 +57,24 @@ try {
 } catch (_error) {
   // Optional tab-specific state is unavailable; shared clock state still works.
 }
+try {
+  if (typeof importScripts === "function") {
+    importScripts(chrome.runtime.getURL("src/background/provider-main-world-installer.js"));
+  }
+} catch (_error) {
+  // Optional MAIN-world provider parsers are unavailable; DOM providers still work.
+}
+if (typeof importScripts === "function") {
+  globalThis.CalendarClockProviders?.list?.().forEach(provider => {
+    const modulePath = String(provider?.backgroundSnapshotModulePath || "");
+    if (!modulePath) return;
+    try {
+      importScripts(chrome.runtime.getURL(modulePath));
+    } catch (_error) {
+      // One optional provider may disappear without disabling the shared feed or other providers.
+    }
+  });
+}
 const calendarClockAudioBridgeTokens = new Map();
 let calendarClockFeedSaveQueue = Promise.resolve();
 
@@ -74,7 +100,7 @@ function isTrustedCalendarClockAudioTokenRequester(sender) {
   try {
     const url = new URL(sender?.url || "");
     return url.protocol === "https:"
-      && url.hostname === "calendar.google.com"
+      && Boolean(globalThis.CalendarClockProviders?.fromHostname?.(url.hostname))
       && Number.isInteger(sender?.tab?.id);
   } catch (_error) {
     return false;
@@ -845,6 +871,10 @@ function saveCalendarClockFeedTransaction(partial, sender, sendResponse, hasCale
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const events = Array.isArray(message?.events) ? message.events : [];
+  const providerHandled = globalThis.CalendarClockProviderSnapshotHandlers
+    ?.get?.(message?.provider)
+    ?.handleMessage?.(message, sender, sendResponse);
+  if (providerHandled === true) return true;
 
   if (message?.type === "CALENDAR_CLOCK_CREATE_AUDIO_BRIDGE_TOKEN") {
     const bridge = createCalendarClockAudioBridgeToken(sender);

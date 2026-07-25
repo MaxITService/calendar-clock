@@ -5,7 +5,9 @@ let calendarClockDebugTemplate = null;
 const CALENDAR_CLOCK_SAFE_DEBUG_SOURCES = new Set([
   "google-calendar-dom",
   "google-page-owned",
-  "google-tasks-dom"
+  "google-tasks-dom",
+  "outlook-calendar-dom",
+  "outlook-page-owned"
 ]);
 const CALENDAR_CLOCK_SAFE_DEBUG_CAPTURE_PHASES = new Set(["ready", "captured", "unavailable"]);
 const CALENDAR_CLOCK_SAFE_DEBUG_TRANSPORTS = new Set(["fetch", "xhr"]);

@@ -99,13 +99,32 @@ function testBridgeTrustAndSchema() {
   }, token);
   assert.strictEqual(valid.records.length, 1);
   assert.deepStrictEqual(valid.deletedIds, ["deleted-event-id"]);
+  assert.strictEqual(valid.status.calendarFolderCount, 0);
+  const withCalendarFolders = bridge.sanitizeRecordsMessage({
+    type: "records",
+    token,
+    records: [record],
+    calendarFolders: [{ id: "folder-1", name: "Calendar" }],
+    status: { phase: "captured", calendarFolderCount: 1 }
+  }, token);
+  assert.deepStrictEqual(withCalendarFolders.calendarFolders, [{ id: "folder-1", name: "Calendar" }]);
+  assert.strictEqual(bridge.sanitizeRecordsMessage({
+    type: "records",
+    token,
+    records: [record],
+    calendarFolders: [
+      { id: "folder-1", name: "Calendar" },
+      { id: "folder-1", name: "Duplicate" }
+    ],
+    status: { phase: "captured", calendarFolderCount: 2 }
+  }, token), null);
   assert.strictEqual(bridge.sanitizeRecordsMessage({ type: "records", token: "wrong", records: [record] }, token), null);
   assert.strictEqual(bridge.sanitizeRecordsMessage({ type: "records", token, records: [{ ...record, endDate: "bad" }] }, token), null);
   assert.strictEqual(bridge.sanitizeRecordsMessage({ type: "records", token, records: [record], deletedIds: [{}] }, token), null);
 
   const scope = { location: { origin: "https://calendar.google.com" } };
   const port = {};
-  const event = { source: scope, origin: scope.location.origin, data: { type: "CALENDAR_CLOCK_PAGE_OWNED_INIT", channelId: token }, ports: [port] };
+  const event = { source: scope, origin: scope.location.origin, data: { type: "CALENDAR_CLOCK_PAGE_OWNED_INIT", channelId: token, providerId: "google" }, ports: [port] };
   assert.strictEqual(hook.isTrustedBridgeInit(event, scope), true);
   assert.strictEqual(hook.isTrustedBridgeInit({ ...event, origin: "https://example.com" }, scope), false);
   assert.strictEqual(hook.isTrustedBridgeInit({ ...event, source: {} }, scope), false);
@@ -274,7 +293,7 @@ function testEarlyTombstonePublishesWhileStructuredCaptureIsDisabled() {
   listeners.get("message")({
     source: scope,
     origin: scope.location.origin,
-    data: { type: "CALENDAR_CLOCK_PAGE_OWNED_INIT", channelId: "e".repeat(43) },
+    data: { type: "CALENDAR_CLOCK_PAGE_OWNED_INIT", channelId: "e".repeat(43), providerId: "google" },
     ports: [port],
     stopImmediatePropagation() {}
   });
@@ -429,7 +448,7 @@ function enableInstalledPageOwnedHook(scope, listeners) {
   listeners.get("message")({
     source: scope,
     origin: scope.location.origin,
-    data: { type: "CALENDAR_CLOCK_PAGE_OWNED_INIT", channelId: "c".repeat(43) },
+    data: { type: "CALENDAR_CLOCK_PAGE_OWNED_INIT", channelId: "c".repeat(43), providerId: "google" },
     ports: [port],
     stopImmediatePropagation() {}
   });

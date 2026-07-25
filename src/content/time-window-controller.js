@@ -47,6 +47,8 @@ function parseCalendarBaseDateFromTitle() {
 }
 
 function getCalendarViewMode() {
+  const providerMode = globalThis.getCalendarClockProvider?.()?.getViewMode?.(location.pathname);
+  if (providerMode) return String(providerMode).toLowerCase();
   const match = location.pathname.match(/\/r\/([^/?#]+)/);
   return match ? decodeURIComponent(match[1]).toLowerCase() : "";
 }
@@ -65,6 +67,9 @@ function getCalendarClockVisibleDateKeysForBaseDate(baseDate, viewMode = getCale
   if (!(baseDate instanceof Date) || Number.isNaN(baseDate.getTime())) return [];
 
   if (/^(day|customday)$/.test(viewMode)) return [formatLocalDateKey(baseDate)].filter(Boolean);
+  if (viewMode === "workweek") {
+    return Array.from({ length: 5 }, (_value, index) => formatLocalDateKey(addLocalDays(baseDate, index))).filter(Boolean);
+  }
   if (/^(week|customweek)$/.test(viewMode)) {
     return Array.from({ length: 7 }, (_value, index) => formatLocalDateKey(addLocalDays(baseDate, index))).filter(Boolean);
   }
@@ -94,7 +99,20 @@ function areCalendarClockDateKeysConsecutive(dateKeys) {
 }
 
 function getCalendarClockVisibleDomDateKeys(viewMode = getCalendarViewMode()) {
-  const expectedCount = viewMode === "day" ? 1 : viewMode === "week" ? 7 : 0;
+  const provider = globalThis.getCalendarClockProvider?.() || {};
+  if (typeof provider.getVisibleDateKeys === "function") {
+    const providerDateKeys = provider.getVisibleDateKeys({
+      document,
+      isElementInViewport: typeof isCalendarClockElementInViewport === "function"
+        ? isCalendarClockElementInViewport
+        : null
+    });
+    return Array.isArray(providerDateKeys) && areCalendarClockDateKeysConsecutive(providerDateKeys)
+      ? providerDateKeys
+      : [];
+  }
+
+  const expectedCount = viewMode === "day" ? 1 : viewMode === "workweek" ? 5 : viewMode === "week" ? 7 : 0;
   if (!expectedCount) return [];
 
   const dateKeys = new Set();

@@ -2,6 +2,17 @@
 const CLOCK_SEARCH_PARAMS = new URLSearchParams(window.location.search);
 const IS_ACTION_POPUP = CLOCK_SEARCH_PARAMS.get("actionPopup") === "1";
 const IS_EMBEDDED = CLOCK_SEARCH_PARAMS.get("embedded") === "1" || IS_ACTION_POPUP;
+const CALENDAR_CLOCK_PROVIDER_ID = globalThis.CalendarClockProviders?.get?.(
+        CLOCK_SEARCH_PARAMS.get("provider")
+    )?.id || "google";
+const CALENDAR_CLOCK_PROVIDER = globalThis.CalendarClockProviders?.get?.(CALENDAR_CLOCK_PROVIDER_ID)
+        || Object.freeze({
+            id: "unsupported",
+            displayName: "Calendar",
+            origin: "",
+            eventsStorageKey: "calendarClockEvents",
+            sourceStorageKey: "calendarClockSource"
+        });
         document.body.classList.add(IS_EMBEDDED ? "embedded-clock" : "extension-popup");
         document.body.classList.toggle("action-popup-clock", IS_ACTION_POPUP);
 

@@ -124,11 +124,11 @@
     }
 
     #calendar-clock-root .cc-divider-settings-panel.expanded {
-      animation: cc-settings-glow-breath 3s infinite ease-in-out;
+      animation: cc-settings-glow-breath 15s infinite ease-in-out;
     }
 
     #calendar-clock-root.cc-menu-theme-dark .cc-divider-settings-panel.expanded {
-      animation: cc-settings-glow-breath-dark 3s infinite ease-in-out;
+      animation: cc-settings-glow-breath-dark 15s infinite ease-in-out;
     }
 
     #calendar-clock-root .cc-event-labels-settings-panel {
@@ -167,7 +167,7 @@
       margin-bottom: 4px;
       max-height: 200px;
       opacity: 1;
-      animation: cc-settings-glow-breath 3s infinite ease-in-out;
+      animation: cc-settings-glow-breath 15s infinite ease-in-out;
     }
 
     #calendar-clock-root .cc-arc-settings-panel.expanded,
@@ -181,7 +181,7 @@
 
     #calendar-clock-root.cc-menu-theme-dark .cc-event-labels-settings-panel.expanded {
       border: 1px solid rgba(215, 167, 87, 0.3);
-      animation: cc-settings-glow-breath-dark 3s infinite ease-in-out;
+      animation: cc-settings-glow-breath-dark 15s infinite ease-in-out;
     }
 
     @keyframes cc-settings-glow-breath {

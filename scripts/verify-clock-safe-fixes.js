@@ -781,6 +781,52 @@ const actionPopupHtmlSource = read("src/action-popup/action-popup.html");
 const clockTimeWindowSource = read("src/clock/scripts/time-window.js");
 const clockPopupHtmlSource = read("src/clock/popup.html");
 const rootTemplateSource = read("src/content/overlay/templates/root.html");
+const miniDimension = loadFunctions("src/content/overlay/overlay-menu.js", [
+  "clampMiniClockDimension"
+], {
+  CALENDAR_CLOCK_MINI_MIN_SIZE: 240,
+  CALENDAR_CLOCK_MINI_SIZE: 520
+});
+assert.strictEqual(miniDimension.api.clampMiniClockDimension(null, 984), 520);
+assert.strictEqual(miniDimension.api.clampMiniClockDimension(120, 984), 240);
+assert.strictEqual(miniDimension.api.clampMiniClockDimension(1200, 984), 984);
+assert.strictEqual(miniDimension.api.clampMiniClockDimension(520, 180), 180);
+const miniResizeListeners = {};
+const miniResizeState = { mode: "mini", miniX: 100, miniY: 100, miniWidth: 520, miniHeight: 520 };
+let miniResizeSaved = 0;
+const miniResizeHandle = {
+  dataset: { ccMiniResize: "nw" },
+  addEventListener(type, listener) { miniResizeListeners[type] = listener; },
+  setPointerCapture() {},
+  releasePointerCapture() {}
+};
+const miniResize = loadFunctions("src/content/overlay/overlay-menu.js", [
+  "bindMiniClockResizing"
+], {
+  calendarClockRoot: { querySelectorAll: () => [miniResizeHandle] },
+  calendarClockState: miniResizeState,
+  CALENDAR_CLOCK_MINI_MIN_SIZE: 240,
+  window: { innerWidth: 1000, innerHeight: 800 },
+  normalizeMiniClockPosition() {},
+  updateMiniClockPosition() {},
+  saveCalendarClockState() { miniResizeSaved += 1; },
+  calendarClockWarn() {}
+});
+miniResize.api.bindMiniClockResizing();
+miniResizeListeners.pointerdown({ pointerId: 1, clientX: 100, clientY: 100, preventDefault() {} });
+miniResizeListeners.pointermove({ pointerId: 1, clientX: 60, clientY: 70 });
+miniResizeListeners.pointerup({ pointerId: 1 });
+assert.deepStrictEqual(miniResizeState, {
+  mode: "mini",
+  miniX: 60,
+  miniY: 70,
+  miniWidth: 560,
+  miniHeight: 550
+});
+assert.strictEqual(miniResizeSaved, 1);
+["n", "e", "s", "w", "ne", "se", "sw", "nw"].forEach(edge => {
+  assert.match(rootTemplateSource, new RegExp(`data-cc-mini-resize="${edge}"`));
+});
 assert.doesNotMatch(backgroundSource, /chrome\.action\.onClicked/);
 assert.doesNotMatch(calendarContentEntrySource, /CALENDAR_CLOCK_TOGGLE_OVERLAY/);
 assert.doesNotMatch(clockAppInitSource, /IS_ACTION_POPUP\)\s*use24HourRadial\s*=\s*true/);

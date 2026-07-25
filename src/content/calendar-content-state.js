@@ -25,6 +25,7 @@ const CALENDAR_CLOCK_STATE_KEY = "calendarClockOverlayState";
 const CALENDAR_CLOCK_LOG_PREFIX = "[calen.clock.ext]";
 const CALENDAR_CLOCK_SUPPORT_EMAIL = "forpphotos@gmail.com";
 const CALENDAR_CLOCK_MINI_SIZE = 520;
+const CALENDAR_CLOCK_MINI_MIN_SIZE = 240;
 const CALENDAR_CLOCK_MINI_MARGIN = 24;
 const CALENDAR_CLOCK_CAPTURE_LIMIT = 50;
 const CALENDAR_CLOCK_CAPTURE_LIMIT_OPTIONS = [50, 100, 200];
@@ -55,6 +56,8 @@ const CALENDAR_CLOCK_PANEL_DEFAULT = {
   perTabState: false,
   miniX: null,
   miniY: null,
+  miniWidth: CALENDAR_CLOCK_MINI_SIZE,
+  miniHeight: CALENDAR_CLOCK_MINI_SIZE,
   windowStart: "08:00",
   windowEnd: "20:00",
   windowPreset: "08:00-20:00",

@@ -48,7 +48,7 @@ After the calendar overlay appears, use its floating panel to open full or mini 
 - **12-hour and 24-hour modes:** Use a familiar 12-hour clock or see the entire day on one 24-hour dial. The dark design above shows the 24-hour mode.
 - **Multiple clock-face designs:** Switch between light, dark, and themed faces without changing your calendar.
 - **Events at a glance:** See event duration, color, and overlaps directly as arcs on the clock.
-- **Flexible display:** Use full or mini mode, move the clock around the page, or hide it when you do not need it.
+- **Flexible display:** Use full or mini mode, move or resize the mini clock with remembered geometry, or hide it when you do not need it.
 - **Smart time window:** Follow the current hour, fit the view around your events, or jump to an event outside the visible range.
 - **Local by design:** Captured calendar data stays in your browser.
 - **Google and Outlook:** Keep independent snapshots and choose either calendar in the toolbar popup.

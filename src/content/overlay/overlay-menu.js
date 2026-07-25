@@ -1100,6 +1100,7 @@ function bindPanelControls() {
   bindTimePanelResizing();
   bindTimePanelWheelScrolling();
   bindMiniClockDragging();
+  bindMiniClockResizing();
 }
 
 function hardRefreshCalendarClockEventsFromToolbar(button) {
@@ -1669,9 +1670,24 @@ function wipeCalendarClockAppSettingsToDefault() {
   });
 }
 
+function clampMiniClockDimension(value, maxSize) {
+  const minSize = Math.min(CALENDAR_CLOCK_MINI_MIN_SIZE, maxSize);
+  const parsed = value === null || value === undefined || value === "" ? NaN : Number(value);
+  const preferred = Number.isFinite(parsed) ? parsed : CALENDAR_CLOCK_MINI_SIZE;
+  return Math.round(Math.min(maxSize, Math.max(minSize, preferred)));
+}
+
+function normalizeMiniClockSize() {
+  const maxWidth = Math.max(1, window.innerWidth - 16);
+  const maxHeight = Math.max(1, window.innerHeight - 16);
+  calendarClockState.miniWidth = clampMiniClockDimension(calendarClockState.miniWidth, maxWidth);
+  calendarClockState.miniHeight = clampMiniClockDimension(calendarClockState.miniHeight, maxHeight);
+}
+
 function clampMiniClockPosition(x, y) {
-  const maxX = Math.max(8, window.innerWidth - CALENDAR_CLOCK_MINI_SIZE - 8);
-  const maxY = Math.max(8, window.innerHeight - CALENDAR_CLOCK_MINI_SIZE - 8);
+  normalizeMiniClockSize();
+  const maxX = Math.max(8, window.innerWidth - calendarClockState.miniWidth - 8);
+  const maxY = Math.max(8, window.innerHeight - calendarClockState.miniHeight - 8);
   return {
     x: Math.min(maxX, Math.max(8, x)),
     y: Math.min(maxY, Math.max(8, y))
@@ -1679,8 +1695,9 @@ function clampMiniClockPosition(x, y) {
 }
 
 function normalizeMiniClockPosition() {
-  const fallbackX = Math.max(8, window.innerWidth - CALENDAR_CLOCK_MINI_SIZE - CALENDAR_CLOCK_MINI_MARGIN);
-  const fallbackY = Math.max(8, window.innerHeight - CALENDAR_CLOCK_MINI_SIZE - CALENDAR_CLOCK_MINI_MARGIN);
+  normalizeMiniClockSize();
+  const fallbackX = Math.max(8, window.innerWidth - calendarClockState.miniWidth - CALENDAR_CLOCK_MINI_MARGIN);
+  const fallbackY = Math.max(8, window.innerHeight - calendarClockState.miniHeight - CALENDAR_CLOCK_MINI_MARGIN);
   const rawX = Number.isFinite(calendarClockState.miniX) ? calendarClockState.miniX : fallbackX;
   const rawY = Number.isFinite(calendarClockState.miniY) ? calendarClockState.miniY : fallbackY;
   const next = clampMiniClockPosition(rawX, rawY);
@@ -1755,6 +1772,92 @@ function bindMiniClockDragging() {
     flushMiniClockPosition();
     dragging = false;
     saveCalendarClockState();
+  });
+}
+
+function bindMiniClockResizing() {
+  const handles = calendarClockRoot.querySelectorAll("[data-cc-mini-resize]");
+  if (!handles.length) {
+    calendarClockWarn("mini clock resize handles unavailable");
+    return;
+  }
+
+  let resizing = false;
+  let edge = "";
+  let startX = 0;
+  let startY = 0;
+  let originX = 0;
+  let originY = 0;
+  let originWidth = 0;
+  let originHeight = 0;
+
+  function applyResize(event) {
+    const dx = event.clientX - startX;
+    const dy = event.clientY - startY;
+    const right = originX + originWidth;
+    const bottom = originY + originHeight;
+    const minWidth = Math.min(CALENDAR_CLOCK_MINI_MIN_SIZE, Math.max(1, window.innerWidth - 16));
+    const minHeight = Math.min(CALENDAR_CLOCK_MINI_MIN_SIZE, Math.max(1, window.innerHeight - 16));
+    let nextX = originX;
+    let nextY = originY;
+    let nextWidth = originWidth;
+    let nextHeight = originHeight;
+
+    if (edge.includes("e")) {
+      nextWidth = Math.min(window.innerWidth - originX - 8, Math.max(minWidth, originWidth + dx));
+    }
+    if (edge.includes("s")) {
+      nextHeight = Math.min(window.innerHeight - originY - 8, Math.max(minHeight, originHeight + dy));
+    }
+    if (edge.includes("w")) {
+      nextX = Math.min(right - minWidth, Math.max(8, originX + dx));
+      nextWidth = right - nextX;
+    }
+    if (edge.includes("n")) {
+      nextY = Math.min(bottom - minHeight, Math.max(8, originY + dy));
+      nextHeight = bottom - nextY;
+    }
+
+    calendarClockState.miniX = Math.round(nextX);
+    calendarClockState.miniY = Math.round(nextY);
+    calendarClockState.miniWidth = Math.round(nextWidth);
+    calendarClockState.miniHeight = Math.round(nextHeight);
+    updateMiniClockPosition();
+  }
+
+  handles.forEach(handle => {
+    handle.addEventListener("pointerdown", event => {
+      if (calendarClockState.mode !== "mini") return;
+      resizing = true;
+      edge = handle.dataset.ccMiniResize || "";
+      startX = event.clientX;
+      startY = event.clientY;
+      normalizeMiniClockPosition();
+      originX = calendarClockState.miniX;
+      originY = calendarClockState.miniY;
+      originWidth = calendarClockState.miniWidth;
+      originHeight = calendarClockState.miniHeight;
+      handle.setPointerCapture(event.pointerId);
+      event.preventDefault();
+    });
+
+    handle.addEventListener("pointermove", event => {
+      if (!resizing) return;
+      applyResize(event);
+    });
+
+    handle.addEventListener("pointerup", event => {
+      if (!resizing) return;
+      resizing = false;
+      handle.releasePointerCapture(event.pointerId);
+      saveCalendarClockState();
+    });
+
+    handle.addEventListener("pointercancel", () => {
+      if (!resizing) return;
+      resizing = false;
+      saveCalendarClockState();
+    });
   });
 }
 
@@ -1842,6 +1945,8 @@ function updateMiniClockPosition() {
   normalizeMiniClockPosition();
   calendarClockRoot.style.setProperty("--cc-mini-x", `${calendarClockState.miniX}px`);
   calendarClockRoot.style.setProperty("--cc-mini-y", `${calendarClockState.miniY}px`);
+  calendarClockRoot.style.setProperty("--cc-mini-width", `${calendarClockState.miniWidth}px`);
+  calendarClockRoot.style.setProperty("--cc-mini-height", `${calendarClockState.miniHeight}px`);
 }
 
 function getSelectableWindowPreset() {

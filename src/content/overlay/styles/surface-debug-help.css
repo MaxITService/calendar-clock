@@ -73,6 +73,7 @@
 
     /* Drag handle mini clock style overrides */
     #calendar-clock-root .cc-clock-surface {
+      box-sizing: border-box;
       position: fixed;
       left: 0;
       top: 0;
@@ -102,14 +103,62 @@
     }
 
     #calendar-clock-root.cc-mode-mini .cc-clock-surface {
-      width: 520px;
-      height: 520px;
+      width: var(--cc-mini-width, 520px);
+      height: var(--cc-mini-height, 520px);
       border: 1px solid rgba(110, 85, 61, .24);
       border-radius: 18px;
       opacity: 1;
       visibility: visible;
       pointer-events: auto;
       transform: translate3d(var(--cc-mini-x, 24px), var(--cc-mini-y, 24px), 0);
+    }
+
+    #calendar-clock-root .cc-mini-resize {
+      position: absolute;
+      z-index: 5;
+      display: none;
+      pointer-events: auto;
+      touch-action: none;
+    }
+
+    #calendar-clock-root.cc-mode-mini .cc-mini-resize {
+      display: block;
+    }
+
+    #calendar-clock-root .cc-mini-resize.cc-resize-n {
+      top: 0;
+    }
+
+    #calendar-clock-root .cc-mini-resize.cc-resize-e {
+      right: 0;
+    }
+
+    #calendar-clock-root .cc-mini-resize.cc-resize-s {
+      bottom: 0;
+    }
+
+    #calendar-clock-root .cc-mini-resize.cc-resize-w {
+      left: 0;
+    }
+
+    #calendar-clock-root .cc-mini-resize.cc-resize-ne {
+      top: 0;
+      right: 0;
+    }
+
+    #calendar-clock-root .cc-mini-resize.cc-resize-se {
+      right: 0;
+      bottom: 0;
+    }
+
+    #calendar-clock-root .cc-mini-resize.cc-resize-sw {
+      bottom: 0;
+      left: 0;
+    }
+
+    #calendar-clock-root .cc-mini-resize.cc-resize-nw {
+      top: 0;
+      left: 0;
     }
 
     #calendar-clock-root.cc-mode-hidden .cc-clock-surface {

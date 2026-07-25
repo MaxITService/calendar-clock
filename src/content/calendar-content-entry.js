@@ -392,9 +392,17 @@ window.addEventListener("resize", () => {
   if (!calendarClockRoot) return;
   const previousX = calendarClockState.miniX;
   const previousY = calendarClockState.miniY;
+  const previousWidth = calendarClockState.miniWidth;
+  const previousHeight = calendarClockState.miniHeight;
   updateMiniClockPosition();
   const panelPositionChanged = updatePanelPosition();
-  if (calendarClockState.miniX !== previousX || calendarClockState.miniY !== previousY || panelPositionChanged) {
+  if (
+    calendarClockState.miniX !== previousX
+    || calendarClockState.miniY !== previousY
+    || calendarClockState.miniWidth !== previousWidth
+    || calendarClockState.miniHeight !== previousHeight
+    || panelPositionChanged
+  ) {
     saveCalendarClockState();
   }
 });

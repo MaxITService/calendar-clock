@@ -364,7 +364,8 @@ function parseTimeToDayMinutes(value) {
         }
 
         function getTodayDateRange() {
-            const startDate = getCalendarBaseDate();
+            const parts = getClockZonedParts(new Date());
+            const startDate = makeClockZonedDate(parts.year, parts.month - 1, parts.day);
             const endDate = addClockZonedDays(startDate, 1);
             return { startDate, endDate };
         }
@@ -382,7 +383,8 @@ function parseTimeToDayMinutes(value) {
         }
 
         function isUndatedGoogleTaskHiddenOutsideToday(event) {
-            return isUndatedGoogleTask(event) && !doesWindowOverlapToday();
+            return isUndatedGoogleTask(event)
+                && (clockDayPreviewState.active === true || !doesWindowOverlapToday());
         }
 
         function getUndatedGoogleTaskWindowLabel(event) {

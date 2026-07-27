@@ -47,6 +47,42 @@ function normalizeClockCaptureMetaEntry(entry, fallbackSource) {
                 .join(" · ");
         }
 
+        function normalizeClockDayPreviewState(value) {
+            const phase = ["idle", "loading", "ready", "unavailable"].includes(value?.phase)
+                ? value.phase
+                : "unavailable";
+            return {
+                active: value?.active === true,
+                dateKey: /^\d{4}-\d{2}-\d{2}$/.test(value?.dateKey || "") ? value.dateKey : "",
+                todayDateKey: /^\d{4}-\d{2}-\d{2}$/.test(value?.todayDateKey || "") ? value.todayDateKey : "",
+                phase,
+                relativeLabel: String(value?.relativeLabel || "").slice(0, 40),
+                reason: String(value?.reason || "").slice(0, 240)
+            };
+        }
+
+        function canAcceptClockEventPayload(previewDateKey = "") {
+            if (clockDayPreviewState.phase === "loading" || clockDayPreviewState.phase === "unavailable") {
+                return false;
+            }
+            if (!clockDayPreviewState.active) return true;
+            return clockDayPreviewState.phase === "ready"
+                && previewDateKey === clockDayPreviewState.dateKey;
+        }
+
+        function applyClockDayPreviewState(value) {
+            clockDayPreviewState = normalizeClockDayPreviewState(value);
+            if (clockDayPreviewState.active
+                || ["loading", "unavailable"].includes(clockDayPreviewState.phase)) stopAutoMagnifier();
+            else scheduleNextAutoMagnifier();
+            if (clockDayPreviewState.phase === "loading"
+                || clockDayPreviewState.phase === "unavailable") {
+                applyCalendarEvents([], null, { force: true });
+            } else {
+                renderCalendarEventList();
+            }
+        }
+
 function setDisplayWindow(start, end, options = {}) {
             if (parseTimeToDayMinutes(start) !== null) displayWindowStartEl.value = start;
             if (parseTimeToDayMinutes(end) !== null) displayWindowEndEl.value = end;
@@ -151,7 +187,9 @@ function setDisplayWindow(start, end, options = {}) {
             if (!data || typeof data !== "object") return;
             if (!isTrustedCalendarPageMessage(event)) return;
 
-            if (data.type === "CALENDAR_CLOCK_SET_WINDOW") {
+            if (data.type === "CALENDAR_CLOCK_SET_DAY_PREVIEW") {
+                applyClockDayPreviewState(data);
+            } else if (data.type === "CALENDAR_CLOCK_SET_WINDOW") {
                 if (["full", "mini", "hidden"].includes(data.mode)) {
                     const modeChanged = clockOverlayMode !== data.mode;
                     clockOverlayMode = data.mode;
@@ -231,7 +269,9 @@ function setDisplayWindow(start, end, options = {}) {
             } else if (data.type === "CALENDAR_CLOCK_SET_CONSOLE_LOGS") {
                 setClockConsoleLogs(data.enabled);
             } else if (data.type === "CALENDAR_CLOCK_SET_EVENTS") {
-                applyCalendarEvents(data.events || [], data.source || null);
+                applyCalendarEvents(data.events || [], data.source || null, {
+                    previewDateKey: String(data.previewDateKey || "")
+                });
             } else if (data.type === "CALENDAR_CLOCK_CLEAR_EVENTS") {
                 applyCalendarEvents([], null);
             } else if (data.type === "CALENDAR_CLOCK_RELOAD_EVENTS") {
@@ -414,21 +454,36 @@ function setDisplayWindow(start, end, options = {}) {
                 ? Math.max(0, Math.round((Date.now() - calendarSource.capturedAt) / 1000))
                 : null;
 
-            const baseStatus = calendarEvents.length
-                ? failedDateCount
-                    ? `${visibleCount} visible · ${outsideCount} outside · ${failedDateCount} date issue`
-                    : hiddenUndatedTaskCount
-                        ? `${visibleCount} visible · ${outsideCount} outside · ${hiddenUndatedTaskCount} undated task hidden`
-                    : hiddenLongArcCount
-                        ? `${visibleCount} visible · ${hiddenLongArcCount} long arc hidden · ${outsideCount} outside`
-                        : `${visibleCount} visible · ${outsideCount} outside`
-                : `Open ${CALENDAR_CLOCK_PROVIDER.displayName}`;
+            const previewLabel = clockDayPreviewState.relativeLabel || clockDayPreviewState.dateKey || "selected day";
+            const baseStatus = clockDayPreviewState.phase === "loading"
+                ? `Loading ${previewLabel}`
+                : clockDayPreviewState.phase === "unavailable"
+                    ? `${previewLabel} unavailable`
+                    : calendarEvents.length
+                        ? failedDateCount
+                            ? `${visibleCount} visible · ${outsideCount} outside · ${failedDateCount} date issue`
+                            : hiddenUndatedTaskCount
+                                ? `${visibleCount} visible · ${outsideCount} outside · ${hiddenUndatedTaskCount} undated task hidden`
+                            : hiddenLongArcCount
+                                ? `${visibleCount} visible · ${hiddenLongArcCount} long arc hidden · ${outsideCount} outside`
+                                : `${visibleCount} visible · ${outsideCount} outside`
+                        : clockDayPreviewState.active
+                            ? `${previewLabel} · no events`
+                            : `Open ${CALENDAR_CLOCK_PROVIDER.displayName}`;
             calendarStatusEl.textContent = omittedCaptureCount ? `${baseStatus} · ${omittedCaptureCount} omitted` : baseStatus;
 
             const rows = calendarEvents.slice(0, 18).map(createCalendarEventRow);
 
             if (!rows.length) {
-                rows.push(createCalendarEventStatusRow("No visible Calendar events found yet."));
+                rows.push(createCalendarEventStatusRow(
+                    clockDayPreviewState.phase === "loading"
+                        ? `Loading events for ${previewLabel}…`
+                        : clockDayPreviewState.phase === "unavailable"
+                            ? `Events are unavailable for ${previewLabel}.${clockDayPreviewState.reason ? ` ${clockDayPreviewState.reason}` : ""}`
+                            : clockDayPreviewState.active
+                                ? `No events found for ${previewLabel}.`
+                                : "No visible Calendar events found yet."
+                ));
             } else if (failedDateCount) {
                 rows.push(createCalendarEventStatusRow(`${failedDateCount} event(s) hidden: Calendar Clock could not understand their date. Send safe diagnostics and your date/time format to the developer.`));
             } else if (hiddenUndatedTaskCount) {
@@ -454,7 +509,9 @@ function setDisplayWindow(start, end, options = {}) {
             updateDisplayWindowSummary();
         }
 
-        function applyCalendarEvents(events, source = null) {
+        function applyCalendarEvents(events, source = null, options = {}) {
+            if (options.force !== true
+                && !canAcceptClockEventPayload(String(options.previewDateKey || ""))) return false;
             clearTimeout(calendarClockHardRefreshFallbackTimer);
             calendarClockHardRefreshFallbackTimer = null;
             if (activeArcTooltipIndex !== null) hideArcTooltip();
@@ -465,6 +522,7 @@ function setDisplayWindow(start, end, options = {}) {
             buildClock();
             renderCalendarEventList();
             scheduleNextAutoMagnifier();
+            return true;
         }
 
         let clockExtensionContextInvalidated = false;
@@ -593,6 +651,10 @@ function setDisplayWindow(start, end, options = {}) {
         }
 
         function loadStoredCalendarEvents() {
+            if (!canAcceptClockEventPayload()) {
+                renderCalendarEventList();
+                return;
+            }
             const chromeApi = getChromeApi();
             if (!chromeApi?.storage?.local) {
                 renderCalendarEventList();

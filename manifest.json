@@ -122,6 +122,8 @@
         "src/content/providers/*/*.mjs",
         "src/content/providers/*/*/*.mjs",
         "src/content/providers/*/*/*.js",
+        "src/content/day-preview/*",
+        "src/content/day-preview/providers/*",
         "src/providers/*.js",
         "src/content/sound/mechanical-clock/*",
         "icons/*.png"

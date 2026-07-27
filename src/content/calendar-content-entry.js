@@ -21,6 +21,7 @@ function isTrustedCalendarClockFrameMessage(event) {
 const CALENDAR_CLOCK_NAVIGATION_REFRESH_DELAYS_MS = [200, 900, 1800, 3200, 5200, 8000, 12000, 15000];
 const CALENDAR_CLOCK_NAVIGATION_SETTLE_MS = 12000;
 const CALENDAR_CLOCK_EVENT_REMINDERS_MODULE_PATH = "src/content/event-reminders/main.mjs";
+const CALENDAR_CLOCK_DAY_PREVIEW_MODULE_PATH = "src/content/day-preview/controller.mjs";
 let calendarClockLastNavigationKey = "";
 let calendarClockNavigationPollIntervalId = null;
 let calendarClockNavigationRefreshTimerIds = [];
@@ -63,6 +64,7 @@ async function initializeCalendarClockEventReminders() {
       getState: () => calendarClockState,
       runtime: chrome.runtime,
       getEvents: () => calendarClockEvents,
+      isPreviewActive: () => globalThis.calendarClockDayPreview?.isPreviewActive?.() === true,
       onContextInvalidated: onCalendarClockContextInvalidated,
       setDebugPlaying: setCalendarClockTickSoundActive
     });
@@ -73,6 +75,93 @@ async function initializeCalendarClockEventReminders() {
     if (api) globalThis.calendarClockEventReminders = api;
   } catch (error) {
     calendarClockWarn("optional event reminders module is unavailable", error);
+  }
+}
+
+function getCalendarClockNavigationDateKeys() {
+  const captureView = getCalendarClockCaptureView();
+  return Array.isArray(captureView?.visibleDateKeys)
+    ? captureView.visibleDateKeys.slice()
+    : [];
+}
+
+function makeCalendarClockDayPreviewZonedDate(dateKey, time) {
+  const date = typeof findExplicitCalendarEventDate === "function"
+    ? findExplicitCalendarEventDate(dateKey)
+    : null;
+  const minutes = parseClockMinutes(time);
+  if (!date || minutes === null) return new Date(NaN);
+  return makeCalendarClockZonedDate(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate(),
+    Math.floor(minutes / 60),
+    minutes % 60
+  );
+}
+
+function clearCalendarClockEventsForDayPreview() {
+  calendarClockPublishSequence += 1;
+  calendarClockEvents = [];
+  setCalendarClockCaptureMeta(
+    "calendar",
+    makeCalendarClockCaptureMeta(
+      globalThis.getCalendarClockProvider?.()?.sourceId || "calendar",
+      0,
+      0,
+      normalizeCalendarClockCaptureLimit(calendarClockState.captureLimit)
+    )
+  );
+  renderCalendarClockEventSnapshot();
+  clearCalendarClockFrameEvents();
+}
+
+function applyCalendarClockDayPreviewState(snapshot) {
+  const suppressTimeDrivenEffects = snapshot?.active === true
+    || ["loading", "unavailable"].includes(snapshot?.phase);
+  globalThis.calendarClockEventReminders?.setPreviewActive?.(suppressTimeDrivenEffects);
+  if (calendarClockState.followNow) {
+    applyFollowNowWindow({ skipSave: true, force: true });
+  } else {
+    updatePanelControls();
+    syncClockFrame();
+  }
+  renderDebugPanel();
+  updatePanelStats();
+}
+
+async function initializeCalendarClockDayPreview() {
+  if (globalThis.calendarClockDayPreview || !canUseCalendarClockExtensionApi()) return;
+  try {
+    await globalThis.calendarClockTemporalProjectionReady;
+    if (!globalThis.calendarClockTemporalProjection) {
+      throw new Error("Calendar temporal projection is unavailable.");
+    }
+    const module = await import(chrome.runtime.getURL(CALENDAR_CLOCK_DAY_PREVIEW_MODULE_PATH));
+    if (calendarClockExtensionContextInvalidated) return;
+    const api = await module.install({
+      window,
+      document,
+      runtime: chrome.runtime,
+      root: calendarClockRoot,
+      providerId: globalThis.getCalendarClockProvider?.()?.id || "",
+      getTodayDateKey: date => formatCalendarClockDateKey(date, getCalendarClockTimeZone()),
+      readNavigationDateKeys: getCalendarClockNavigationDateKeys,
+      getTimeZone: getCalendarClockTimeZone,
+      getLanguage: () => navigator.language || undefined,
+      makeZonedDate: makeCalendarClockDayPreviewZonedDate,
+      clearEvents: clearCalendarClockEventsForDayPreview,
+      captureEvents: publishCalendarEvents,
+      onStateChange: applyCalendarClockDayPreviewState,
+      onContextInvalidated: onCalendarClockContextInvalidated
+    });
+    if (calendarClockExtensionContextInvalidated) {
+      api?.destroy?.();
+      return;
+    }
+    if (api) globalThis.calendarClockDayPreview = api;
+  } catch (error) {
+    calendarClockWarn("optional Day Preview module is unavailable", error);
   }
 }
 
@@ -421,6 +510,7 @@ Promise.resolve(globalThis.calendarClockProviderReady).then(provider => {
   calendarClockLastNavigationKey = getCalendarClockNavigationKey();
   await ensureCalendarClockUi();
   installCalendarClockProviderPresenceTracking(provider);
+  await initializeCalendarClockDayPreview();
   await initializeCalendarClockEventReminders();
   applyFollowNowWindow({ skipSave: true });
   queuePublishCalendarEvents();

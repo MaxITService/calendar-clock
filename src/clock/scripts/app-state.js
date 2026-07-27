@@ -130,6 +130,14 @@ const stageEl = document.getElementById("stage");
         let longDurationArcsVisible = true;
         let displayWindowDurationOverride = null;
         let displayWindowDateRangeOverride = null;
+        let clockDayPreviewState = {
+            active: false,
+            dateKey: "",
+            todayDateKey: "",
+            phase: "idle",
+            relativeLabel: "",
+            reason: ""
+        };
 
         let clockSize = 0;
         let lensSize = 0;

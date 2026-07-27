@@ -2433,6 +2433,19 @@ function postCalendarClockFrameMessage(message, targetOrigin) {
   }
 }
 
+function getCalendarClockFrameEventSource() {
+  const temporalContext = calendarClockEffectiveEventSource?.temporalContext || null;
+  return {
+    capturedAt: Date.now(),
+    timeZone: typeof getCalendarClockTimeZone === "function" ? getCalendarClockTimeZone() : "",
+    systemTimeZone: typeof getCalendarClockSystemTimeZone === "function" ? getCalendarClockSystemTimeZone() : "",
+    temporalContext,
+    contextFingerprint: temporalContext?.fingerprint || "",
+    captureMeta: calendarClockCaptureMeta,
+    effectiveSource: calendarClockEffectiveEventSource
+  };
+}
+
 function syncClockFrame(options = {}) {
   const targetOrigin = getCalendarClockFrameTargetOrigin();
   if (!targetOrigin || !calendarClockFrame?.contentWindow) return;
@@ -2448,6 +2461,16 @@ function syncClockFrame(options = {}) {
     calendarClockWarn("clock frame sync skipped: Calendar temporal context is unavailable");
     return;
   }
+  const dayPreviewSnapshot = globalThis.calendarClockDayPreview?.getSnapshot?.() || null;
+  if (dayPreviewSnapshot && !postCalendarClockFrameMessage({
+    type: "CALENDAR_CLOCK_SET_DAY_PREVIEW",
+    active: dayPreviewSnapshot.active === true,
+    dateKey: dayPreviewSnapshot.dateKey,
+    todayDateKey: dayPreviewSnapshot.todayDateKey,
+    phase: dayPreviewSnapshot.phase,
+    relativeLabel: dayPreviewSnapshot.presentation?.relativeLabel || "",
+    reason: dayPreviewSnapshot.reason || ""
+  }, targetOrigin)) return;
   if (!postCalendarClockFrameMessage({
     type: "CALENDAR_CLOCK_SET_WINDOW",
     mode: calendarClockState.mode,
@@ -2463,11 +2486,19 @@ function syncClockFrame(options = {}) {
     systemTimeZone: typeof getCalendarClockSystemTimeZone === "function" ? getCalendarClockSystemTimeZone() : "",
     transient: calendarClockState.followNow
   }, targetOrigin)) return;
-  if (globalThis.getCalendarClockProvider?.()?.usesPageLocalEffectiveFeed === true
+  const previewEventsBlocked = dayPreviewSnapshot
+    && ["loading", "unavailable"].includes(dayPreviewSnapshot.phase);
+  const sendDirectEvents = dayPreviewSnapshot?.phase === "ready"
+    || dayPreviewSnapshot?.active === true
+    || globalThis.getCalendarClockProvider?.()?.usesPageLocalEffectiveFeed === true;
+  if (previewEventsBlocked) {
+    if (!postCalendarClockFrameMessage({ type: "CALENDAR_CLOCK_CLEAR_EVENTS" }, targetOrigin)) return;
+  } else if (sendDirectEvents
       && !postCalendarClockFrameMessage({
         type: "CALENDAR_CLOCK_SET_EVENTS",
         events: calendarClockEvents,
-        source: calendarClockEffectiveEventSource
+        source: getCalendarClockFrameEventSource(),
+        previewDateKey: dayPreviewSnapshot?.phase === "ready" ? dayPreviewSnapshot.dateKey : ""
       }, targetOrigin)) return;
   if (!postCalendarClockFrameMessage({
     type: "CALENDAR_CLOCK_SET_WINDOW_START_MARKER",

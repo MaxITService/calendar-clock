@@ -67,7 +67,11 @@ function updateMagnifier() {
         }
 
         function shouldRunAutoMagnifier() {
-            return magnifierEnabled && magnifierAutoEnabled && clockOverlayMode !== "hidden";
+            return magnifierEnabled
+                && magnifierAutoEnabled
+                && clockOverlayMode !== "hidden"
+                && clockDayPreviewState.active !== true
+                && !["loading", "unavailable"].includes(clockDayPreviewState.phase);
         }
 
         function scheduleNextMinuteHandAutoMagnifier(nowMs = Date.now()) {

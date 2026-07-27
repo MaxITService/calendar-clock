@@ -104,6 +104,7 @@
 | `src/content/calendar-dom-reader.js` | Normalizes structured records or visible calendar DOM nodes into projected events. |
 | `src/content/tasks/tasks-content-entry.js` | Scrapes timed Google Tasks from the Tasks side-panel iframe. |
 | `src/content/time-window-controller.js` | Manages display-window presets, auto-fit, follow-now, persistence, and summaries. |
+| `src/content/day-preview/*` | Owns transient civil-date preview state, provider navigation capabilities, loading safety, controls, and indicators. |
 | `src/temporal-projection/temporal-projection.js` | Defines the shared versioned Calendar-time projection, overlap, identity, and validation contract. |
 | `src/content/overlay/debug-panel.js` | Builds and updates the debug panel for captured event and window diagnostics. |
 | `src/content/overlay/overlay-menu.js` | Creates and controls the floating calendar overlay menus and provider-aware clock frame. |

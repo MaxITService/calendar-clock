@@ -212,6 +212,10 @@ function getCalendarEventDateKey(event) {
 }
 
 function getWindowAnchorDate() {
+  const previewAnchor = globalThis.calendarClockDayPreview?.getAnchorDate?.();
+  if (previewAnchor instanceof Date && !Number.isNaN(previewAnchor.getTime())) {
+    return previewAnchor;
+  }
   return getCurrentDayDate();
 }
 
@@ -264,6 +268,17 @@ function restoreManualWindowState(options = {}) {
 }
 
 function getWindowDateRange() {
+  const dayPreview = globalThis.calendarClockDayPreview;
+  if (calendarClockState.followNow && dayPreview?.isPreviewActive?.() === true) {
+    const previewRange = dayPreview.getWindowDateRange?.(getDisplayWindow());
+    if (previewRange?.startDate instanceof Date
+        && previewRange?.endDate instanceof Date
+        && !Number.isNaN(previewRange.startDate.getTime())
+        && previewRange.endDate > previewRange.startDate) {
+      return previewRange;
+    }
+  }
+
   if (calendarClockState.radial24Hour) {
     if (calendarClockState.followNow) {
       const now = new Date();
@@ -432,7 +447,8 @@ function isUndatedGoogleTask(event) {
 }
 
 function isUndatedGoogleTaskHiddenOutsideToday(event) {
-  return isUndatedGoogleTask(event) && !doesWindowOverlapToday();
+  return isUndatedGoogleTask(event)
+    && (globalThis.calendarClockDayPreview?.isPreviewActive?.() === true || !doesWindowOverlapToday());
 }
 
 function getUndatedGoogleTaskWindowLabel(event) {

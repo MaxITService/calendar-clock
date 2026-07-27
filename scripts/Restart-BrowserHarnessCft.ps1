@@ -279,7 +279,44 @@ function Invoke-BrowserHarness {
     return
   }
 
-  $InputText | & browser-harness @Arguments
+  $command = Get-Command browser-harness -ErrorAction Stop | Select-Object -First 1
+  $python = Get-Command python -CommandType Application -ErrorAction Stop |
+    Select-Object -First 1
+  $startInfo = [Diagnostics.ProcessStartInfo]::new()
+  $pythonCommand = "import base64,json,os,subprocess,sys;p=subprocess.run([os.environ['CC_CFT_HARNESS_EXE']]+json.loads(os.environ['CC_CFT_HARNESS_ARGS']),input=base64.b64decode(os.environ['CC_CFT_HARNESS_INPUT']),stdout=subprocess.PIPE,stderr=subprocess.PIPE);sys.stdout.buffer.write(p.stdout);sys.stderr.buffer.write(p.stderr);sys.exit(p.returncode)"
+  $startInfo.FileName = $python.Source
+  $startInfo.Arguments = "-c `"$pythonCommand`""
+  $startInfo.UseShellExecute = $false
+  $startInfo.CreateNoWindow = $true
+  $startInfo.RedirectStandardOutput = $true
+  $startInfo.RedirectStandardError = $true
+  $startInfo.EnvironmentVariables["CC_CFT_HARNESS_EXE"] = $command.Source
+  $startInfo.EnvironmentVariables["CC_CFT_HARNESS_ARGS"] =
+    ConvertTo-Json -Compress -InputObject @($Arguments)
+  $cleanInput = $InputText.TrimStart([char]0xFEFF)
+  $inputBytes = [Text.UTF8Encoding]::new($false).GetBytes($cleanInput)
+  $startInfo.EnvironmentVariables["CC_CFT_HARNESS_INPUT"] =
+    [Convert]::ToBase64String($inputBytes)
+
+  $process = [Diagnostics.Process]::new()
+  $process.StartInfo = $startInfo
+  if (-not $process.Start()) {
+    throw "Could not start browser-harness."
+  }
+
+  $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+  $stderrTask = $process.StandardError.ReadToEndAsync()
+  $process.WaitForExit()
+  $stdout = $stdoutTask.GetAwaiter().GetResult()
+  $stderr = $stderrTask.GetAwaiter().GetResult()
+  $exitCode = $process.ExitCode
+  $script:LASTEXITCODE = $exitCode
+  $process.Dispose()
+
+  if ($stdout) { Write-Output $stdout.TrimEnd() }
+  if ($stderr -and $exitCode -eq 0) { Write-Warning $stderr.TrimEnd() }
+  if ($stderr -and $exitCode -ne 0) { Write-Error $stderr.TrimEnd() }
+  if ($exitCode -ne 0) { throw "browser-harness exited with code $exitCode." }
 }
 
 function Reset-BrowserHarnessDaemon {

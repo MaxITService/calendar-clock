@@ -1,6 +1,6 @@
 # Outlook Calendar
 
-See also [[Calendar Providers]], [[Google Calendar]], and [[code-notes]].
+See also [[Calendar Providers]], [[Google Calendar]], [[Day Preview]], and [[code-notes]].
 
 - The default source observes Outlook Web responses already loaded by the page. A small provider-declared capture starts at `document_start`, then hands its bounded queue to an optional Outlook parser injected through Chrome's scripting API. It does not make an additional calendar request or use a separate Microsoft Graph login.
 - Initial events come from `startupdata.ashx` → `getCalendarView.Body.Items`. Only validated item IDs, titles, times, availability status, category names/colors, calendar names, and timezone data cross the isolated bridge.
@@ -18,3 +18,4 @@ See also [[Calendar Providers]], [[Google Calendar]], and [[code-notes]].
 - The shared Outlook appearance contract maps structured master-category presets to arc colors. Master category `Color` is the 0-based preset index (Red 0, Blue 7, Purple 8). Uncategorized structured events take the rendered color via the provider's `readEventColor`; the generic reader would pick the wrapper's gray border. The first known event category wins; otherwise `OOF` uses Outlook's away color.
 - `[data-calitemid]` is a locale-independent fallback for title, time, appearance, and hover matching. Normal events use their computed event layer; a proven striped OOF layer uses `--freeBusyAwayColor`. DOM fallback does not infer category semantics when OOF and category styling overlap.
 - Canonical Outlook events, a fail-open persisted display feed, and presence metadata use separate `calendarClockOutlook*` storage keys. A validated effective subset is delivered directly to the embedded clock and is not trusted across page or service-worker lifetimes.
+- [[Day Preview]] uses the primary Fluent Today/Chevron toolbar and mounted `data-column-date` columns, never the mini-calendar month controls. Work Week stays active for weekdays; a weekend target switches through Outlook's locale-independent Day ribbon command because Work Week cannot mount that date.

@@ -309,7 +309,17 @@ function installSoundDialog({ document, root, getState, runtime, storage, player
 }
 
 export async function install(options = {}) {
-  const { window, document, root, getState, runtime, getEvents, onContextInvalidated, setDebugPlaying } = options;
+  const {
+    window,
+    document,
+    root,
+    getState,
+    runtime,
+    getEvents,
+    isPreviewActive,
+    onContextInvalidated,
+    setDebugPlaying
+  } = options;
   if (!window || !document || !root || typeof getState !== "function" || !getState() || !runtime?.id) return null;
   await injectStyles(document, runtime);
   const storage = new AudioStorageClient({ document, window, runtime });
@@ -320,7 +330,15 @@ export async function install(options = {}) {
     onDiagnostic: error => window.console.warn("Calendar Clock custom sound playback fell back to built-in", error)
   });
   let settings = normalizeReminderSettings(getState());
-  const scheduler = new ReminderScheduler({ onDue: () => player.play(settings).catch(() => {}) });
+  let previewActive = isPreviewActive?.() === true;
+  const getSchedulableEvents = (events = getEvents()) => previewActive ? [] : events;
+  const scheduler = new ReminderScheduler({
+    onDue: () => {
+      if (!previewActive && isPreviewActive?.() !== true) {
+        player.play(settings).catch(() => {});
+      }
+    }
+  });
   const startToggle = root.querySelector("[data-cc-event-reminder-start]");
   const startLead = root.querySelector("[data-cc-event-reminder-start-lead]");
   const endToggle = root.querySelector("[data-cc-event-reminder-end]");
@@ -365,7 +383,7 @@ export async function install(options = {}) {
     startLead.value = String(settings.startLeadSeconds);
     endLead.value = String(settings.endLeadSeconds);
     saveState(runtime, { ...currentState }).catch(() => {});
-    scheduler.update(getEvents(), settings);
+    scheduler.update(getSchedulableEvents(), settings);
     if (settings.startEnabled || settings.endEnabled) player.prime(settings).catch(() => {});
     if (settings.startEnabled || settings.endEnabled) armAudioUnlockListeners();
     else removeAudioUnlockListeners();
@@ -380,7 +398,7 @@ export async function install(options = {}) {
     endLead.value = String(settings.endLeadSeconds); endLead.disabled = false;
     const tooltip = getSoundTooltip(settings);
     soundButtons.forEach(button => { button.disabled = false; button.title = tooltip; button.setAttribute("aria-label", tooltip); });
-    scheduler.update(getEvents(), settings);
+    scheduler.update(getSchedulableEvents(), settings);
   }
   const dialog = installSoundDialog({ document, root, getState, runtime, storage, player, onSaved: refreshControls });
   const listenerOptions = { signal: listenerController.signal };
@@ -396,8 +414,13 @@ export async function install(options = {}) {
   );
 
   const api = {
-    updateEvents(events = getEvents()) { scheduler.update(events, settings); },
+    updateEvents(events = getEvents()) { scheduler.update(getSchedulableEvents(events), settings); },
     updateSettings() { refreshControls(); },
+    setPreviewActive(active) {
+      previewActive = active === true;
+      if (previewActive) player.stop();
+      scheduler.update(getSchedulableEvents(), settings);
+    },
     syncState({ clearCustomBlob = false } = {}) {
       const selectedSoundIdToClear = clearCustomBlob && settings.soundKind === "custom"
         ? settings.soundId

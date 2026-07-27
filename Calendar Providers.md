@@ -1,6 +1,6 @@
 # Calendar Providers
 
-See [[Google Calendar]], [[Outlook Calendar]], and [[code-notes]].
+See [[Google Calendar]], [[Outlook Calendar]], [[Day Preview]], and [[code-notes]].
 
 Each calendar integration is an isolated provider. Shared code owns temporal projection, display-window filtering, the clock UI, and publication; a provider owns only site-specific discovery and evidence.
 

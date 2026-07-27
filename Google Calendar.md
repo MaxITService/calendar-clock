@@ -8,7 +8,7 @@ Calendar Clock works on the visible Google Calendar page, not through the Google
 - During week navigation, Google Calendar can briefly remove old event chips before rendering the next view; empty captures during that transition are ignored.
 - Calendar captures update a bounded occurrence store. Queries intersect canonical civil-date spans, so a cross-midnight event remains available from either covered day without duplicating the event.
 - Stable-ID replacements and explicit tombstones are date-independent. Missing-event purge requires a trusted `dated-url` or `visible-dom` capture scope; title and today fallbacks only guide display.
-- The clock display is always anchored to today/real now. Windows that cross midnight can include yesterday/today or today/tomorrow.
+- The clock display is normally anchored to today/real now. [[Day Preview]] temporarily anchors the same wall-clock window to another civil date; windows that cross midnight can include either adjacent date.
 - Day and week views are the best test views because event chips expose time labels.
 - Parsed events are saved to `chrome.storage.local` as `calendarClockEvents`.
 - The Tasks side panel is a `tasks.google.com` iframe, so timed tasks are collected by a separate iframe content script and merged with Calendar events.
@@ -20,6 +20,7 @@ Calendar Clock works on the visible Google Calendar page, not through the Google
 - Page-owned records do not carry display colors or DOM nodes. Their raw event IDs are matched to the base64 IDs on Calendar DOM chips so arcs retain the original Calendar color and can highlight/scroll to the visible chip; unmatched offscreen records use a stable fallback color.
 - Both structured and DOM records pass through the same versioned projection in the Calendar display timezone before filtering or storage. Timed intervals are `[start, end)`; all-day records retain their civil bounds and can derive overlap directly from an absolute window when display date keys are unavailable.
 - Stored projections are partitioned by Calendar timezone and projection-policy version. Missing/invalid timezone context or an unavailable projection module rejects publication instead of using the computer timezone.
+- [[Day Preview]] preserves the current Day or Week view and uses the primary Today/Previous/Next group only when the requested civil date is outside the mounted range. Navigation-date hints remain separate from trusted event-capture scope. Navigation is bounded and event arcs remain empty until the route and visible date scope agree.
 
 ## Clock Mapping
 

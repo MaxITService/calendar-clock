@@ -334,6 +334,29 @@ assert.strictEqual(
   "2026-07-21T20:00:00.000Z"
 );
 
+const domDraftFilter = loadFunctions("src/content/calendar-dom-reader.js", [
+  "shouldIgnoreCalendarClockDomEventNode"
+]);
+const ordinaryEventNode = { closest: () => null };
+assert.strictEqual(
+  domDraftFilter.api.shouldIgnoreCalendarClockDomEventNode(
+    ordinaryEventNode,
+    "(No title) All day, No title, Magnus, Accepted, No location, 1 August 2026 Event is being created."
+  ),
+  true
+);
+assert.strictEqual(
+  domDraftFilter.api.shouldIgnoreCalendarClockDomEventNode(ordinaryEventNode, "Design review, 10:00 to 11:00"),
+  false
+);
+const editorEventNode = {
+  closest: () => ({ querySelector: selector => selector === "[aria-label='Cancel event creation']" ? {} : null })
+};
+assert.strictEqual(
+  domDraftFilter.api.shouldIgnoreCalendarClockDomEventNode(editorEventNode, "All day, 1 August 2026"),
+  true
+);
+
 const interval = loadFunctions("src/clock/scripts/magnifier-motion.js", [
   "setMagnifierAutoIntervalSeconds"
 ], {

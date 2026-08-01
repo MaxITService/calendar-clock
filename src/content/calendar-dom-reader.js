@@ -204,6 +204,13 @@ function isCalendarEventChipNode(node) {
   return Boolean(node.matches("[data-eventid], [data-eventchip], [data-eid], [data-taskid], [data-task-id], [data-calitemid]"));
 }
 
+function shouldIgnoreCalendarClockDomEventNode(node, rawText) {
+  if (/\bevent is being created\b/i.test(String(rawText || ""))) return true;
+
+  const dialog = node?.closest?.("[role='dialog']");
+  return Boolean(dialog?.querySelector?.("[aria-label='Cancel event creation']"));
+}
+
 function getCalendarClockDomEventDedupeKey(stableId, fallbackKey) {
   const normalizedId = String(stableId || "").trim();
   return normalizedId ? `id:${normalizedId}` : `fallback:${fallbackKey}`;
@@ -847,6 +854,7 @@ function extractCalendarEvents() {
       eventNode.getAttribute("title"),
       eventNode.textContent
     ].filter(Boolean).join(" "));
+    if (shouldIgnoreCalendarClockDomEventNode(eventNode, rawText)) return;
 
     const canParseNode = Boolean(providerEvent)
       || isCalendarEventChipNode(eventNode)

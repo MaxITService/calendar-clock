@@ -254,8 +254,7 @@ async function buildCalendarClockUi() {
   calendarClockRoot = document.createElement("div");
   calendarClockRoot.id = "calendar-clock-root";
   const manifest = chrome.runtime.getManifest();
-  const buildName = "calendar-clock-features";
-  const versionText = `Calendar Clock v${manifest.version} · build: ${buildName}`;
+  const versionText = `Calendar Clock v${manifest.version} · build: ${CALENDAR_CLOCK_BUILD_NAME}`;
   calendarClockRoot.appendChild(await cloneCalendarClockTemplate(CALENDAR_CLOCK_ROOT_TEMPLATE_PATH));
 
   const versionNote = calendarClockRoot.querySelector("[data-cc-version-note]");

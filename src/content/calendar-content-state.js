@@ -24,6 +24,7 @@ const CALENDAR_CLOCK_COLORS = [
 const CALENDAR_CLOCK_STATE_KEY = "calendarClockOverlayState";
 const CALENDAR_CLOCK_LOG_PREFIX = "[calen.clock.ext]";
 const CALENDAR_CLOCK_SUPPORT_EMAIL = "forpphotos@gmail.com";
+const CALENDAR_CLOCK_BUILD_NAME = "calendar-clock-features";
 const CALENDAR_CLOCK_MINI_SIZE = 520;
 const CALENDAR_CLOCK_MINI_MIN_SIZE = 240;
 const CALENDAR_CLOCK_MINI_MARGIN = 24;

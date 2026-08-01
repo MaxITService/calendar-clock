@@ -12,6 +12,19 @@ const CALENDAR_CLOCK_SAFE_DEBUG_SOURCES = new Set([
 const CALENDAR_CLOCK_SAFE_DEBUG_CAPTURE_PHASES = new Set(["ready", "captured", "unavailable"]);
 const CALENDAR_CLOCK_SAFE_DEBUG_TRANSPORTS = new Set(["fetch", "xhr"]);
 
+function getCalendarClockDebugBuildInfo() {
+  let extensionVersion = "";
+  try {
+    extensionVersion = String(chrome.runtime.getManifest()?.version || "");
+  } catch (_error) {
+    // Diagnostics must remain available if the extension context was invalidated.
+  }
+  return {
+    extensionVersion,
+    buildName: typeof CALENDAR_CLOCK_BUILD_NAME === "string" ? CALENDAR_CLOCK_BUILD_NAME : ""
+  };
+}
+
 async function loadCalendarClockDebugTemplates() {
   if (calendarClockDebugTemplate) return calendarClockDebugTemplate;
 
@@ -60,6 +73,7 @@ function getFullDebugPayload() {
   const displayWindow = getDisplayWindow();
   return {
     capturedAt: new Date().toISOString(),
+    ...getCalendarClockDebugBuildInfo(),
     url: location.href,
     mode: calendarClockState.mode,
     eventSource: calendarClockEffectiveEventSource,
@@ -204,6 +218,7 @@ function getSafeDebugPayload() {
   return {
     format: "calendar-clock-safe-diagnostics-v1",
     capturedAt: new Date().toISOString(),
+    ...getCalendarClockDebugBuildInfo(),
     ui: {
       mode: calendarClockState.mode,
       clockFaceId: calendarClockState.clockFaceId,
@@ -263,6 +278,8 @@ function getSafeDebugTextPayload() {
     "Calendar Clock Safe Diagnostics",
     "Privacy: event and task titles, calendar names, event dates and times, identifiers, raw text, and page URLs are excluded.",
     `capturedAt: ${payload.capturedAt}`,
+    `extensionVersion: ${payload.extensionVersion || "unknown"}`,
+    `buildName: ${payload.buildName || "unknown"}`,
     `mode: ${payload.ui.mode}`,
     `clockFace: ${payload.ui.clockFaceId}`,
     `pageOwnedInfo: ${payload.ui.pageOwnedInfo}`,

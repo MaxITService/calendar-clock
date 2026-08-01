@@ -33,6 +33,8 @@ function makeContext() {
   return vm.createContext({
     console,
     Date,
+    chrome: { runtime: { getManifest: () => ({ version: "9.8.7" }) } },
+    CALENDAR_CLOCK_BUILD_NAME: "calendar-clock-test-build",
     location: { href: privateValues.at(-1) },
     calendarClockState: {
       mode: "mini",
@@ -125,6 +127,10 @@ function main() {
   assertDoesNotContainPrivateValues(safeText, "Safe text");
   assert.strictEqual(Object.hasOwn(safePayload, "url"), false);
   assert.strictEqual(Object.hasOwn(safePayload, "events"), false);
+  assert.strictEqual(safePayload.extensionVersion, "9.8.7");
+  assert.strictEqual(safePayload.buildName, "calendar-clock-test-build");
+  assert.match(safeText, /extensionVersion: 9\.8\.7/);
+  assert.match(safeText, /buildName: calendar-clock-test-build/);
   assert.deepStrictEqual(safePayload.eventSummary, {
     count: 1,
     durationKinds: { point: 0, allDay: 0, range: 1 },
@@ -147,6 +153,8 @@ function main() {
   privateValues.forEach(value => {
     assert.strictEqual(fullJson.includes(value), true, `Full diagnostics must retain ${value}`);
   });
+  assert.strictEqual(fullPayload.extensionVersion, "9.8.7");
+  assert.strictEqual(fullPayload.buildName, "calendar-clock-test-build");
   console.log("Debug payload privacy verification passed.");
 }
 

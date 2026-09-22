@@ -48,18 +48,18 @@
 | `src/clock/faces/neumorphic-white/neumorphic-white-builder.js` | Builds the white neumorphic clock face DOM using the analog geometry. |
 | `src/clock/faces/neumorphic-white/neumorphic-white-face.css` | White neumorphic styling for the alternate clock face design. |
 | `src/clock/faces/neumorphic-white/neumorphic-white-face.js` | Registers the white neumorphic clock face module. |
-| `src/clock/faces/emerald-gold/emerald-gold-builder.js` | Builds the luxury emerald gold clock face DOM. |
-| `src/clock/faces/emerald-gold/emerald-gold-face.css` | Luxury emerald and gold styling for the alternate clock face design. |
-| `src/clock/faces/emerald-gold/emerald-gold-face.js` | Registers the luxury emerald gold clock face module. |
-| `src/clock/faces/midnight-aurora/midnight-aurora-builder.js` | Builds the dark space / aurora borealis clock face with star particles and aurora glow. |
-| `src/clock/faces/midnight-aurora/midnight-aurora-face.css` | Deep navy-violet styling with polar-light gradient rim for the Midnight Aurora face. |
+| `src/clock/faces/emerald-gold/emerald-gold-builder.js` | Builds the Emerald Gold face DOM with thin matte ticks and slimmer hands. |
+| `src/clock/faces/emerald-gold/emerald-gold-face.css` | Restrained matte-gold and forest-green styling for the Emerald Gold face. |
+| `src/clock/faces/emerald-gold/emerald-gold-face.js` | Registers the Emerald Gold clock face module. |
+| `src/clock/faces/midnight-aurora/midnight-aurora-builder.js` | Builds the Midnight Aurora face DOM: thin pale ticks, no stars or aurora halo. |
+| `src/clock/faces/midnight-aurora/midnight-aurora-face.css` | Quiet midnight and gunmetal styling with a muted teal accent for the Midnight Aurora face. |
 | `src/clock/faces/midnight-aurora/midnight-aurora-face.js` | Registers the Midnight Aurora clock face module. |
-| `src/clock/faces/crimson-dusk/crimson-dusk-builder.js` | Builds the Crimson Dusk sunset clock face with ember particles and Roman numerals. |
-| `src/clock/faces/crimson-dusk/crimson-dusk-face.css` | Warm amber-to-crimson sunset styling with glowing ember particles for Crimson Dusk face. |
+| `src/clock/faces/crimson-dusk/crimson-dusk-builder.js` | Builds the Crimson Dusk face DOM: Roman numerals, thin copper ticks, no embers or halo. |
+| `src/clock/faces/crimson-dusk/crimson-dusk-face.css` | Restrained bordeaux and matte copper styling for the Crimson Dusk face. |
 | `src/clock/faces/crimson-dusk/crimson-dusk-face.js` | Registers the Crimson Dusk clock face module. |
-| `src/clock/faces/cobalt-meridian/cobalt-meridian-builder.js` | Builds the Cobalt Meridian cartographic instrument clock face. |
-| `src/clock/faces/cobalt-meridian/cobalt-meridian-face.css` | Cold cobalt, chrome, and survey-map styling for Cobalt Meridian. |
-| `src/clock/faces/cobalt-meridian/cobalt-meridian-face.js` | Registers Cobalt Meridian and arc render tuning. |
+| `src/clock/faces/cobalt-meridian/cobalt-meridian-builder.js` | Builds the Cobalt Meridian face DOM: meridians and grid only, thin steel ticks. |
+| `src/clock/faces/cobalt-meridian/cobalt-meridian-face.css` | Quiet navy and matte steel styling for the Cobalt Meridian face. |
+| `src/clock/faces/cobalt-meridian/cobalt-meridian-face.js` | Registers the Cobalt Meridian clock face module. |
 | `src/clock/faces/sterling-sector/sterling-sector-builder.js` | Builds the Sterling Sector steel dress-watch clock face. |
 | `src/clock/faces/sterling-sector/sterling-sector-face.css` | Muted silver sunburst, sector, and steel marker styling for Sterling Sector. |
 | `src/clock/faces/sterling-sector/sterling-sector-face.js` | Registers Sterling Sector and arc render tuning. |

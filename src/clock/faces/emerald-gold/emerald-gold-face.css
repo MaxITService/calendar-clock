@@ -1,4 +1,4 @@
-/* Visual styling for the Emerald Gold luxury face, rim, ticks, numbers, hands, and arcs. */
+/* Emerald Gold: a restrained, matte-gold and forest-green take on the Emerald Gold face. */
 .clock {
     width: 100%;
     height: 100%;
@@ -6,34 +6,29 @@
     position: relative;
     overflow: hidden;
     background:
-        linear-gradient(140deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.02) 42%, rgba(212, 175, 55, 0.15)) padding-box,
-        var(--face-texture) padding-box,
+        linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0) 48%, rgba(0, 0, 0, 0.12)) padding-box,
         var(--face-grain) padding-box,
-        radial-gradient(circle at 50% 50%, #0c5640 0%, #063124 64%, #021a13 100%) padding-box,
-        conic-gradient(from 315deg,
-            #ffe082 0deg,
-            #d4af37 60deg,
-            #aa7c11 150deg,
-            #5a4004 220deg,
-            #d4af37 300deg,
-            #ffe082 360deg) border-box;
+        radial-gradient(circle at 50% 44%, #12463a 0%, #0b3129 58%, #06211b 100%) padding-box,
+        conic-gradient(from 300deg,
+            #a8925a 0deg,
+            #6f5c2c 90deg,
+            #c2ad76 180deg,
+            #6f5c2c 270deg,
+            #a8925a 360deg) border-box;
     border: var(--rim-width) solid transparent;
     box-shadow:
-        inset 0 0 0 clamp(3px, .8vmin, 8px) rgba(255, 243, 200, 0.45),
-        inset 0 0 6vmin rgba(2, 26, 19, 0.75),
-        0 0 0 1px rgba(255, 243, 200, 0.35),
-        0 4vmin 9vmin rgba(0, 0, 0, 0.65);
+        inset 0 0 0 1px rgba(214, 196, 140, 0.32),
+        inset 0 0 5vmin rgba(3, 20, 15, 0.7),
+        0 0 0 1px rgba(214, 196, 140, 0.18),
+        0 3vmin 7vmin rgba(0, 0, 0, 0.6);
 }
 
 .clock::before {
     content: "";
     position: absolute;
-    inset: 8.4%;
+    inset: 7.6%;
     border-radius: 50%;
-    border: 1px solid rgba(212, 175, 55, 0.28);
-    box-shadow:
-        inset 0 0 2vmin rgba(212, 175, 55, 0.08),
-        0 0 1.4vmin rgba(212, 175, 55, 0.04);
+    border: 1px solid rgba(194, 173, 118, 0.34);
     pointer-events: none;
     z-index: 1;
 }
@@ -43,10 +38,9 @@
     position: absolute;
     inset: 0;
     border-radius: 50%;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.35) 0 24%, transparent 24% 100%);
+    background: radial-gradient(circle at 50% 50%, transparent 62%, rgba(0, 0, 0, 0.22) 100%);
     pointer-events: none;
     z-index: 6;
-    mix-blend-mode: screen;
 }
 
 .ticks,
@@ -87,8 +81,7 @@
     left: 50%;
     top: 50%;
     border-radius: 50%;
-    background: rgba(212, 175, 55, 0.35);
-    box-shadow: 0 0 .24vmin rgba(212, 175, 55, 0.15);
+    background: rgba(194, 173, 118, 0.28);
 }
 
 .center-shadow-ring {
@@ -96,10 +89,8 @@
     left: 50%;
     top: 50%;
     border-radius: 50%;
-    border: 1px solid rgba(212, 175, 55, 0.22);
-    box-shadow:
-        inset 0 0 1.8vmin rgba(2, 26, 19, 0.45),
-        0 0 1.4vmin rgba(212, 175, 55, 0.15);
+    border: 1px solid rgba(194, 173, 118, 0.18);
+    box-shadow: inset 0 0 1.8vmin rgba(3, 20, 15, 0.4);
     transform: translate(-50%, -50%);
 }
 
@@ -120,18 +111,16 @@
     fill: none;
     stroke-linecap: round;
     stroke-linejoin: round;
-    opacity: .88;
-    filter:
-        drop-shadow(0 .18vmin .18vmin rgba(0, 0, 0, 0.34)) drop-shadow(0 0 .28vmin currentColor);
+    opacity: .86;
+    filter: drop-shadow(0 .16vmin .18vmin rgba(0, 0, 0, 0.36));
     pointer-events: stroke;
     cursor: help;
 }
 
 .time-point {
-    opacity: .92;
-    stroke-width: max(2px, .34vmin);
-    filter:
-        drop-shadow(0 .18vmin .18vmin rgba(0, 0, 0, 0.34)) drop-shadow(0 0 .28vmin currentColor);
+    opacity: .9;
+    stroke-width: max(2px, .3vmin);
+    filter: drop-shadow(0 .16vmin .18vmin rgba(0, 0, 0, 0.36));
     pointer-events: visiblePainted;
     cursor: help;
 }
@@ -192,7 +181,7 @@
 .time-point.is-arc-hovered {
     opacity: 1;
     filter:
-        drop-shadow(0 .22vmin .20vmin rgba(0, 0, 0, .45)) drop-shadow(0 0 1.2vmin currentColor);
+        drop-shadow(0 .2vmin .2vmin rgba(0, 0, 0, .45)) drop-shadow(0 0 .6vmin currentColor);
 }
 
 .time-arc-label {
@@ -200,8 +189,8 @@
     text-anchor: middle;
     dominant-baseline: central;
     font-family: Outfit, Inter, "Segoe UI", Arial, sans-serif;
-    font-weight: 850;
-    letter-spacing: 0.5px;
+    font-weight: 650;
+    letter-spacing: 0.4px;
     opacity: .96;
     user-select: none;
 }
@@ -222,7 +211,7 @@
 
 .time-arc-label--ink {
     fill: rgba(2, 26, 19, .98);
-    stroke: rgba(255, 243, 200, .9);
+    stroke: rgba(214, 196, 140, .85);
     stroke-width: 1.5px;
     paint-order: stroke;
     filter: drop-shadow(0 .08vmin .10vmin rgba(255, 255, 255, .25));
@@ -255,19 +244,19 @@
 }
 
 .window-start-marker {
-    stroke: var(--window-start-marker-color, #d4af37);
+    stroke: var(--window-start-marker-color, #c2ad76);
     stroke-width: var(--window-start-marker-width, max(3px, .55vmin));
     stroke-linecap: round;
     stroke-dasharray: var(--window-start-marker-dasharray, .01 12);
     filter:
         drop-shadow(0 0 .24vmin rgba(255, 255, 255, .78))
-        drop-shadow(0 0 var(--window-start-marker-glow, .26vmin) var(--window-start-marker-color, rgba(212, 175, 55, .45)));
+        drop-shadow(0 0 var(--window-start-marker-glow, .26vmin) var(--window-start-marker-color, rgba(194, 173, 118, .35)));
     pointer-events: none;
     opacity: var(--window-start-marker-opacity, 1);
 }
 
 .window-start-marker-pulse-group {
-    color: var(--window-start-marker-pulse-color, #d4af37);
+    color: var(--window-start-marker-pulse-color, #c2ad76);
     opacity: 0;
     pointer-events: none;
     mix-blend-mode: screen;
@@ -345,7 +334,7 @@
 }
 
 .window-start-marker-emoji {
-    fill: var(--window-start-marker-color, #d4af37);
+    fill: var(--window-start-marker-color, #c2ad76);
     stroke: rgba(2, 26, 19, 0.86);
     stroke-width: 2px;
     paint-order: stroke;
@@ -353,14 +342,14 @@
     text-anchor: middle;
     filter:
         drop-shadow(0 0 .42vmin rgba(255, 255, 255, .9))
-        drop-shadow(0 0 var(--window-start-marker-glow, .32vmin) var(--window-start-marker-color, rgba(212, 175, 55, .45)));
+        drop-shadow(0 0 var(--window-start-marker-glow, .32vmin) var(--window-start-marker-color, rgba(194, 173, 118, .35)));
     pointer-events: none;
     opacity: var(--window-start-marker-opacity, 1);
     user-select: none;
 }
 
 .window-start-marker-boundary-label {
-    fill: var(--window-start-marker-color, #d4af37);
+    fill: var(--window-start-marker-color, #c2ad76);
     stroke: rgba(2, 26, 19, 0.88);
     stroke-width: 2px;
     paint-order: stroke;
@@ -372,7 +361,7 @@
     text-transform: uppercase;
     filter:
         drop-shadow(0 0 .36vmin rgba(255, 255, 255, .88))
-        drop-shadow(0 0 var(--window-start-marker-glow, .32vmin) var(--window-start-marker-color, rgba(212, 175, 55, .45)));
+        drop-shadow(0 0 var(--window-start-marker-glow, .32vmin) var(--window-start-marker-color, rgba(194, 173, 118, .35)));
     pointer-events: none;
     opacity: var(--window-start-marker-opacity, 1);
     user-select: none;
@@ -383,9 +372,17 @@
     left: 50%;
     top: 50%;
     transform-origin: center center;
-    border-radius: 999px;
-    background: linear-gradient(180deg, #ffe082 0%, #d4af37 100%) !important;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    border-radius: 1px;
+    background: rgba(194, 173, 118, 0.55);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+}
+
+.egs-tick-major {
+    background: #c2ad76;
+}
+
+.egs-tick-reference {
+    background: #d9c48f;
 }
 
 .number {
@@ -396,28 +393,25 @@
     height: 2.448em;
     display: grid;
     place-items: center;
-    color: #ffe082;
-    font-family: "Georgia", serif;
-    font-weight: bold;
-    font-size: clamp(2.1528rem, 8.0496vmin, 6.4584rem);
+    color: #d9c48f;
+    font-family: "Didot", "Bodoni MT", "Playfair Display", "Times New Roman", Georgia, serif;
+    font-weight: 400;
+    font-size: clamp(1.8rem, 6.6vmin, 5.3rem);
+    letter-spacing: 0.02em;
     line-height: 1;
     text-align: center;
     transform-origin: center center;
-    text-shadow:
-        0 2px 4px rgba(0, 0, 0, 0.6),
-        0 0 1px #aa7c11,
-        0 1px 0 rgba(255, 255, 255, 0.25);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
     user-select: none;
 }
 
 .clock.is-24-hour .number {
-    color: #ffe082;
-    font-size: clamp(1.28rem, 4.5vmin, 3.45rem);
+    color: #c2ad76;
+    font-size: clamp(1.1rem, 3.9vmin, 3rem);
 }
 
 .clock.is-24-hour .number-24:nth-child(2n) {
-    font-weight: bold;
-    color: #fffdf0;
+    color: #d9c48f;
 }
 
 .hand {
@@ -425,18 +419,20 @@
     left: 50%;
     top: 50%;
     transform-origin: center bottom;
-    border-radius: 999px 999px 4px 4px;
-    filter: drop-shadow(.32vmin .42vmin .40vmin rgba(2, 26, 19, 0.55));
-    clip-path: polygon(50% 0%, 78% 11%, 66% 100%, 34% 100%, 22% 11%);
+    border-radius: 2px;
+    filter: drop-shadow(.2vmin .3vmin .34vmin rgba(3, 20, 15, 0.6));
+    clip-path: polygon(50% 0%, 100% 18%, 74% 100%, 26% 100%, 0% 18%);
 }
 
 .hour-hand,
 .minute-hand {
-    background: linear-gradient(90deg, #ffe89e 0%, #d4af37 40%, #aa7c11 50%, #d4af37 60%, #ffe89e 100%);
+    background: linear-gradient(90deg, #b9a46c 0%, #d9c48f 50%, #a8925a 100%);
 }
 
 .second-hand {
-    background: linear-gradient(180deg, #ff5a52 0%, #d5312f 48%, #a91516 100%);
+    clip-path: none;
+    border-radius: 999px;
+    background: #7a2a2a;
 }
 
 .center {
@@ -445,22 +441,22 @@
     top: 50%;
     transform: translate(-50%, -50%);
     border-radius: 50%;
-    background: #d4af37;
+    background: #c2ad76;
     z-index: 5;
     box-shadow:
-        -.32vmin -.32vmin .66vmin rgba(255, 255, 255, 0.25),
-        .34vmin .38vmin .72vmin rgba(2, 26, 19, .48),
-        inset 0 0 0 1px rgba(255, 255, 255, .38);
+        .2vmin .26vmin .5vmin rgba(3, 20, 15, .5),
+        inset 0 0 0 1px rgba(255, 255, 255, .22),
+        inset 0 0 0 .3vmin #7a2a2a;
 }
 
 /* Base page background overrides when Emerald Gold is active */
 :root {
-    --page-bg: #091f17;
-    --face: #063124;
-    --rim-width: clamp(6px, 1.7vmin, 16px);
+    --page-bg: #0a1a15;
+    --face: #0b3129;
+    --rim-width: clamp(4px, 1.1vmin, 10px);
 }
 
 body {
-    background: #091f17;
-    background-image: radial-gradient(circle at center, #0c2b20 0%, #05140f 100%);
+    background: #0a1a15;
+    background-image: radial-gradient(circle at center, #0f2820 0%, #06130f 100%);
 }

@@ -1,4 +1,4 @@
-// Builds the Cobalt Meridian face: a cold-luxury cartographic instrument dial.
+// Builds the Cobalt Meridian face: a quiet navy-and-steel cartographic instrument dial.
 function buildCobaltMeridianClockFace(target) {
     target.innerHTML = "";
     target.classList.remove("is-clock-face-missing");
@@ -7,54 +7,21 @@ function buildCobaltMeridianClockFace(target) {
     const r = size / 2;
 
     const plateEl = document.createElement("div");
-    plateEl.className = "cm-plate";
+    plateEl.className = "cms-plate";
 
     const mapEl = document.createElement("div");
-    mapEl.className = "cm-map";
+    mapEl.className = "cms-map";
 
     const gridEl = document.createElement("div");
-    gridEl.className = "cm-grid";
+    gridEl.className = "cms-grid";
 
     const meridiansEl = document.createElement("div");
-    meridiansEl.className = "cm-meridians";
+    meridiansEl.className = "cms-meridians";
     for (let i = 0; i < 12; i++) {
         const line = document.createElement("div");
-        line.className = "cm-meridian";
+        line.className = "cms-meridian";
         line.style.transform = `translate(-50%, -50%) rotate(${i * 15}deg)`;
         meridiansEl.appendChild(line);
-    }
-
-    const contourEl = document.createElement("div");
-    contourEl.className = "cm-contours";
-    for (let i = 0; i < 5; i++) {
-        const contour = document.createElement("div");
-        contour.className = "cm-contour";
-        const inset = 16 + i * 9;
-        Object.assign(contour.style, {
-            inset: inset + "%",
-            transform: `rotate(${i * 18 - 7}deg)`,
-        });
-        contourEl.appendChild(contour);
-    }
-
-    const surveyEl = document.createElement("div");
-    surveyEl.className = "cm-survey-points";
-    for (let i = 0; i < 20; i++) {
-        const point = document.createElement("div");
-        point.className = "cm-survey-point";
-        const angle = i * 137.508 + 11;
-        const distance = 12 + (i * 23) % 73;
-        const x = 50 + Math.sin(angle * Math.PI / 180) * distance * 0.48;
-        const y = 50 - Math.cos(angle * Math.PI / 180) * distance * 0.48;
-        const pointSize = 1.7 + (i % 4) * 0.45;
-        Object.assign(point.style, {
-            width: pointSize + "px",
-            height: pointSize + "px",
-            left: x + "%",
-            top: y + "%",
-            opacity: String(0.18 + (i % 5) * 0.055),
-        });
-        surveyEl.appendChild(point);
     }
 
     function makeMinuteDotRing(config) {
@@ -65,7 +32,7 @@ function buildCobaltMeridianClockFace(target) {
         const dotCount = use24HourRadial ? 96 : DOT_RING_CONFIG.dotsPerRing;
         const dotStepDeg = 360 / dotCount;
 
-        ring.className = `cm-dot-ring ${config.className}`;
+        ring.className = `cms-dot-ring ${config.className}`;
         ring.dataset.dotCount = String(dotCount);
         ring.dataset.radiusRatioFromCenter = String(config.radiusRatioFromCenter);
         ring.dataset.dotSizeMultiplier = String(config.dotSizeMultiplier || 1);
@@ -73,7 +40,7 @@ function buildCobaltMeridianClockFace(target) {
 
         for (let i = 0; i < dotCount; i++) {
             const dot = document.createElement("div");
-            dot.className = "cm-minute-dot";
+            dot.className = "cms-minute-dot";
             Object.assign(dot.style, {
                 width: dotSize + "px",
                 height: dotSize + "px",
@@ -88,7 +55,7 @@ function buildCobaltMeridianClockFace(target) {
     function makeCenterShadowRing() {
         const ring = document.createElement("div");
         const ringRadius = size * DOT_RING_CONFIG.centerShadowRadiusRatioFromCenter;
-        ring.className = "cm-center-shadow-ring";
+        ring.className = "cms-center-shadow-ring";
         ring.dataset.radiusRatioFromCenter = String(DOT_RING_CONFIG.centerShadowRadiusRatioFromCenter);
         ring.dataset.radius = String(ringRadius);
         Object.assign(ring.style, {
@@ -99,14 +66,14 @@ function buildCobaltMeridianClockFace(target) {
     }
 
     const dotRingsEl = document.createElement("div");
-    dotRingsEl.className = "cm-dot-rings";
+    dotRingsEl.className = "cms-dot-rings";
     dotRingsEl.appendChild(makeCenterShadowRing());
     DOT_RING_CONFIG.rings.forEach(config => {
         dotRingsEl.appendChild(makeMinuteDotRing(config));
     });
 
     const ticksEl = document.createElement("div");
-    ticksEl.className = "cm-ticks";
+    ticksEl.className = "cms-ticks";
     const tickCount = use24HourRadial ? 96 : 60;
     const tickStepDeg = 360 / tickCount;
 
@@ -115,13 +82,13 @@ function buildCobaltMeridianClockFace(target) {
         const isMajor = use24HourRadial ? i % 4 === 0 : isReference;
         const isMedium = use24HourRadial && i % 2 === 0 && !isMajor;
         const tick = document.createElement("div");
-        tick.className = "cm-tick";
-        const tickR = isReference ? r * 0.884 : isMajor ? r * 0.896 : isMedium ? r * 0.907 : r * 0.917;
-        const w = isReference ? r * 0.026 : isMajor ? r * 0.018 : isMedium ? r * 0.010 : r * 0.006;
-        const h = isReference ? r * 0.132 : isMajor ? r * 0.088 : isMedium ? r * 0.052 : r * 0.030;
-        tick.classList.toggle("cm-tick-reference", isReference);
-        tick.classList.toggle("cm-tick-major", isMajor);
-        tick.classList.toggle("cm-tick-medium", isMedium);
+        tick.className = "cms-tick";
+        const tickR = isReference ? r * 0.880 : isMajor ? r * 0.894 : isMedium ? r * 0.905 : r * 0.914;
+        const w = isReference ? r * 0.012 : isMajor ? r * 0.009 : isMedium ? r * 0.006 : r * 0.004;
+        const h = isReference ? r * 0.124 : isMajor ? r * 0.086 : isMedium ? r * 0.050 : r * 0.028;
+        tick.classList.toggle("cms-tick-reference", isReference);
+        tick.classList.toggle("cms-tick-major", isMajor);
+        tick.classList.toggle("cms-tick-medium", isMedium);
         Object.assign(tick.style, {
             width: w + "px",
             height: h + "px",
@@ -131,7 +98,7 @@ function buildCobaltMeridianClockFace(target) {
     }
 
     const arcsSvg = document.createElementNS(SVG_NS, "svg");
-    arcsSvg.classList.add("cm-time-arcs", "time-arcs");
+    arcsSvg.classList.add("cms-time-arcs", "time-arcs");
     arcsSvg.setAttribute("viewBox", `0 0 ${size} ${size}`);
     arcsSvg.setAttribute("aria-hidden", "true");
     const faceId = String(target.id || "clock-face").replace(/[^\w-]/g, "-");
@@ -213,7 +180,7 @@ function buildCobaltMeridianClockFace(target) {
     });
 
     const numbersEl = document.createElement("div");
-    numbersEl.className = "cm-numbers numbers";
+    numbersEl.className = "cms-numbers numbers";
     const numberCount = use24HourRadial ? 24 : 12;
     const numberRadius = use24HourRadial ? r * 0.724 : r * 0.684;
 
@@ -222,8 +189,8 @@ function buildCobaltMeridianClockFace(target) {
         const angle = use24HourRadial ? i * 15 : i * 30;
         const number = document.createElement("div");
         number.className = use24HourRadial
-            ? "cm-number number cm-number-24 number-24"
-            : "cm-number number";
+            ? "cms-number number cms-number-24 number-24"
+            : "cms-number number";
         number.textContent = label;
         Object.assign(number.style, {
             marginLeft: "-1.18em",
@@ -234,11 +201,11 @@ function buildCobaltMeridianClockFace(target) {
     }
 
     const handsEl = document.createElement("div");
-    handsEl.className = "cm-hands hands";
+    handsEl.className = "cms-hands hands";
 
     function makeHand(classes, wRatio, hRatio) {
         const el = document.createElement("div");
-        el.className = "cm-hand hand " + classes;
+        el.className = "cms-hand hand " + classes;
         const w = size * wRatio;
         const h = size * hRatio;
         Object.assign(el.style, {
@@ -250,19 +217,19 @@ function buildCobaltMeridianClockFace(target) {
         return el;
     }
 
-    const handWidth = 0.021;
-    const hourHand = makeHand("cm-hour-hand hour-hand", handWidth, 0.252);
-    const minHand = makeHand("cm-minute-hand minute-hand", handWidth * 0.54, 0.388);
-    const secHand = makeHand("cm-second-hand second-hand", handWidth * 0.26, 0.431);
+    const handWidth = 0.017;
+    const hourHand = makeHand("cms-hour-hand hour-hand", handWidth, 0.246);
+    const minHand = makeHand("cms-minute-hand minute-hand", handWidth * 0.7, 0.372);
+    const secHand = makeHand("cms-second-hand second-hand", handWidth * 0.18, 0.418);
 
     const dot = document.createElement("div");
-    dot.className = "cm-center center";
-    const ds = size * 0.055;
+    dot.className = "cms-center center";
+    const ds = size * 0.036;
     Object.assign(dot.style, {
         width: ds + "px",
         height: ds + "px",
     });
 
     handsEl.append(hourHand, minHand, secHand, dot);
-    target.append(plateEl, mapEl, gridEl, meridiansEl, contourEl, surveyEl, dotRingsEl, ticksEl, arcsSvg, numbersEl, handsEl);
+    target.append(plateEl, mapEl, gridEl, meridiansEl, dotRingsEl, ticksEl, arcsSvg, numbersEl, handsEl);
 }

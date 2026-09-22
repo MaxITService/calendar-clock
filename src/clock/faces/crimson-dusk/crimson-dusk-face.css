@@ -1,4 +1,4 @@
-/* Crimson Dusk – warm sunset clock with amber glow, ember particles, and Roman numerals. */
+/* Crimson Dusk – restrained bordeaux and matte copper dial with Roman numerals. */
 
 /* ── Face & rim ──────────────────────────────────────── */
 .clock {
@@ -8,152 +8,98 @@
     position: relative;
     overflow: hidden;
     background:
-        linear-gradient(145deg, rgba(255, 200, 100, 0.07), rgba(200, 50, 20, 0.04) 45%, rgba(80, 10, 5, 0.08)) padding-box,
-        radial-gradient(circle at 48% 40%, #2a1008 0%, #1a0a04 50%, #0e0504 100%) padding-box,
-        conic-gradient(from 190deg,
-            #f97316 0deg,
-            #b45309 60deg,
-            #dc2626 120deg,
-            #9f1239 180deg,
-            #b45309 260deg,
-            #f97316 360deg) border-box;
-    border: var(--rim-width, clamp(6px, 1.7vmin, 16px)) solid transparent;
+        linear-gradient(160deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0) 48%, rgba(0, 0, 0, 0.14)) padding-box,
+        radial-gradient(circle at 50% 44%, #4a1a1f 0%, #33121a 58%, #1c0a0f 100%) padding-box,
+        conic-gradient(from 300deg,
+            #b5744a 0deg,
+            #6d4229 90deg,
+            #c98a5c 180deg,
+            #6d4229 270deg,
+            #b5744a 360deg) border-box;
+    border: var(--rim-width, clamp(4px, 1.1vmin, 10px)) solid transparent;
     box-shadow:
-        inset 0 0 0 clamp(2px, .65vmin, 7px) rgba(255, 140, 50, 0.16),
-        inset 0 0 6vmin rgba(14, 5, 4, 0.84),
-        0 0 0 1px rgba(255, 120, 40, 0.12),
-        0 4vmin 9vmin rgba(0, 0, 0, 0.78),
-        0 0 3vmin rgba(200, 80, 20, 0.25);
+        inset 0 0 0 1px rgba(214, 160, 120, 0.3),
+        inset 0 0 5vmin rgba(18, 6, 8, 0.72),
+        0 0 0 1px rgba(214, 160, 120, 0.16),
+        0 3vmin 7vmin rgba(0, 0, 0, 0.62);
 }
 
 .clock::before {
     content: "";
     position: absolute;
-    inset: 8.2%;
+    inset: 7.6%;
     border-radius: 50%;
-    border: 1px solid rgba(255, 150, 60, 0.12);
-    box-shadow:
-        inset 0 0 2vmin rgba(200, 80, 20, 0.06),
-        0 0 1.4vmin rgba(220, 100, 30, 0.04);
+    border: 1px solid rgba(201, 138, 92, 0.32);
     pointer-events: none;
     z-index: 1;
 }
 
-/* Glass highlight sheen */
+/* Soft edge vignette */
 .clock::after {
     content: "";
     position: absolute;
     inset: 0;
     border-radius: 50%;
-    background: linear-gradient(138deg, rgba(255, 200, 100, 0.14) 0 20%, transparent 20% 100%);
+    background: radial-gradient(circle at 50% 50%, transparent 62%, rgba(0, 0, 0, 0.24) 100%);
     pointer-events: none;
     z-index: 6;
-    mix-blend-mode: screen;
 }
 
 /* ── Shared layout ──────────────────────────────────── */
-.cd-ticks,
-.cd-dot-rings,
-.cd-hands,
-.cd-numbers {
+.cds-ticks,
+.cds-dot-rings,
+.cds-hands,
+.cds-numbers {
     position: absolute;
     inset: 0;
 }
 
-.cd-ticks,
-.cd-tick,
-.cd-dot-rings,
-.cd-minute-dot,
-.cd-numbers,
-.cd-number,
-.cd-hands,
-.cd-hand,
-.cd-center {
+.cds-ticks,
+.cds-tick,
+.cds-dot-rings,
+.cds-minute-dot,
+.cds-numbers,
+.cds-number,
+.cds-hands,
+.cds-hand,
+.cds-center {
     pointer-events: none;
 }
 
-.cd-ticks    { z-index: 1; }
-.cd-dot-rings { z-index: 1; }
-.cd-numbers  { z-index: 3; }
-
-/* ── Sunset halo ────────────────────────────────────── */
-.cd-halo {
-    position: absolute;
-    inset: 3%;
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 0;
-    background: conic-gradient(
-        from 0deg,
-        rgba(249, 115, 22, 0.07),
-        rgba(220, 38, 38, 0.10),
-        rgba(180, 83, 9, 0.08),
-        rgba(159, 18, 57, 0.10),
-        rgba(220, 38, 38, 0.07),
-        rgba(249, 115, 22, 0.07)
-    );
-    filter: blur(10px);
-    animation: cd-halo-rotate 32s linear infinite;
-}
-
-@keyframes cd-halo-rotate {
-    from { transform: rotate(0deg); }
-    to   { transform: rotate(360deg); }
-}
-
-/* ── Ember particles ────────────────────────────────── */
-.cd-embers {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    overflow: hidden;
-    border-radius: 50%;
-}
-
-.cd-ember {
-    position: absolute;
-    border-radius: 50%;
-    background: radial-gradient(circle at 40% 40%, #fde68a, #f97316);
-    animation: cd-ember-float var(--dur, 4s) ease-in-out infinite alternate;
-}
-
-@keyframes cd-ember-float {
-    0%   { opacity: 0.08; transform: scale(0.6) translateY(0); }
-    40%  { opacity: 0.7;  transform: scale(1.15) translateY(-2px); }
-    70%  { opacity: 0.55; transform: scale(0.9) translateY(1px); }
-    100% { opacity: 0.10; transform: scale(0.65) translateY(-1px); }
-}
-
-/* Stagger timing across embers */
-.cd-ember:nth-child(3n)   { animation-delay: 0.5s; }
-.cd-ember:nth-child(3n+1) { animation-delay: 1.3s; }
-.cd-ember:nth-child(3n+2) { animation-delay: 2.6s; }
-.cd-ember:nth-child(5n)   { animation-delay: 0.9s; }
-.cd-ember:nth-child(7n)   { animation-delay: 1.7s; }
+.cds-ticks    { z-index: 1; }
+.cds-dot-rings { z-index: 1; }
+.cds-numbers  { z-index: 3; }
 
 /* ── Dot rings ──────────────────────────────────────── */
-.cd-minute-dot {
+.cds-minute-dot {
     position: absolute;
     left: 50%;
     top: 50%;
     border-radius: 50%;
-    background: rgba(255, 160, 60, 0.24);
-    box-shadow: 0 0 .32vmin rgba(255, 120, 30, 0.18);
+    background: rgba(201, 138, 92, 0.26);
 }
 
 /* ── Tick marks ─────────────────────────────────────── */
-.cd-tick {
+.cds-tick {
     position: absolute;
     left: 50%;
     top: 50%;
     transform-origin: center center;
-    border-radius: 999px;
-    box-shadow: 0 0 3px rgba(249, 115, 22, 0.40), 0 1px 2px rgba(0, 0, 0, 0.55);
+    border-radius: 1px;
+    background: rgba(201, 138, 92, 0.5);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
+}
+
+.cds-tick-medium {
+    background: rgba(201, 138, 92, 0.72);
+}
+
+.cds-tick-hour {
+    background: #d6a078;
 }
 
 /* ── Event arcs SVG ─────────────────────────────────── */
-.cd-time-arcs {
+.cds-time-arcs {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -168,20 +114,16 @@
     fill: none;
     stroke-linecap: round;
     stroke-linejoin: round;
-    opacity: .88;
-    filter:
-        drop-shadow(0 .18vmin .18vmin rgba(0, 0, 0, 0.44))
-        drop-shadow(0 0 .34vmin currentColor);
+    opacity: .86;
+    filter: drop-shadow(0 .16vmin .18vmin rgba(0, 0, 0, 0.4));
     pointer-events: stroke;
     cursor: help;
 }
 
 .time-point {
-    opacity: .92;
-    stroke-width: max(2px, .34vmin);
-    filter:
-        drop-shadow(0 .18vmin .18vmin rgba(0, 0, 0, 0.44))
-        drop-shadow(0 0 .34vmin currentColor);
+    opacity: .9;
+    stroke-width: max(2px, .3vmin);
+    filter: drop-shadow(0 .16vmin .18vmin rgba(0, 0, 0, 0.4));
     pointer-events: visiblePainted;
     cursor: help;
 }
@@ -191,8 +133,8 @@
     pointer-events: none;
     opacity: .98;
     filter:
-        drop-shadow(0 .16vmin .18vmin rgba(14, 5, 4, .82))
-        drop-shadow(0 0 .26vmin rgba(255, 200, 100, .42));
+        drop-shadow(0 .16vmin .18vmin rgba(18, 6, 8, .82))
+        drop-shadow(0 0 .26vmin rgba(240, 222, 200, .4));
 }
 
 .time-arc-separator-shadow,
@@ -201,8 +143,8 @@
     stroke-linecap: butt;
 }
 
-.time-arc-separator-shadow { stroke: rgba(14, 5, 4, .94); }
-.time-arc-separator-cut    { stroke: rgba(255, 210, 120, .90); }
+.time-arc-separator-shadow { stroke: rgba(18, 6, 8, .94); }
+.time-arc-separator-cut    { stroke: rgba(240, 222, 200, .9); }
 
 .time-point-callout {
     pointer-events: none;
@@ -222,7 +164,7 @@
 
 .time-point-callout-dot {
     fill: currentColor;
-    stroke: rgba(255, 210, 120, .88);
+    stroke: rgba(240, 222, 200, .88);
     stroke-width: max(.8px, .12vmin);
     opacity: .88;
     filter: drop-shadow(0 0 .24vmin currentColor);
@@ -238,8 +180,8 @@
 .time-point.is-arc-hovered {
     opacity: 1;
     filter:
-        drop-shadow(0 .22vmin .22vmin rgba(0, 0, 0, .54))
-        drop-shadow(0 0 1.6vmin currentColor);
+        drop-shadow(0 .2vmin .2vmin rgba(0, 0, 0, .5))
+        drop-shadow(0 0 .6vmin currentColor);
 }
 
 /* ── Arc labels ─────────────────────────────────────── */
@@ -248,7 +190,7 @@
     text-anchor: middle;
     dominant-baseline: central;
     font-family: "Cinzel", "Trajan Pro", "Times New Roman", serif;
-    font-weight: 700;
+    font-weight: 600;
     letter-spacing: 0.4px;
     opacity: .96;
     user-select: none;
@@ -257,36 +199,34 @@
 .time-arc-label textPath { text-anchor: middle; }
 
 .time-arc-label--glass {
-    fill: rgba(255, 220, 150, .96);
-    stroke: rgba(14, 5, 4, .72);
+    fill: rgba(240, 222, 200, .96);
+    stroke: rgba(18, 6, 8, .72);
     stroke-width: 1px;
     paint-order: stroke;
-    filter:
-        drop-shadow(0 .08vmin .10vmin rgba(0, 0, 0, .44))
-        drop-shadow(0 0 .28vmin rgba(255, 160, 60, .36));
+    filter: drop-shadow(0 .08vmin .10vmin rgba(0, 0, 0, .44));
 }
 
 .time-arc-label--ink {
-    fill: rgba(255, 220, 140, .98);
-    stroke: rgba(14, 5, 4, .82);
+    fill: rgba(240, 222, 200, .98);
+    stroke: rgba(18, 6, 8, .82);
     stroke-width: 1.5px;
     paint-order: stroke;
-    filter: drop-shadow(0 .08vmin .10vmin rgba(200, 80, 20, .22));
+    filter: drop-shadow(0 .08vmin .10vmin rgba(0, 0, 0, .3));
 }
 
 .time-arc-label--glow {
-    fill: #fde68a;
-    stroke: rgba(26, 10, 4, .7);
+    fill: #f3e4d4;
+    stroke: rgba(26, 8, 10, .7);
     stroke-width: 1px;
     paint-order: stroke;
     filter:
-        drop-shadow(0 0 .34vmin currentColor)
-        drop-shadow(0 .10vmin .14vmin rgba(0, 0, 0, .54));
+        drop-shadow(0 0 .24vmin currentColor)
+        drop-shadow(0 .10vmin .14vmin rgba(0, 0, 0, .5));
 }
 
 .time-arc-label--color {
     fill: var(--event-color);
-    stroke: rgba(255, 220, 130, .88);
+    stroke: rgba(240, 222, 200, .88);
     stroke-width: 1.4px;
     paint-order: stroke;
     filter: drop-shadow(0 .10vmin .12vmin rgba(0, 0, 0, .38));
@@ -294,27 +234,27 @@
 
 .time-arc-label--custom {
     fill: var(--custom-label-color);
-    stroke: rgba(14, 5, 4, 0.82);
+    stroke: rgba(18, 6, 8, 0.82);
     stroke-width: 1.2px;
     paint-order: stroke;
-    filter: drop-shadow(0 0 .2vmin rgba(255, 160, 60, 0.46));
+    filter: drop-shadow(0 0 .18vmin rgba(240, 222, 200, 0.4));
 }
 
 /* ── Window start marker ────────────────────────────── */
 .window-start-marker {
-    stroke: var(--window-start-marker-color, #f97316);
+    stroke: var(--window-start-marker-color, #c98a5c);
     stroke-width: var(--window-start-marker-width, max(3px, .55vmin));
     stroke-linecap: round;
     stroke-dasharray: var(--window-start-marker-dasharray, .01 12);
     filter:
-        drop-shadow(0 0 .28vmin rgba(255, 200, 80, .72))
-        drop-shadow(0 0 var(--window-start-marker-glow, .3vmin) var(--window-start-marker-color, rgba(249, 115, 22, .5)));
+        drop-shadow(0 0 .28vmin rgba(240, 222, 200, .6))
+        drop-shadow(0 0 var(--window-start-marker-glow, .3vmin) var(--window-start-marker-color, rgba(201, 138, 92, .4)));
     pointer-events: none;
     opacity: var(--window-start-marker-opacity, 1);
 }
 
 .window-start-marker-pulse-group {
-    color: var(--window-start-marker-pulse-color, #f97316);
+    color: var(--window-start-marker-pulse-color, #c98a5c);
     opacity: 0;
     pointer-events: none;
     mix-blend-mode: screen;
@@ -327,7 +267,7 @@
     stroke-linejoin: round;
     vector-effect: non-scaling-stroke;
     filter:
-        drop-shadow(0 0 .24vmin rgba(255, 200, 80, .68))
+        drop-shadow(0 0 .24vmin rgba(240, 222, 200, .55))
         drop-shadow(0 0 .46vmin var(--window-start-marker-pulse-color, currentColor));
 }
 
@@ -378,23 +318,23 @@
 }
 
 .window-start-marker-emoji {
-    fill: var(--window-start-marker-color, #f97316);
-    stroke: rgba(14, 5, 4, 0.88);
+    fill: var(--window-start-marker-color, #c98a5c);
+    stroke: rgba(18, 6, 8, 0.88);
     stroke-width: 2px;
     paint-order: stroke;
     dominant-baseline: middle;
     text-anchor: middle;
     filter:
-        drop-shadow(0 0 .46vmin rgba(255, 200, 80, .85))
-        drop-shadow(0 0 var(--window-start-marker-glow, .36vmin) var(--window-start-marker-color, rgba(249, 115, 22, .5)));
+        drop-shadow(0 0 .46vmin rgba(240, 222, 200, .7))
+        drop-shadow(0 0 var(--window-start-marker-glow, .36vmin) var(--window-start-marker-color, rgba(201, 138, 92, .4)));
     pointer-events: none;
     opacity: var(--window-start-marker-opacity, 1);
     user-select: none;
 }
 
 .window-start-marker-boundary-label {
-    fill: var(--window-start-marker-color, #f97316);
-    stroke: rgba(14, 5, 4, 0.9);
+    fill: var(--window-start-marker-color, #c98a5c);
+    stroke: rgba(18, 6, 8, 0.9);
     stroke-width: 2px;
     paint-order: stroke;
     dominant-baseline: middle;
@@ -404,15 +344,15 @@
     letter-spacing: 0.5px;
     text-transform: uppercase;
     filter:
-        drop-shadow(0 0 .4vmin rgba(255, 200, 80, .82))
-        drop-shadow(0 0 var(--window-start-marker-glow, .36vmin) var(--window-start-marker-color, rgba(249, 115, 22, .5)));
+        drop-shadow(0 0 .4vmin rgba(240, 222, 200, .7))
+        drop-shadow(0 0 var(--window-start-marker-glow, .36vmin) var(--window-start-marker-color, rgba(201, 138, 92, .4)));
     pointer-events: none;
     opacity: var(--window-start-marker-opacity, 1);
     user-select: none;
 }
 
 /* ── Roman numerals ─────────────────────────────────── */
-.cd-number {
+.cds-number {
     position: absolute;
     left: 50%;
     top: 50%;
@@ -422,81 +362,69 @@
     place-items: center;
     /* Cinzel is a Google Font with Roman numeral letterforms */
     font-family: "Cinzel", "Trajan Pro", "Times New Roman", serif;
-    font-weight: 700;
-    font-size: clamp(1.4rem, 5.2vmin, 4.1rem);
+    font-weight: 500;
+    font-size: clamp(1.25rem, 4.6vmin, 3.6rem);
+    letter-spacing: 0.03em;
     line-height: 1;
     text-align: center;
     transform-origin: center center;
-    color: #fde68a;
-    text-shadow:
-        0 0 8px rgba(249, 115, 22, 0.50),
-        0 2px 4px rgba(0, 0, 0, 0.72),
-        0 0 2px rgba(255, 200, 80, 0.55);
+    color: #e2c3a6;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
     user-select: none;
 }
 
-.clock.is-24-hour .cd-number {
-    color: #fde68a;
-    font-size: clamp(1.0rem, 3.8vmin, 2.9rem);
+.clock.is-24-hour .cds-number {
+    color: #d6a078;
+    font-size: clamp(0.95rem, 3.5vmin, 2.7rem);
 }
 
 /* ── Hands ──────────────────────────────────────────── */
-.cd-hands { z-index: 4; }
+.cds-hands { z-index: 4; }
 
-.cd-hand {
+.cds-hand {
     position: absolute;
     left: 50%;
     top: 50%;
     transform-origin: center bottom;
-    border-radius: 999px 999px 4px 4px;
-    filter: drop-shadow(.28vmin .38vmin .38vmin rgba(14, 5, 4, 0.66));
-    clip-path: polygon(50% 0%, 76% 12%, 65% 100%, 35% 100%, 24% 12%);
+    border-radius: 2px;
+    filter: drop-shadow(.2vmin .3vmin .34vmin rgba(18, 6, 8, 0.62));
+    clip-path: polygon(50% 0%, 100% 18%, 74% 100%, 26% 100%, 0% 18%);
 }
 
-.cd-hour-hand,
-.cd-minute-hand {
-    background: linear-gradient(90deg,
-        #fde68a 0%,
-        #f59e0b 35%,
-        #b45309 50%,
-        #f59e0b 65%,
-        #fde68a 100%);
+.cds-hour-hand,
+.cds-minute-hand {
+    background: linear-gradient(90deg, #b5744a 0%, #d6a078 50%, #9a5e3a 100%);
 }
 
-.cd-second-hand {
-    background: linear-gradient(180deg, #fca5a5 0%, #ef4444 48%, #b91c1c 100%);
+.cds-second-hand {
+    clip-path: none;
+    border-radius: 999px;
+    background: #e2c3a6;
 }
 
 /* ── Center dot ─────────────────────────────────────── */
-.cd-center {
+.cds-center {
     position: absolute;
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
     border-radius: 50%;
-    background: radial-gradient(circle at 36% 36%, #fde68a, #f97316 65%, #7f1d1d);
+    background: #c98a5c;
     z-index: 5;
     box-shadow:
-        -.28vmin -.28vmin .58vmin rgba(255, 220, 100, 0.22),
-        .30vmin .34vmin .64vmin rgba(14, 5, 4, .58),
-        inset 0 0 0 1px rgba(255, 200, 80, .30),
-        0 0 7px rgba(249, 115, 22, .45);
-}
-
-/* ── Reduced-motion ─────────────────────────────────── */
-@media (prefers-reduced-motion: reduce) {
-    .cd-ember  { animation: none; opacity: 0.30; }
-    .cd-halo   { animation: none; }
+        .2vmin .26vmin .5vmin rgba(18, 6, 8, .55),
+        inset 0 0 0 1px rgba(255, 255, 255, .2),
+        inset 0 0 0 .3vmin #4a1a1f;
 }
 
 /* ── Root overrides ─────────────────────────────────── */
 :root {
-    --page-bg: #0e0504;
-    --face: #1a0a04;
-    --rim-width: clamp(6px, 1.7vmin, 16px);
+    --page-bg: #150609;
+    --face: #33121a;
+    --rim-width: clamp(4px, 1.1vmin, 10px);
 }
 
 body {
-    background: #0e0504;
-    background-image: radial-gradient(circle at center, #1f0c06 0%, #0e0504 100%);
+    background: #150609;
+    background-image: radial-gradient(circle at center, #23090f 0%, #0f0406 100%);
 }

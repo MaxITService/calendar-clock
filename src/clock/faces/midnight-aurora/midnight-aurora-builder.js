@@ -6,40 +6,6 @@ function buildMidnightAuroraClockFace(target) {
     const size = clockSize || target.offsetWidth;
     const r = size / 2;
 
-    // ── Aurora glow ring (decorative background halo) ──
-    const auroraGlow = document.createElement("div");
-    auroraGlow.className = "aurora-glow";
-
-    // ── Star particles (decorative background) ──
-    const starsEl = document.createElement("div");
-    starsEl.className = "aurora-stars";
-    const STAR_COUNT = 42;
-    // Reset per build so the clock and magnifier render the same star field.
-    let randomState = 0xa87012a5;
-    const random = () => {
-        randomState = (Math.imul(randomState, 1664525) + 1013904223) >>> 0;
-        return randomState / 0x100000000;
-    };
-    const rng = (min, max) => min + random() * (max - min);
-
-    for (let i = 0; i < STAR_COUNT; i++) {
-        const star = document.createElement("div");
-        star.className = "aurora-star";
-        // Distribute stars within the circular dial using polar coordinates
-        const angle = random() * Math.PI * 2;
-        const dist = 0.12 + random() * 0.82; // keep inside dial
-        const sx = 50 + Math.cos(angle) * dist * 46;
-        const sy = 50 + Math.sin(angle) * dist * 46;
-        const starSize = rng(1.2, 3.2);
-        Object.assign(star.style, {
-            width: starSize + "px",
-            height: starSize + "px",
-            left: sx + "%",
-            top: sy + "%",
-        });
-        starsEl.appendChild(star);
-    }
-
     // ── Dot rings ──
     function makeMinuteDotRing(config) {
         const ring = document.createElement("div");
@@ -100,18 +66,13 @@ function buildMidnightAuroraClockFace(target) {
         const isMajor = use24HourRadial ? i % 4 === 0 : isMinuteReference;
         const isMedium = use24HourRadial && i % 2 === 0 && !isMajor;
         const tick = document.createElement("div");
-        tick.className = "tick";
-        const tickR = isMinuteReference ? r * 0.884 : isMajor ? r * 0.895 : isMedium ? r * 0.905 : r * 0.914;
-        const w = isMinuteReference ? r * 0.024 : isMajor ? r * 0.020 : isMedium ? r * 0.011 : r * 0.007;
-        const h = isMinuteReference ? r * 0.14553 : isMajor ? r * 0.104 : isMedium ? r * 0.060 : r * 0.034;
-        // Color gradient: teal → indigo → purple depending on position
-        const hue = 220 + (i / tickCount) * 80; // 220–300 range
-        const lum = isMinuteReference ? 82 : isMajor ? 74 : isMedium ? 66 : 58;
-        const alpha = isMinuteReference ? 1 : isMajor ? 1 : isMedium ? 0.78 : 0.52;
+        tick.className = isMinuteReference ? "tick mas-tick-reference" : isMajor ? "tick mas-tick-major" : "tick";
+        const tickR = isMinuteReference ? r * 0.878 : isMajor ? r * 0.892 : isMedium ? r * 0.904 : r * 0.912;
+        const w = isMinuteReference ? r * 0.012 : isMajor ? r * 0.010 : isMedium ? r * 0.006 : r * 0.004;
+        const h = isMinuteReference ? r * 0.128 : isMajor ? r * 0.092 : isMedium ? r * 0.052 : r * 0.030;
         Object.assign(tick.style, {
             width: w + "px",
             height: h + "px",
-            background: `hsla(${hue}, 76%, ${lum}%, ${alpha})`,
             transform: `translate(-50%,-50%) rotate(${i * tickStepDeg}deg) translateY(-${tickR}px)`,
         });
         ticksEl.appendChild(tick);
@@ -238,19 +199,19 @@ function buildMidnightAuroraClockFace(target) {
         return el;
     }
 
-    const handWidth = 0.021;
-    const hourHand = makeHand("hour-hand", handWidth, 0.252);
-    const minHand = makeHand("minute-hand", handWidth * 0.6, 0.386);
-    const secHand = makeHand("second-hand", handWidth * 0.3, 0.427);
+    const handWidth = 0.017;
+    const hourHand = makeHand("hour-hand", handWidth, 0.246);
+    const minHand = makeHand("minute-hand", handWidth * 0.7, 0.372);
+    const secHand = makeHand("second-hand", handWidth * 0.18, 0.418);
 
     const dot = document.createElement("div");
     dot.className = "center";
-    const ds = size * 0.052;
+    const ds = size * 0.036;
     Object.assign(dot.style, {
         width: ds + "px",
         height: ds + "px",
     });
 
     handsEl.append(hourHand, minHand, secHand, dot);
-    target.append(auroraGlow, starsEl, dotRingsEl, ticksEl, arcsSvg, numbersEl, handsEl);
+    target.append(dotRingsEl, ticksEl, arcsSvg, numbersEl, handsEl);
 }

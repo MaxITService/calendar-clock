@@ -1,48 +1,11 @@
 // Builds the static analog clock DOM for the Crimson Dusk design.
-// Warm amber-to-crimson sunset aesthetic with Roman numerals and ember particles.
+// Restrained bordeaux-and-copper take on Crimson Dusk: Roman numerals, no embers, no animated halo.
 function buildCrimsonDuskClockFace(target) {
     target.innerHTML = "";
     target.classList.remove("is-clock-face-missing");
     target.classList.toggle("is-24-hour", use24HourRadial);
     const size = clockSize || target.offsetWidth;
     const r = size / 2;
-
-    // ── Ember particles (decorative fire-like specks) ──
-    const embersEl = document.createElement("div");
-    embersEl.className = "cd-embers";
-    const EMBER_COUNT = 28;
-    // Reset per build so the clock and magnifier render the same ember field.
-    let randomState = 0xc41d5eed;
-    const random = () => {
-        randomState = (Math.imul(randomState, 1664525) + 1013904223) >>> 0;
-        return randomState / 0x100000000;
-    };
-    const rng = (min, max) => min + random() * (max - min);
-
-    for (let i = 0; i < EMBER_COUNT; i++) {
-        const ember = document.createElement("div");
-        ember.className = "cd-ember";
-        // Scatter embers in the lower two-thirds of the face
-        const angle = random() * Math.PI * 2;
-        const dist = 0.08 + random() * 0.74;
-        const ex = 50 + Math.cos(angle) * dist * 44;
-        const ey = 50 + Math.sin(angle) * dist * 44;
-        const emberSize = rng(1.2, 3.6);
-        Object.assign(ember.style, {
-            width: emberSize + "px",
-            height: emberSize + "px",
-            left: ex + "%",
-            top: ey + "%",
-            // Stagger animation offset per ember
-            animationDelay: rng(0, 6) + "s",
-            animationDuration: rng(2.8, 6.5) + "s",
-        });
-        embersEl.appendChild(ember);
-    }
-
-    // ── Radial sunset gradient halo ──
-    const haloEl = document.createElement("div");
-    haloEl.className = "cd-halo";
 
     // ── Dot rings ──
     function makeMinuteDotRing(config) {
@@ -53,12 +16,12 @@ function buildCrimsonDuskClockFace(target) {
         const dotCount = use24HourRadial ? 96 : DOT_RING_CONFIG.dotsPerRing;
         const dotStepDeg = 360 / dotCount;
 
-        ring.className = `cd-dot-ring ${config.className}`;
+        ring.className = `cds-dot-ring ${config.className}`;
         ring.dataset.dotCount = String(dotCount);
 
         for (let i = 0; i < dotCount; i++) {
             const dot = document.createElement("div");
-            dot.className = "cd-minute-dot";
+            dot.className = "cds-minute-dot";
             Object.assign(dot.style, {
                 width: dotSize + "px",
                 height: dotSize + "px",
@@ -70,14 +33,14 @@ function buildCrimsonDuskClockFace(target) {
     }
 
     const dotRingsEl = document.createElement("div");
-    dotRingsEl.className = "cd-dot-rings";
+    dotRingsEl.className = "cds-dot-rings";
     DOT_RING_CONFIG.rings.forEach(config => {
         dotRingsEl.appendChild(makeMinuteDotRing(config));
     });
 
-    // ── Tick marks – ember-glowing warm gradient ──
+    // ── Tick marks – thin matte copper ──
     const ticksEl = document.createElement("div");
-    ticksEl.className = "cd-ticks";
+    ticksEl.className = "cds-ticks";
     const tickCount = use24HourRadial ? 96 : 60;
     const tickStepDeg = 360 / tickCount;
 
@@ -85,19 +48,13 @@ function buildCrimsonDuskClockFace(target) {
         const isHourRef = use24HourRadial ? i % 4 === 0 : i % 5 === 0;
         const isMedium = !isHourRef && (use24HourRadial ? i % 2 === 0 : false);
         const tick = document.createElement("div");
-        tick.className = "cd-tick";
-        const tickR = isHourRef ? r * 0.882 : isMedium ? r * 0.902 : r * 0.913;
-        const w = isHourRef ? r * 0.026 : isMedium ? r * 0.012 : r * 0.007;
-        const h = isHourRef ? r * 0.145 : isMedium ? r * 0.065 : r * 0.034;
-        // Warm amber→crimson hue sweep around the dial
-        const hue = 15 + (i / tickCount) * 25; // 15–40 range (orange-amber)
-        const sat = isHourRef ? 92 : 80;
-        const lum = isHourRef ? 72 : isMedium ? 64 : 55;
-        const alpha = isHourRef ? 1 : isMedium ? 0.75 : 0.48;
+        tick.className = isHourRef ? "cds-tick cds-tick-hour" : isMedium ? "cds-tick cds-tick-medium" : "cds-tick";
+        const tickR = isHourRef ? r * 0.878 : isMedium ? r * 0.902 : r * 0.912;
+        const w = isHourRef ? r * 0.012 : isMedium ? r * 0.006 : r * 0.004;
+        const h = isHourRef ? r * 0.125 : isMedium ? r * 0.055 : r * 0.030;
         Object.assign(tick.style, {
             width: w + "px",
             height: h + "px",
-            background: `hsla(${hue}, ${sat}%, ${lum}%, ${alpha})`,
             transform: `translate(-50%,-50%) rotate(${i * tickStepDeg}deg) translateY(-${tickR}px)`,
         });
         ticksEl.appendChild(tick);
@@ -105,7 +62,7 @@ function buildCrimsonDuskClockFace(target) {
 
     // ── Event arcs SVG ──
     const arcsSvg = document.createElementNS(SVG_NS, "svg");
-    arcsSvg.classList.add("cd-time-arcs", "time-arcs");
+    arcsSvg.classList.add("cds-time-arcs", "time-arcs");
     arcsSvg.setAttribute("viewBox", `0 0 ${size} ${size}`);
     arcsSvg.setAttribute("aria-hidden", "true");
     const faceId = String(target.id || "clock-face").replace(/[^\w-]/g, "-");
@@ -189,7 +146,7 @@ function buildCrimsonDuskClockFace(target) {
     // ── Roman numerals (or Arabic for 24h) ──
     const ROMAN = ["XII", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI"];
     const numbersEl = document.createElement("div");
-    numbersEl.className = "cd-numbers numbers";
+    numbersEl.className = "cds-numbers numbers";
     const numberCount = use24HourRadial ? 24 : 12;
     const numberRadius = use24HourRadial ? r * 0.735 : r * 0.70;
 
@@ -200,8 +157,8 @@ function buildCrimsonDuskClockFace(target) {
         const angle = use24HourRadial ? i * 15 : i * 30;
         const number = document.createElement("div");
         number.className = use24HourRadial
-            ? "cd-number number cd-number-24 number-24"
-            : "cd-number number";
+            ? "cds-number number cds-number-24 number-24"
+            : "cds-number number";
         number.textContent = label;
         Object.assign(number.style, {
             marginLeft: "-1.5em",
@@ -213,11 +170,11 @@ function buildCrimsonDuskClockFace(target) {
 
     // ── Hands ──
     const handsEl = document.createElement("div");
-    handsEl.className = "cd-hands hands";
+    handsEl.className = "cds-hands hands";
 
     function makeHand(cls, wRatio, hRatio) {
         const el = document.createElement("div");
-        el.className = "cd-hand hand " + cls;
+        el.className = "cds-hand hand " + cls;
         const w = size * wRatio;
         const h = size * hRatio;
         Object.assign(el.style, {
@@ -229,19 +186,19 @@ function buildCrimsonDuskClockFace(target) {
         return el;
     }
 
-    const handWidth = 0.023;
-    const hourHand = makeHand("cd-hour-hand hour-hand", handWidth, 0.250);
-    const minHand  = makeHand("cd-minute-hand minute-hand", handWidth * 0.55, 0.382);
-    const secHand  = makeHand("cd-second-hand second-hand", handWidth * 0.28, 0.424);
+    const handWidth = 0.017;
+    const hourHand = makeHand("cds-hour-hand hour-hand", handWidth, 0.246);
+    const minHand  = makeHand("cds-minute-hand minute-hand", handWidth * 0.7, 0.372);
+    const secHand  = makeHand("cds-second-hand second-hand", handWidth * 0.18, 0.418);
 
     const dot = document.createElement("div");
-    dot.className = "cd-center center";
-    const ds = size * 0.054;
+    dot.className = "cds-center center";
+    const ds = size * 0.036;
     Object.assign(dot.style, {
         width: ds + "px",
         height: ds + "px",
     });
 
     handsEl.append(hourHand, minHand, secHand, dot);
-    target.append(haloEl, embersEl, dotRingsEl, ticksEl, arcsSvg, numbersEl, handsEl);
+    target.append(dotRingsEl, ticksEl, arcsSvg, numbersEl, handsEl);
 }

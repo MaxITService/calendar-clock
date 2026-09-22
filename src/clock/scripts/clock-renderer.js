@@ -1278,6 +1278,35 @@ function buildClock() {
             return sorted;
         }
 
+        // Right-aligns the label to the dial's chord at its row so the round face never clips it,
+        // and ends the leader where the text begins instead of running under it.
+        function getPointCalloutPlacement(item, center) {
+            const edgeInset = Math.max(6, item.fontSize * 0.45);
+            const rowOffset = item.labelY - center;
+            const halfChord = Math.sqrt(Math.max(0, (center - edgeInset) ** 2 - rowOffset ** 2));
+            const labelX = center + item.side * halfChord;
+            const leaderGap = Math.max(4, item.fontSize * 0.3);
+            const minimumLeader = Math.max(12, item.fontSize * 0.8);
+            const availableWidth = item.side * (labelX - item.anchor.x) - leaderGap - minimumLeader;
+            const preferredWidth = item.showFullTitle ? availableWidth : Math.min(availableWidth, clockSize * 0.24);
+            const text = availableWidth > 0
+                ? getSidePlateLabelText(item.event, preferredWidth, item.fontSize, item.showFullTitle, 800)
+                : "";
+            if (!text) return null;
+
+            const textWidth = getArcLabelEstimatedPixelLength(text, item.fontSize);
+            const lineEndX = labelX - item.side * (textWidth + leaderGap);
+            const defaultElbowX = center + item.side * clockSize * 0.435;
+            const elbowX = item.side > 0
+                ? Math.max(item.anchor.x, Math.min(defaultElbowX, lineEndX))
+                : Math.min(item.anchor.x, Math.max(defaultElbowX, lineEndX));
+            return {
+                text,
+                labelX,
+                path: `M ${item.anchor.x} ${item.anchor.y} L ${elbowX} ${item.labelY} L ${lineEndX} ${item.labelY}`,
+            };
+        }
+
         function updatePointCalloutLabels(items, arcStrokeWidth) {
             if (getClockFaceArcConfig().labelsVisible === false) {
                 document.querySelectorAll(".time-point-callout").forEach(callout => {
@@ -1299,7 +1328,12 @@ function buildClock() {
                 const angle = item.segment.clockStartMinutes / getClockCycleMinutes() * 360;
                 const anchor = pointOnClockArc(center, center, item.radius, angle);
                 const side = anchor.x >= center ? 1 : -1;
-                (side > 0 ? right : left).push({ ...item, anchor, text, fontSize });
+                (side > 0 ? right : left).push({
+                    ...item,
+                    anchor,
+                    fontSize,
+                    showFullTitle: proximityPresentation.showFullTitle,
+                });
             });
 
             const leftLayoutFontSize = Math.max(baseFontSize, ...left.map(item => item.fontSize));
@@ -1311,29 +1345,27 @@ function buildClock() {
 
             calendarEvents.forEach((event, index) => {
                 const item = byIndex.get(index);
+                const placement = item ? getPointCalloutPlacement(item, center) : null;
                 document.querySelectorAll(`.time-point-callout-${index + 1}`).forEach(callout => {
-                    callout.style.display = item ? "" : "none";
-                    if (!item) return;
+                    callout.style.display = placement ? "" : "none";
+                    if (!placement) return;
 
                     const line = callout.querySelector(".time-point-callout-line");
                     const dot = callout.querySelector(".time-point-callout-dot");
                     const label = callout.querySelector(".time-point-callout-label");
                     if (!line || !dot || !label) return;
 
-                    const labelX = item.side > 0 ? clockSize - clockSize * 0.03 : clockSize * 0.03;
-                    const lineEndX = labelX - item.side * 4;
-                    const elbowX = center + item.side * clockSize * 0.435;
-                    const path = `M ${item.anchor.x} ${item.anchor.y} L ${elbowX} ${item.labelY} L ${lineEndX} ${item.labelY}`;
                     callout.style.color = event.color;
                     callout.style.setProperty("--event-color", event.color);
-                    line.setAttribute("d", path);
+                    line.setAttribute("d", placement.path);
                     dot.setAttribute("cx", String(item.anchor.x));
                     dot.setAttribute("cy", String(item.anchor.y));
                     dot.setAttribute("r", String(Math.max(2.2, arcStrokeWidth * 0.34)));
-                    label.textContent = item.text;
-                    label.setAttribute("x", String(labelX));
+                    label.textContent = placement.text;
+                    label.setAttribute("x", String(placement.labelX));
                     label.setAttribute("y", String(item.labelY));
-                    label.setAttribute("text-anchor", item.side > 0 ? "end" : "start");
+                    // Faces style .time-arc-label with text-anchor: middle, which beats the SVG attribute.
+                    label.style.textAnchor = item.side > 0 ? "end" : "start";
                     label.style.fontSize = `${item.fontSize}px`;
                     label.style.fontFamily = getEventLabelFontFamily();
                     label.style.color = event.color;

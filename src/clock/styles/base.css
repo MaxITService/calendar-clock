@@ -78,10 +78,9 @@
 
         .stage {
             position: relative;
-            width: min(calc(100vw - var(--clock-margin) - var(--clock-margin)),
-                    calc(100vh - var(--clock-margin) - var(--clock-margin)));
-            height: min(calc(100vw - var(--clock-margin) - var(--clock-margin)),
-                    calc(100vh - var(--clock-margin) - var(--clock-margin)));
+            /* --clock-fit-scale shrinks the dial when Full-mode flyouts need room. */
+            width: calc(min(100vw - var(--clock-margin) * 2, 100vh - var(--clock-margin) * 2) * var(--clock-fit-scale, 1));
+            height: calc(min(100vw - var(--clock-margin) * 2, 100vh - var(--clock-margin) * 2) * var(--clock-fit-scale, 1));
             display: grid;
             place-items: center;
         }

@@ -6,6 +6,8 @@ const MIN_CLOCK_LAYOUT_SIZE = 120;
 const CLOCK_LAYOUT_RETRY_LIMIT = 10;
 let clockLayoutRetryFrameId = null;
 let clockLayoutRetryCount = 0;
+let clockFitScale = 1;
+let clockFitRebuilding = false;
 let arcLabelMeasurementContext = null;
 let eventLabelPriorityRefreshAt = 0;
 const EVENT_LABEL_PRIORITY_REFRESH_MS = 15 * 1000;
@@ -217,8 +219,41 @@ function buildClock() {
             }
         }
 
+        // Full-mode flyouts may shrink the dial to make room; the stage CSS multiplies its size by this scale.
+        // Returns true when the clock was rebuilt at the new size, so the caller's render is stale.
+        function setClockFitScale(scale) {
+            const nextScale = Math.round((Number(scale) || 1) * 1000) / 1000;
+            if (nextScale === clockFitScale || clockFitRebuilding) return false;
+            clockFitScale = nextScale;
+            document.documentElement.style.setProperty("--clock-fit-scale", String(nextScale));
+            clockFitRebuilding = true;
+            try {
+                buildClock();
+            } finally {
+                clockFitRebuilding = false;
+            }
+            return true;
+        }
+
+        // The clock rect at fit scale 1, which the flyout fit is measured from.
+        function getUnscaledClockRect(rect) {
+            const width = Math.round(rect.width / clockFitScale);
+            const height = Math.round(rect.height / clockFitScale);
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            return {
+                left: centerX - width / 2,
+                top: centerY - height / 2,
+                right: centerX + width / 2,
+                bottom: centerY + height / 2,
+                width,
+                height,
+            };
+        }
+
         function hideRenderedCalendarEventVisuals() {
             if (typeof hideArcTooltip === "function") hideArcTooltip();
+            if (typeof clearEventLabelLayouts === "function") clearEventLabelLayouts();
             document.querySelectorAll(".time-arc, .time-point, .time-arc-separator, .time-arc-label, .time-point-callout").forEach(element => {
                 element.style.display = "none";
             });
@@ -1015,17 +1050,49 @@ function buildClock() {
             return getArcLabelTrimmedText(title, maxChars);
         }
 
-        function getArcLabelEstimatedPixelLength(text, fontSize) {
+        function getArcLabelEstimatedPixelLength(text, fontSize, fontWeight = 800) {
             const labelText = String(text || "");
             const fallbackLength = labelText.length * Math.max(1, fontSize * 0.56);
             const context = getArcLabelMeasurementContext();
             if (!context || !labelText) return fallbackLength;
 
-            context.font = `800 ${fontSize}px ${getEventLabelFontFamily()}`;
+            context.font = `${fontWeight} ${fontSize}px ${getEventLabelFontFamily()}`;
             const measuredLength = context.measureText(labelText).width;
             return Number.isFinite(measuredLength) && measuredLength > 0
                 ? measuredLength
                 : fallbackLength;
+        }
+
+        function getSidePlateLabelEstimatedPixelLength(text, fontSize, fontWeight = 500) {
+            return getArcLabelEstimatedPixelLength(text, fontSize, fontWeight);
+        }
+
+        function getSidePlateLabelText(event, availablePixelLength, fontSize, showFullTitle = false, fontWeight = 500) {
+            const title = getArcLabelFullText(event);
+            const physicalLimit = Math.max(0, Number(availablePixelLength) || 0);
+            if (!title || !physicalLimit) return "";
+
+            const threshold = getEventLabelShortenThreshold();
+            const preferredLimit = showFullTitle || threshold >= 305
+                ? physicalLimit
+                : Math.min(physicalLimit, physicalLimit * (threshold / 100));
+            if (getSidePlateLabelEstimatedPixelLength(title, fontSize, fontWeight) <= preferredLimit) return title;
+
+            const minLength = getEventLabelMinLength();
+            let low = minLength;
+            let high = title.length;
+            let best = "";
+            while (low <= high) {
+                const middle = Math.floor((low + high) / 2);
+                const candidate = getArcLabelTrimmedText(title, middle);
+                if (getSidePlateLabelEstimatedPixelLength(candidate, fontSize, fontWeight) <= preferredLimit) {
+                    best = candidate;
+                    low = middle + 1;
+                } else {
+                    high = middle - 1;
+                }
+            }
+            return best;
         }
 
         function getArcLabelPathPadding(labelPixelLength, fontSize) {
@@ -1090,7 +1157,20 @@ function buildClock() {
             return getArcLabelAnchoredRange(segment, desiredDuration, options.anchor, options.reverse === true);
         }
 
-        function updateArcLabels(index, event, showArc, radius, segment, arcStrokeWidth, radialSide = -1) {
+        // Hybrid placement keeps a title on its arc only when the whole title fits along it.
+        function doesFullTitleFitOnArc(event, radius, segment, arcStrokeWidth, radialSide = -1) {
+            if (!segment || segment.isPointEvent === true) return false;
+            const proximityPresentation = getEventLabelProximityPresentation(event);
+            const fontSize = getEventLabelScaledFontSize(getArcLabelFontSize(), proximityPresentation.fontScale);
+            const fullLabelText = getArcLabelFullText(event);
+            const reverseLabelPath = shouldReverseArcLabelPath(segment.clockStartMinutes, segment.clockEndMinutes);
+            const labelRadius = getArcLabelRadius(radius, fontSize, radialSide, reverseLabelPath, fullLabelText, arcStrokeWidth);
+            const arcPixelLength = getArcPixelLength(labelRadius, segment.clockStartMinutes, segment.clockEndMinutes);
+            const labelPixelLength = getArcLabelEstimatedPixelLength(fullLabelText, fontSize);
+            return labelPixelLength + fontSize * 0.9 <= arcPixelLength;
+        }
+
+        function updateArcLabels(index, event, showArc, radius, segment, arcStrokeWidth, radialSide = -1, options = {}) {
             const canRenderArcLabel = showArc && Boolean(segment);
             const isPointEvent = canRenderArcLabel && segment.isPointEvent === true;
             const proximityPresentation = getEventLabelProximityPresentation(event);
@@ -1119,7 +1199,7 @@ function buildClock() {
             const faceLabelsVisible = getClockFaceArcConfig().labelsVisible !== false;
             const labelAnchor = getEventLabelAnchor();
             const labelText = faceLabelsVisible && eventLabelsVisible && canRenderArcLabel
-                ? proximityPresentation.showFullTitle
+                ? proximityPresentation.showFullTitle || options.fullTitle === true
                     ? fullLabelText
                     : getArcLabelText(event, labelPixelLength, fontSize)
                 : "";
@@ -1270,6 +1350,7 @@ function buildClock() {
 
             const displayWindow = getDisplayWindow();
             if (eventArcsVisible === false) {
+                if (setClockFitScale(1)) return;
                 hideRenderedCalendarEventVisuals();
                 updateWindowStartMarkers();
                 return;
@@ -1321,16 +1402,45 @@ function buildClock() {
             const separatorIndexes = getSameColorSequentialSeparatorIndexes(laneSegments);
             const labelSides = getAlternatingArcLabelSides(laneSegments);
             const pointCalloutItems = [];
+            const sidePlateItems = [];
+            const sidePlateFontSize = getEventLabelFontSize();
+            const clockRect = clockEl.getBoundingClientRect();
+            const unscaledClockRect = getUnscaledClockRect(clockRect);
+            const sidePlateLayout = typeof getEventLabelLayout === "function"
+                ? getEventLabelLayout("side-plates")
+                : null;
+            const sidePlatesAvailable = eventLabelsVisible
+                && clockOverlayMode === "full"
+                && arcConfig.labelsVisible !== false
+                && eventLabelPlacement !== "arc"
+                && sidePlateLayout?.canRender?.({
+                    mode: clockOverlayMode,
+                    viewportWidth: window.innerWidth,
+                    viewportHeight: window.innerHeight,
+                    clockRect: unscaledClockRect,
+                    fontSize: sidePlateFontSize,
+                    variant: eventLabelFlyoutVariant,
+                    fitClock: true,
+                }) === true;
+            const hybridPlacement = sidePlatesAvailable && eventLabelPlacement === "hybrid";
 
             calendarEvents.forEach((event, index) => {
                 const segment = byIndex.get(index);
                 const showArc = Boolean(segment);
                 const showPoint = showArc && segment.isPointEvent;
-                const showPointCallout = showPoint && eventLabelsVisible && clockOverlayMode === "full";
+                const showPointCallout = showPoint
+                    && eventLabelsVisible
+                    && clockOverlayMode === "full"
+                    && !sidePlatesAvailable;
                 const showPointArcLabel = showPoint && eventLabelsVisible && clockOverlayMode !== "full";
                 const radius = showArc
                     ? Math.max(innerArcRadius + arcStrokeWidth / 2, packedOuterArcRadius - arcStrokeWidth / 2 - segment.lane * laneStep)
                     : outerArcRadius;
+                const labelSide = labelSides.get(index) ?? -1;
+                const keepTitleOnArc = hybridPlacement
+                    && showArc
+                    && doesFullTitleFitOnArc(event, radius, segment, arcStrokeWidth, labelSide);
+                const useSidePlateLabel = sidePlatesAvailable && showArc && !keepTitleOnArc;
 
                 document.querySelectorAll(`.time-arc-${index + 1}`).forEach(arc => {
                     arc.style.display = showArc && !showPoint ? "" : "none";
@@ -1367,19 +1477,85 @@ function buildClock() {
                 if (showPointCallout) {
                     pointCalloutItems.push({ event, index, radius, segment });
                 }
+                if (useSidePlateLabel) {
+                    const proximityPresentation = getEventLabelProximityPresentation(event);
+                    sidePlateItems.push({
+                        event,
+                        index,
+                        radius,
+                        segment,
+                        labelSide,
+                        fontScale: proximityPresentation.fontScale,
+                        fontSize: getEventLabelScaledFontSize(
+                            sidePlateFontSize,
+                            proximityPresentation.fontScale
+                        ),
+                        showFullTitle: proximityPresentation.showFullTitle,
+                    });
+                }
 
                 updateArcSeparator(index, showArc && !showPoint && separatorIndexes.has(index), radius, segment, arcStrokeWidth);
                 updateArcLabels(
                     index,
                     event,
-                    (showArc && !showPoint) || showPointArcLabel,
+                    !useSidePlateLabel && ((showArc && !showPoint) || showPointArcLabel),
                     radius,
                     segment,
                     arcStrokeWidth,
-                    labelSides.get(index) ?? -1
+                    labelSide,
+                    { fullTitle: keepTitleOnArc }
                 );
             });
 
+            let renderedSidePlateIndexes = [];
+            const sidePlateContext = {
+                mode: clockOverlayMode,
+                items: sidePlateItems,
+                viewportWidth: window.innerWidth,
+                viewportHeight: window.innerHeight,
+                clockRect,
+                clockSize,
+                cycleMinutes: getClockCycleMinutes(),
+                fontSize: sidePlateFontSize,
+                fontFamily: getEventLabelFontFamily(),
+                opacity: getEventLabelOpacity() / 100,
+                style: eventLabelStyle,
+                variant: eventLabelFlyoutVariant,
+                customColor: eventLabelCustomColor,
+                arcStrokeWidth,
+                fitText: getSidePlateLabelText,
+                measureText: getSidePlateLabelEstimatedPixelLength,
+            };
+            let fitScale = 1;
+            if (sidePlatesAvailable && sidePlateItems.length) {
+                try {
+                    fitScale = sidePlateLayout.getClockFitScale?.({ ...sidePlateContext, clockRect: unscaledClockRect }) ?? 1;
+                } catch (error) {
+                    clockWarn("failed to fit the clock around side event-label plates", error);
+                }
+            }
+            // A new dial size rebuilds the clock, which already labelled every event at that size.
+            if (setClockFitScale(fitScale)) return;
+            if (sidePlatesAvailable && sidePlateItems.length) {
+                try {
+                    renderedSidePlateIndexes = sidePlateLayout.render(sidePlateContext);
+                } catch (error) {
+                    clockWarn("failed to render side event-label plates", error);
+                    sidePlateLayout.clear?.();
+                }
+            } else if (typeof clearEventLabelLayouts === "function") {
+                clearEventLabelLayouts();
+            }
+            // Events whose plate did not fit (narrow gutter, full column) fall back to arc text or a callout.
+            const renderedSidePlates = new Set(Array.isArray(renderedSidePlateIndexes) ? renderedSidePlateIndexes : []);
+            sidePlateItems.forEach(item => {
+                if (renderedSidePlates.has(item.index)) return;
+                if (item.segment.isPointEvent) {
+                    pointCalloutItems.push({ event: item.event, index: item.index, radius: item.radius, segment: item.segment });
+                    return;
+                }
+                updateArcLabels(item.index, item.event, true, item.radius, item.segment, arcStrokeWidth, item.labelSide);
+            });
             updatePointCalloutLabels(pointCalloutItems, arcStrokeWidth);
             updateWindowStartMarkers();
         }

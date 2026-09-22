@@ -85,6 +85,10 @@
 | `src/clock/styles/controls.css` | Styling for overlay buttons, sliders, time controls, and event panels. |
 | `src/clock/styles/event-tooltip.css` | Tooltip appearance for clock event arc hover details. |
 | `src/clock/styles/magnifier.css` | Magnifier lens, glass layers, shine, and motion-related presentation styles. |
+| `src/clock/scripts/event-label-layout-registry.js` | Loads optional event-label layouts and keeps missing layout folders non-fatal. |
+| `src/clock/event-label-layouts/side-plates/side-plates-layout.js` | Lays out Full-mode flyout plates beside the circular clock or in the viewport corners, wraps and measures titles, and routes non-crossing leaders. |
+| `src/clock/event-label-layouts/side-plates/side-plates.css` | Styles the flyout overlay, hairline leaders, and the Mono, Ledger, and Engraved designs in light and dark tones. |
+| `scripts/verify-side-plates-layout.js` | Verifies side-plate geometry, collision spacing, arc projection, and loader wiring. |
 | `test/design-mock/index.html` | Standalone design mock page hosting the real clock frame with fake events and live setting controls. |
 | `test/design-mock/design-mock.js` | Drives the mock frame through the Calendar postMessage protocol and exposes `window.designMock` for automation. |
 | `test/design-mock/design-mock.css` | Dark control-panel and scaled-stage styling for the design mock. |

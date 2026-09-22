@@ -191,8 +191,6 @@
         const startIso = zonedIso(dateKey, `${pad2(Math.floor(startMinutes / 60) % 24)}:${pad2(startMinutes % 60)}`);
         const endIso = new Date(Date.parse(startIso) + duration * 60000).toISOString();
 
-        const frameDocument = frame.contentWindow?.document;
-        if (frameDocument) frameDocument.documentElement.dataset.flyoutVariant = settings.flyoutVariant;
         post({
             type: "CALENDAR_CLOCK_SET_DAY_PREVIEW",
             active: false,
@@ -242,6 +240,7 @@
             enabled: settings.labels,
             style: settings.labelStyle,
             placement: settings.placement,
+            flyoutVariant: settings.flyoutVariant,
             customColor: settings.customColor,
             fontFamily: settings.fontFamily,
             fontSize: settings.mode === "mini" ? settings.fontSizeMini : settings.fontSizeFull,

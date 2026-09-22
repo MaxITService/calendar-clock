@@ -244,6 +244,7 @@ function setDisplayWindow(start, end, options = {}) {
                 eventLabelsVisible = data.enabled === true;
                 eventLabelStyle = EVENT_LABEL_STYLES.includes(data.style) ? data.style : "ink";
                 eventLabelPlacement = EVENT_LABEL_PLACEMENTS.includes(data.placement) ? data.placement : "hybrid";
+                eventLabelFlyoutVariant = EVENT_LABEL_FLYOUT_VARIANTS.includes(data.flyoutVariant) ? data.flyoutVariant : "mono";
                 eventLabelCustomColor = data.customColor || "#ffffff";
                 eventLabelFontFamily = data.fontFamily || "Inter, Segoe UI, Arial, sans-serif";
                 eventLabelFontSize = data.fontSize !== undefined
@@ -580,6 +581,11 @@ function setDisplayWindow(start, end, options = {}) {
             }
             if (state.eventLabelPlacement !== undefined) {
                 eventLabelPlacement = EVENT_LABEL_PLACEMENTS.includes(state.eventLabelPlacement) ? state.eventLabelPlacement : "hybrid";
+            }
+            if (state.eventLabelFlyoutVariant !== undefined) {
+                eventLabelFlyoutVariant = EVENT_LABEL_FLYOUT_VARIANTS.includes(state.eventLabelFlyoutVariant)
+                    ? state.eventLabelFlyoutVariant
+                    : "mono";
             }
             if (state.eventLabelCustomColor !== undefined) eventLabelCustomColor = state.eventLabelCustomColor || "#ffffff";
             if (state.eventLabelFontFamily !== undefined) eventLabelFontFamily = state.eventLabelFontFamily || "Inter, Segoe UI, Arial, sans-serif";

@@ -998,6 +998,12 @@ function applyLoadedCalendarClockState(savedState = {}) {
   calendarClockState.eventLabelStyle = ["glass", "ink", "glow", "color", "custom"].includes(calendarClockState.eventLabelStyle)
     ? calendarClockState.eventLabelStyle
     : CALENDAR_CLOCK_PANEL_DEFAULT.eventLabelStyle;
+  calendarClockState.eventLabelPlacement = ["hybrid", "flyout", "arc"].includes(calendarClockState.eventLabelPlacement)
+    ? calendarClockState.eventLabelPlacement
+    : CALENDAR_CLOCK_PANEL_DEFAULT.eventLabelPlacement;
+  calendarClockState.eventLabelFlyoutVariant = ["mono", "ledger", "engraved"].includes(calendarClockState.eventLabelFlyoutVariant)
+    ? calendarClockState.eventLabelFlyoutVariant
+    : CALENDAR_CLOCK_PANEL_DEFAULT.eventLabelFlyoutVariant;
   calendarClockState.eventLabelsSettingsExpanded = calendarClockState.eventLabelsSettingsExpanded === true;
   calendarClockState.eventLabelCustomColor = savedState.eventLabelCustomColor || CALENDAR_CLOCK_PANEL_DEFAULT.eventLabelCustomColor;
   calendarClockState.eventLabelFontFamily = normalizeEventLabelFontFamily(calendarClockState.eventLabelFontFamily);

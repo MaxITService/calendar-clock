@@ -88,6 +88,8 @@ const CALENDAR_CLOCK_PANEL_DEFAULT = {
   eventLabels: true,
   eventLabelsSettingsExpanded: false,
   eventLabelStyle: "ink",
+  eventLabelPlacement: "hybrid",
+  eventLabelFlyoutVariant: "mono",
   eventLabelCustomColor: "#ffffff",
   eventLabelFontFamily: "Inter, Segoe UI, Arial, sans-serif",
   eventLabelFontSizeFull: 22,

@@ -1,4 +1,4 @@
-// Starts the clock page after all feature scripts and discoverable face modules have registered.
+// Starts the clock page after all discoverable visual modules have registered.
 let clockAnimationFrameId = null;
 
 function animateClock(nowMs) {
@@ -50,7 +50,10 @@ function startClockApp() {
         });
 }
 
-const clockFacesReady = typeof loadClockFaces === "function" ? loadClockFaces() : Promise.resolve();
-clockFacesReady
-    .catch(error => clockWarn("failed to load clock faces; using built-in analog face", error))
+const clockVisualModulesReady = Promise.all([
+        typeof loadClockFaces === "function" ? loadClockFaces() : Promise.resolve(),
+        typeof loadEventLabelLayouts === "function" ? loadEventLabelLayouts() : Promise.resolve(),
+]);
+clockVisualModulesReady
+    .catch(error => clockWarn("failed to load optional clock visuals; using available fallbacks", error))
     .then(startClockApp);

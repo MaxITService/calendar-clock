@@ -86,6 +86,7 @@ const stageEl = document.getElementById("stage");
         const EVENT_LABEL_STYLES = ["glass", "ink", "glow", "color", "custom"];
         const EVENT_LABEL_ANCHORS = ["center", "start", "end"];
         const EVENT_LABEL_PLACEMENTS = ["hybrid", "flyout", "arc"];
+        const EVENT_LABEL_FLYOUT_VARIANTS = ["mono", "ledger", "engraved"];
 
         let calendarEvents = [];
         let calendarSource = null;
@@ -109,6 +110,7 @@ const stageEl = document.getElementById("stage");
         let eventLabelsVisible = true;
         let eventLabelStyle = "ink";
         let eventLabelPlacement = "hybrid";
+        let eventLabelFlyoutVariant = "mono";
         let eventLabelCustomColor = "#ffffff";
         let eventLabelFontFamily = "Inter, Segoe UI, Arial, sans-serif";
         let eventLabelFontSize = clockOverlayMode === "mini" ? 18 : 22;

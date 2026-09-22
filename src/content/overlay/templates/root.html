@@ -358,15 +358,32 @@
 
                 <div class="cc-event-labels-settings-panel cc-nested-event-labels-settings-panel" data-cc-event-labels-settings-panel>
                   <div class="cc-divider-settings-row">
-                    <label class="cc-row-label" for="cc-event-label-style" title="Choose how event titles are drawn on top of arcs. You will see the same curved labels with a different contrast and glow treatment.">Style</label>
-                    <select id="cc-event-label-style" data-cc-event-label-style title="Choose the visual treatment for event labels. Ink is dark and readable, Glass is soft and bright, Glow is luminous, Color uses the event color, and Custom uses your choice.">
-                      <option value="ink">Ink</option>
-                      <option value="glass">Glass</option>
-                      <option value="glow">Glow</option>
-                      <option value="color">Color</option>
-                      <option value="custom">Custom</option>
+                    <label class="cc-row-label" for="cc-event-label-placement" title="Choose where Full-mode titles go: on the arc when the whole title fits and in a flyout card otherwise, always in flyouts, or always curved along the arc.">Placement (Full)</label>
+                    <select id="cc-event-label-placement" data-cc-event-label-placement title="Hybrid keeps short titles on their arcs and moves the rest to flyout cards beside the clock.">
+                      <option value="hybrid">Hybrid: on arc when it fits</option>
+                      <option value="flyout">Flyout cards</option>
+                      <option value="arc">On arc</option>
                     </select>
                   </div>
+                  <div class="cc-divider-settings-row">
+                    <label class="cc-row-label" for="cc-event-label-flyout-variant" title="Choose how Full-mode flyout labels beside the clock look.">Flyout design</label>
+                    <select id="cc-event-label-flyout-variant" data-cc-event-label-flyout-variant title="Mono: paper plate with inline time. Ledger: rows on a vertical rule with a time column. Engraved: letterspaced capitals without a box.">
+                      <option value="mono">Mono plate</option>
+                      <option value="ledger">Ledger rows</option>
+                      <option value="engraved">Engraved capitals</option>
+                    </select>
+                  </div>
+                  <div class="cc-divider-settings-row">
+                    <label class="cc-row-label" for="cc-event-label-style" title="Choose the card design used by Full labels and the matching curved-text treatment in Mini.">Label design</label>
+                    <select id="cc-event-label-style" data-cc-event-label-style title="Choose one of five event-label designs. The selected design is saved with Calendar Clock settings.">
+                      <option value="glass">Frosted Glass</option>
+                      <option value="ink">Paper Tag</option>
+                      <option value="glow">Night Signal</option>
+                      <option value="color">Event Wash</option>
+                      <option value="custom">Custom Tint</option>
+                    </select>
+                  </div>
+                  <div class="cc-divider-help" data-cc-event-label-style-description>Translucent, softly blurred cards with a fine glass edge.</div>
                   <div class="cc-divider-settings-row" data-cc-event-label-custom-color-row>
                     <label class="cc-row-label" for="cc-event-label-custom-color">Color</label>
                     <input id="cc-event-label-custom-color" data-cc-event-label-custom-color type="color" value="#ffffff" title="Choose custom event label color">

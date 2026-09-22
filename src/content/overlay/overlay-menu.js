@@ -17,6 +17,13 @@ const CALENDAR_CLOCK_TICK_SOUND_MAX_DURATION_MS = 60000;
 const CALENDAR_CLOCK_TICK_SOUND_FADE_SECONDS = 0.04;
 const CALENDAR_CLOCK_TICK_SOUND_GAIN = 0.72;
 const CALENDAR_CLOCK_CUSTOM_EVENT_LABEL_FONT_VALUE = "custom";
+const CALENDAR_CLOCK_EVENT_LABEL_DESIGN_DESCRIPTIONS = Object.freeze({
+  glass: "Translucent, softly blurred cards with a fine glass edge.",
+  ink: "Matte paper cards with crisp dark type and compact corners.",
+  glow: "Smoked dark cards with luminous text for strong contrast.",
+  color: "Soft cards washed with the color of each calendar event.",
+  custom: "Soft cards washed with the custom color selected below."
+});
 let calendarClockUiPromise = null;
 let calendarClockWarningRowTemplates = null;
 
@@ -576,6 +583,8 @@ function bindPanelControls() {
   const eventLabelsSettingsToggleEl = calendarClockRoot.querySelector("[data-cc-action='event-labels-settings-toggle']");
   const eventLabelsSettingsPanelEl = calendarClockRoot.querySelector("[data-cc-event-labels-settings-panel]");
   const eventLabelStyleEl = calendarClockRoot.querySelector("[data-cc-event-label-style]");
+  const eventLabelPlacementEl = calendarClockRoot.querySelector("[data-cc-event-label-placement]");
+  const eventLabelFlyoutVariantEl = calendarClockRoot.querySelector("[data-cc-event-label-flyout-variant]");
   const eventLabelCustomColorRowEl = calendarClockRoot.querySelector("[data-cc-event-label-custom-color-row]");
   const eventLabelCustomColorEl = calendarClockRoot.querySelector("[data-cc-event-label-custom-color]");
   const eventLabelFontPresetEl = calendarClockRoot.querySelector("[data-cc-event-label-font-preset]");
@@ -907,6 +916,22 @@ function bindPanelControls() {
 
   eventLabelStyleEl.addEventListener("change", () => {
     calendarClockState.eventLabelStyle = eventLabelStyleEl.value;
+    saveCalendarClockState();
+    updatePanelControls();
+    syncClockFrame();
+    renderDebugPanel();
+  });
+
+  eventLabelPlacementEl.addEventListener("change", () => {
+    calendarClockState.eventLabelPlacement = eventLabelPlacementEl.value;
+    saveCalendarClockState();
+    updatePanelControls();
+    syncClockFrame();
+    renderDebugPanel();
+  });
+
+  eventLabelFlyoutVariantEl.addEventListener("change", () => {
+    calendarClockState.eventLabelFlyoutVariant = eventLabelFlyoutVariantEl.value;
     saveCalendarClockState();
     updatePanelControls();
     syncClockFrame();
@@ -2191,6 +2216,15 @@ function updatePanelControls() {
   calendarClockRoot.querySelector("[data-cc-event-labels]").checked = calendarClockState.eventLabels === true;
   calendarClockRoot.querySelector("[data-cc-event-labels]").disabled = !areArcsVisible;
   calendarClockRoot.querySelector("[data-cc-event-label-style]").value = labelStyle;
+  calendarClockRoot.querySelector("[data-cc-event-label-placement]").value =
+    calendarClockState.eventLabelPlacement || CALENDAR_CLOCK_PANEL_DEFAULT.eventLabelPlacement;
+  calendarClockRoot.querySelector("[data-cc-event-label-flyout-variant]").value =
+    calendarClockState.eventLabelFlyoutVariant || CALENDAR_CLOCK_PANEL_DEFAULT.eventLabelFlyoutVariant;
+  const labelStyleDescription = calendarClockRoot.querySelector("[data-cc-event-label-style-description]");
+  if (labelStyleDescription) {
+    labelStyleDescription.textContent = CALENDAR_CLOCK_EVENT_LABEL_DESIGN_DESCRIPTIONS[labelStyle]
+      || CALENDAR_CLOCK_EVENT_LABEL_DESIGN_DESCRIPTIONS.ink;
+  }
   calendarClockRoot.querySelector("[data-cc-event-label-custom-color]").value = labelCustomColor;
   updateEventLabelFontControls(labelFontFamily);
   calendarClockRoot.querySelector("[data-cc-event-label-font-size-full]").value = String(labelFontSizeFull);
@@ -2520,6 +2554,8 @@ function syncClockFrame(options = {}) {
     type: "CALENDAR_CLOCK_SET_EVENT_LABELS",
     enabled: calendarClockState.eventLabels === true,
     style: calendarClockState.eventLabelStyle,
+    placement: calendarClockState.eventLabelPlacement,
+    flyoutVariant: calendarClockState.eventLabelFlyoutVariant,
     customColor: calendarClockState.eventLabelCustomColor,
     fontFamily: calendarClockState.eventLabelFontFamily,
     fontSize: getCalendarClockEventLabelFontSizeForMode(),

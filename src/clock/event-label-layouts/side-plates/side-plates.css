@@ -1,0 +1,161 @@
+/* Full-mode flyout labels placed in the side space around the circular clock. */
+.calendar-clock-side-plates {
+    --flyout-ink: rgba(38, 32, 26, .9);
+    --flyout-ink-soft: rgba(38, 32, 26, .56);
+    --flyout-hair: rgba(38, 32, 26, .4);
+    --flyout-paper: rgba(255, 253, 248, .9);
+    --flyout-halo: rgba(255, 255, 255, .75);
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    width: 100vw;
+    height: 100vh;
+    overflow: visible;
+    pointer-events: none;
+    user-select: none;
+}
+
+/* Dark faces repaint the page; the layout samples the tone and flips the ink. */
+.calendar-clock-side-plates[data-tone="dark"] {
+    --flyout-ink: rgba(236, 238, 244, .92);
+    --flyout-ink-soft: rgba(236, 238, 244, .6);
+    --flyout-hair: rgba(236, 238, 244, .42);
+    --flyout-paper: rgba(16, 20, 28, .84);
+    --flyout-halo: rgba(6, 9, 18, .8);
+}
+
+.time-side-plate {
+    color: var(--event-color);
+}
+
+.time-side-plate-line {
+    fill: none;
+    stroke: var(--flyout-hair);
+    stroke-width: 1;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+}
+
+.time-side-plate-dot {
+    fill: currentColor;
+    stroke: var(--flyout-halo);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+}
+
+.time-side-plate-rule {
+    stroke: var(--flyout-hair);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+}
+
+.time-side-plate-object {
+    overflow: visible;
+}
+
+.time-side-plate-card {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: .45em;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    padding: var(--side-plate-padding-y, 6px) var(--side-plate-padding-x, 12px);
+    font-size: var(--side-plate-font-size, 16px);
+}
+
+.time-side-plate--left .time-side-plate-card {
+    flex-direction: row-reverse;
+    text-align: right;
+}
+
+.time-side-plate--right .time-side-plate-card {
+    flex-direction: row;
+    text-align: left;
+}
+
+/* Line breaks are computed by the layout script, so the text never re-wraps here. */
+.time-side-plate-label {
+    display: block;
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--flyout-ink);
+    font-weight: var(--side-plate-font-weight, 500);
+    line-height: var(--side-plate-line-height, 1.22);
+    letter-spacing: -.012em;
+    white-space: pre;
+}
+
+.time-side-plate-time {
+    flex: 0 0 auto;
+    color: var(--flyout-ink-soft);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: .02em;
+    line-height: 1.3;
+    white-space: nowrap;
+}
+
+/* Variant: ledger — rows with a short vertical rule segment each: dot, tabular time, then title. */
+.time-side-plate--ledger .time-side-plate-card::before {
+    content: "";
+    flex: 0 0 auto;
+    width: .32em;
+    height: .32em;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.time-side-plate--ledger .time-side-plate-time {
+    box-sizing: border-box;
+    min-width: var(--side-plate-time-column, 5.6em);
+}
+
+.time-side-plate--ledger.time-side-plate--left .time-side-plate-time {
+    text-align: left;
+}
+
+.time-side-plate--ledger .time-side-plate-label {
+    font-weight: 500;
+    text-shadow: 0 0 3px var(--flyout-halo), 0 0 8px var(--flyout-halo);
+}
+
+/* Variant: mono — squared instrument plate in paper/ink, inline time, color swatch. */
+.time-side-plate--mono .time-side-plate-card {
+    gap: .5em;
+    border: 1px solid var(--flyout-hair);
+    border-radius: 3px;
+    background: var(--flyout-paper);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .08);
+}
+
+.time-side-plate--mono .time-side-plate-card::before {
+    content: "";
+    flex: 0 0 auto;
+    width: .45em;
+    height: .45em;
+    background: currentColor;
+}
+
+.time-side-plate--mono .time-side-plate-label {
+    font-weight: 500;
+}
+
+/* Variant: engraved — letterspaced capitals like dial engraving, no box. */
+.time-side-plate--engraved .time-side-plate-label {
+    opacity: .82;
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-shadow: 0 0 3px var(--flyout-halo), 0 0 8px var(--flyout-halo);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .time-side-plate-line,
+    .time-side-plate-card,
+    .time-side-plate-label {
+        transition: opacity 140ms ease;
+    }
+}

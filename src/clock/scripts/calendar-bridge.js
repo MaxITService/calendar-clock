@@ -149,6 +149,7 @@ function setDisplayWindow(start, end, options = {}) {
 
         function isTrustedCalendarPageMessage(event) {
             if (!IS_EMBEDDED || IS_ACTION_POPUP || window.parent === window) return true;
+            if (IS_DESIGN_MOCK) return event.source === window.parent;
             return event.source === window.parent && event.origin === CALENDAR_CLOCK_PROVIDER.origin;
         }
 
@@ -242,6 +243,7 @@ function setDisplayWindow(start, end, options = {}) {
             } else if (data.type === "CALENDAR_CLOCK_SET_EVENT_LABELS") {
                 eventLabelsVisible = data.enabled === true;
                 eventLabelStyle = EVENT_LABEL_STYLES.includes(data.style) ? data.style : "ink";
+                eventLabelPlacement = EVENT_LABEL_PLACEMENTS.includes(data.placement) ? data.placement : "hybrid";
                 eventLabelCustomColor = data.customColor || "#ffffff";
                 eventLabelFontFamily = data.fontFamily || "Inter, Segoe UI, Arial, sans-serif";
                 eventLabelFontSize = data.fontSize !== undefined
@@ -575,6 +577,9 @@ function setDisplayWindow(start, end, options = {}) {
             if (typeof state.eventLabels === "boolean") eventLabelsVisible = state.eventLabels;
             if (state.eventLabelStyle !== undefined) {
                 eventLabelStyle = EVENT_LABEL_STYLES.includes(state.eventLabelStyle) ? state.eventLabelStyle : "ink";
+            }
+            if (state.eventLabelPlacement !== undefined) {
+                eventLabelPlacement = EVENT_LABEL_PLACEMENTS.includes(state.eventLabelPlacement) ? state.eventLabelPlacement : "hybrid";
             }
             if (state.eventLabelCustomColor !== undefined) eventLabelCustomColor = state.eventLabelCustomColor || "#ffffff";
             if (state.eventLabelFontFamily !== undefined) eventLabelFontFamily = state.eventLabelFontFamily || "Inter, Segoe UI, Arial, sans-serif";

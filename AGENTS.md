@@ -4,6 +4,7 @@
 
 # Testing Instructions
 - code editing tasks do not require  browser testing.  
+- Clock design work (faces, labels, flyouts): use the design mock instead of Google Calendar. `test\design-mock\Start-DesignMock.ps1` serves the repo on `http://127.0.0.1:8766/test/design-mock/` and opens it in CFT; the page loads the real `src/clock/popup.html` with fake events. Any browser that can reach localhost works. Settings are driven from the panel or `window.designMock.set({...})`.
 - For browser testing, use the isolated browser setup described by the local platform instructions when available. If a calendar tab is open, you may use it.
 - Cleanup tabs, use one tab maximum, unless taks needs more.
 - Use bounded retry limits for browser/testing operations. For a single operation, try at most 3 total attempts (initial attempt plus up to 2 retries) with safe recovery steps such as reconnecting the browser harness, reloading the allowed test extension, or refreshing Calendar tabs. Do not switch browser profiles, kill browser processes, or bypass permissions without asking the user. If the operation still fails after the limit, stop and report the blocker in chat with the attempts made.

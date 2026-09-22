@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calendar Clock — Design Mock</title>
+    <link rel="stylesheet" href="design-mock.css" />
+</head>
+<body>
+    <aside class="mock-panel" id="mockPanel" aria-label="Design mock controls">
+        <header class="mock-panel-header">
+            <strong>Calendar Clock design mock</strong>
+            <button type="button" id="mockCollapse" title="Collapse or expand the panel">_</button>
+        </header>
+
+        <section class="mock-group">
+            <h2>Stage</h2>
+            <label>Viewport
+                <select id="mockViewport">
+                    <option value="fit">Fit to window</option>
+                    <option value="1920x1080">1920 × 1080</option>
+                    <option value="1664x874">1664 × 874</option>
+                    <option value="1366x768">1366 × 768</option>
+                    <option value="2560x1440">2560 × 1440</option>
+                    <option value="4000x2178">4000 × 2178</option>
+                </select>
+            </label>
+            <label>Mode
+                <select id="mockMode">
+                    <option value="full">Full</option>
+                    <option value="mini">Mini</option>
+                </select>
+            </label>
+            <label>Clock face <select id="mockFace"></select></label>
+            <label>Scenario <select id="mockScenario"></select></label>
+            <label class="mock-toggle"><input type="checkbox" id="mockMagnifier"> Magnifier</label>
+            <label class="mock-toggle"><input type="checkbox" id="mockRadial24"> 24h radial</label>
+            <div class="mock-row">
+                <label>From <input type="time" id="mockWindowStart" value="08:00"></label>
+                <label>To <input type="time" id="mockWindowEnd" value="20:00"></label>
+            </div>
+            <label class="mock-toggle"><input type="checkbox" id="mockWindowMarker" checked> Window Start marker</label>
+        </section>
+
+        <section class="mock-group">
+            <h2>Event labels</h2>
+            <label class="mock-toggle"><input type="checkbox" id="mockLabels" checked> Show labels</label>
+            <label>Placement (Full)
+                <select id="mockPlacement">
+                    <option value="hybrid">Hybrid: arc text when it fits</option>
+                    <option value="flyout">Flyouts only</option>
+                    <option value="arc">Arc text only</option>
+                </select>
+            </label>
+            <label>Flyout variant
+                <select id="mockFlyoutVariant">
+                    <option value="pill">A · Pill + bullet, curved leader</option>
+                    <option value="tag">B · Tag + edge bar, elbow leader</option>
+                    <option value="bare">C · Bare text + underline</option>
+                </select>
+            </label>
+            <label>Design
+                <select id="mockLabelStyle">
+                    <option value="glass">Frosted Glass</option>
+                    <option value="ink">Paper Tag</option>
+                    <option value="glow">Night Signal</option>
+                    <option value="color">Event Wash</option>
+                    <option value="custom">Custom Tint</option>
+                </select>
+            </label>
+            <label>Custom tint <input type="color" id="mockCustomColor" value="#ffffff"></label>
+            <label>Font <input type="text" id="mockFontFamily" value="Inter, Segoe UI, Arial, sans-serif"></label>
+            <label>Font size Full <output id="mockFontSizeFullOut">22</output>
+                <input type="range" id="mockFontSizeFull" min="8" max="40" value="22"></label>
+            <label>Font size Mini <output id="mockFontSizeMiniOut">18</output>
+                <input type="range" id="mockFontSizeMini" min="8" max="40" value="18"></label>
+            <label class="mock-toggle"><input type="checkbox" id="mockProximity"> Proximity priority</label>
+            <label>Min length <output id="mockMinLengthOut">5</output>
+                <input type="range" id="mockMinLength" min="1" max="20" value="5"></label>
+            <label>Shorten threshold <output id="mockShortenOut">250</output>
+                <input type="range" id="mockShorten" min="50" max="305" step="5" value="250"></label>
+            <label>Anchor
+                <select id="mockAnchor">
+                    <option value="center">Center</option>
+                    <option value="start">Start</option>
+                    <option value="end">End</option>
+                </select>
+            </label>
+            <label>Opacity <output id="mockOpacityOut">100</output>
+                <input type="range" id="mockOpacity" min="10" max="100" value="100"></label>
+            <label>Arc distance <output id="mockArcDistanceOut">12</output>
+                <input type="range" id="mockArcDistance" min="0" max="60" value="12"></label>
+        </section>
+
+        <section class="mock-group">
+            <h2>Arcs</h2>
+            <label class="mock-toggle"><input type="checkbox" id="mockArcs" checked> Show arcs</label>
+            <label>Density <output id="mockDensityOut">50</output>
+                <input type="range" id="mockDensity" min="0" max="100" value="50"></label>
+            <label>Thickness <output id="mockThicknessOut">50</output>
+                <input type="range" id="mockThickness" min="0" max="100" value="50"></label>
+            <label>Gap <output id="mockGapOut">0</output>
+                <input type="range" id="mockGap" min="0" max="100" value="0"></label>
+            <label class="mock-toggle"><input type="checkbox" id="mockNonOverlapping"> Same-level non-overlapping</label>
+        </section>
+
+        <section class="mock-group mock-actions">
+            <button type="button" id="mockReload" title="Reload the clock frame with the current settings">Reload frame</button>
+            <button type="button" id="mockReset" title="Forget saved mock settings">Reset settings</button>
+            <div class="mock-status" id="mockStatus">Loading…</div>
+        </section>
+    </aside>
+
+    <main class="mock-stage" id="mockStage">
+        <div class="mock-frame-box" id="mockFrameBox">
+            <iframe id="mockFrame" title="Calendar Clock frame"></iframe>
+        </div>
+    </main>
+
+    <script src="../../src/providers/provider-registry.js"></script>
+    <script src="../../src/temporal-projection/temporal-projection.js"></script>
+    <script src="scenarios.js"></script>
+    <script src="design-mock.js"></script>
+</body>
+</html>

@@ -2,6 +2,9 @@
 const CLOCK_SEARCH_PARAMS = new URLSearchParams(window.location.search);
 const IS_ACTION_POPUP = CLOCK_SEARCH_PARAMS.get("actionPopup") === "1";
 const IS_EMBEDDED = CLOCK_SEARCH_PARAMS.get("embedded") === "1" || IS_ACTION_POPUP;
+// Design mock harness (test/design-mock) drives the frame from a non-extension parent page.
+const IS_DESIGN_MOCK = CLOCK_SEARCH_PARAMS.get("designMock") === "1"
+    && !(typeof chrome !== "undefined" && chrome.runtime?.id);
 const CALENDAR_CLOCK_PROVIDER_ID = globalThis.CalendarClockProviders?.get?.(
         CLOCK_SEARCH_PARAMS.get("provider")
     )?.id || "google";
@@ -82,6 +85,7 @@ const stageEl = document.getElementById("stage");
         ];
         const EVENT_LABEL_STYLES = ["glass", "ink", "glow", "color", "custom"];
         const EVENT_LABEL_ANCHORS = ["center", "start", "end"];
+        const EVENT_LABEL_PLACEMENTS = ["hybrid", "flyout", "arc"];
 
         let calendarEvents = [];
         let calendarSource = null;
@@ -104,6 +108,7 @@ const stageEl = document.getElementById("stage");
         let eventArcsVisible = true;
         let eventLabelsVisible = true;
         let eventLabelStyle = "ink";
+        let eventLabelPlacement = "hybrid";
         let eventLabelCustomColor = "#ffffff";
         let eventLabelFontFamily = "Inter, Segoe UI, Arial, sans-serif";
         let eventLabelFontSize = clockOverlayMode === "mini" ? 18 : 22;

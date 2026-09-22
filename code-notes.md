@@ -85,6 +85,12 @@
 | `src/clock/styles/controls.css` | Styling for overlay buttons, sliders, time controls, and event panels. |
 | `src/clock/styles/event-tooltip.css` | Tooltip appearance for clock event arc hover details. |
 | `src/clock/styles/magnifier.css` | Magnifier lens, glass layers, shine, and motion-related presentation styles. |
+| `test/design-mock/index.html` | Standalone design mock page hosting the real clock frame with fake events and live setting controls. |
+| `test/design-mock/design-mock.js` | Drives the mock frame through the Calendar postMessage protocol and exposes `window.designMock` for automation. |
+| `test/design-mock/design-mock.css` | Dark control-panel and scaled-stage styling for the design mock. |
+| `test/design-mock/scenarios.js` | Fake event scenarios (long titles, overlaps, crowded, around-now, tasks) projected through the temporal contract. |
+| `test/design-mock/serve.mjs` | Dependency-free static server exposing the repo root for the design mock. |
+| `test/design-mock/Start-DesignMock.ps1` | Starts the mock server and opens the page in the Browser Harness CFT tab. |
 | `src/content/calendar-content-entry.js` | Content-script entrypoint that observes supported calendar pages and publishes updates. |
 | `src/content/calendar-content-state.js` | Shared content-script selectors, defaults, state variables, and event caches. |
 | `src/content/optional-module-loader.js` | Optionally loads and authenticates the experimental MAIN-world page-owned response module. |

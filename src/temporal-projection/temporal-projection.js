@@ -58,15 +58,50 @@
     ].join("-");
   }
 
+  // Intl.DateTimeFormat construction dominates validation cost, so both the
+  // validity check and the zoned-parts formatter are cached per IANA zone.
+  const TIME_ZONE_CACHE_LIMIT = 64;
+  const timeZoneValidity = new Map();
+  const zonedPartsFormatters = new Map();
+
+  function rememberBounded(cache, key, value) {
+    if (cache.size >= TIME_ZONE_CACHE_LIMIT) cache.delete(cache.keys().next().value);
+    cache.set(key, value);
+    return value;
+  }
+
   function isValidTimeZone(value) {
     const timeZone = String(value || "").trim();
     if (!timeZone) return false;
+    if (timeZoneValidity.has(timeZone)) return timeZoneValidity.get(timeZone);
+    let valid;
     try {
       new Intl.DateTimeFormat("en-US", { timeZone }).format(0);
-      return true;
+      valid = true;
     } catch (_error) {
-      return false;
+      valid = false;
     }
+    return rememberBounded(timeZoneValidity, timeZone, valid);
+  }
+
+  function getZonedPartsFormatter(timeZone) {
+    if (zonedPartsFormatters.has(timeZone)) return zonedPartsFormatters.get(timeZone);
+    let formatter;
+    try {
+      formatter = new Intl.DateTimeFormat("en-CA", {
+        timeZone,
+        hourCycle: "h23",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      });
+    } catch (_error) {
+      formatter = null;
+    }
+    return rememberBounded(zonedPartsFormatters, timeZone, formatter);
   }
 
   function createContext(calendarTimeZone) {
@@ -107,21 +142,8 @@
         ? (Number.isFinite(instant) ? instant : null)
         : parseAbsoluteInstant(instant)?.milliseconds;
     if (parsed === null || !isValidTimeZone(timeZone)) return null;
-    let formatter;
-    try {
-      formatter = new Intl.DateTimeFormat("en-CA", {
-        timeZone,
-        hourCycle: "h23",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit"
-      });
-    } catch (_error) {
-      return null;
-    }
+    const formatter = getZonedPartsFormatter(String(timeZone).trim());
+    if (!formatter) return null;
     const values = {};
     formatter.formatToParts(new Date(parsed)).forEach(part => {
       if (part.type !== "literal") values[part.type] = Number(part.value);
@@ -327,8 +349,8 @@
       && temporal.lastDateKey === dateKeyForInstant(lastInstant, temporal.calendarTimeZone);
   }
 
-  function validateEvent(event, expectedContext) {
-    if (!isPlainObject(event) || !validateTemporal(event.temporal, expectedContext)) return false;
+  function validateEventShape(event) {
+    if (!validateTemporal(event.temporal)) return false;
     const stableId = String(event.id || event.domKey || "").trim();
     if (!stableId) return false;
     const source = String(event.capturedFrom || "calendar");
@@ -337,6 +359,49 @@
     if (event.temporal.kind === "all-day") return event.durationKind === "all-day";
     if (event.temporal.kind === "point") return event.durationKind === "point";
     return event.durationKind === "range";
+  }
+
+  // The self-consistency check re-projects instants through Intl, so its result
+  // is memoized per event object. The signature covers every field the check
+  // reads, so in-place edits (tampering, drags) still invalidate the memo.
+  const eventShapeMemo = new WeakMap();
+
+  function getEventShapeSignature(event) {
+    const temporal = event.temporal;
+    return [
+      event.id,
+      event.domKey,
+      event.capturedFrom,
+      event.durationKind,
+      temporal.contractVersion,
+      temporal.projectionPolicyVersion,
+      temporal.kind,
+      temporal.calendarTimeZone,
+      temporal.contextFingerprint,
+      temporal.occurrenceKey,
+      temporal.firstDateKey,
+      temporal.lastDateKey,
+      temporal.startInstant,
+      temporal.endInstant,
+      temporal.startDateKey,
+      temporal.endDateKeyExclusive
+    ].map(value => (value === undefined ? "" : String(value))).join(" ");
+  }
+
+  function isEventShapeValid(event) {
+    if (!isPlainObject(event.temporal)) return false;
+    const signature = getEventShapeSignature(event);
+    const cached = eventShapeMemo.get(event);
+    if (cached && cached.signature === signature) return cached.valid;
+    const valid = validateEventShape(event);
+    eventShapeMemo.set(event, { signature, valid });
+    return valid;
+  }
+
+  function validateEvent(event, expectedContext) {
+    if (!isPlainObject(event) || !isEventShapeValid(event)) return false;
+    if (!expectedContext) return true;
+    return isValidContext(expectedContext) && event.temporal.contextFingerprint === expectedContext.fingerprint;
   }
 
   function normalizeDateKeys(values) {

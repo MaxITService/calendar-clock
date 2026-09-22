@@ -58,8 +58,7 @@ function updateMagnifier() {
         }
 
         function getAutoIntervalSeconds() {
-            const parsed = Number(autoIntervalInputEl.value.trim());
-            const value = Number.isFinite(parsed) ? parsed : magnifierAutoIntervalSeconds;
+            const value = magnifierAutoIntervalSeconds;
             return Math.min(
                 MAGNIFIER_AUTO_INTERVAL_MAX_SECONDS,
                 Math.max(MAGNIFIER_AUTO_INTERVAL_MIN_SECONDS, Math.round(Number(value) || 600))
@@ -401,7 +400,6 @@ function updateMagnifier() {
             const parsed = Number(value);
             if (!Number.isFinite(parsed)) return;
             const safeSize = Math.min(LENS_MAX_SIZE, Math.max(LENS_MIN_SIZE, Math.round(parsed)));
-            lensSizeSliderEl.value = String(safeSize);
             document.documentElement.style.setProperty("--lens-size", safeSize + "px");
             lensSize = magnifierEl.offsetWidth;
             updateMagnifier();
@@ -414,7 +412,6 @@ function updateMagnifier() {
                 MAGNIFIER_AUTO_INTERVAL_MAX_SECONDS,
                 Math.max(MAGNIFIER_AUTO_INTERVAL_MIN_SECONDS, Math.round(Number.isFinite(parsed) ? parsed : 600))
             );
-            autoIntervalInputEl.value = String(magnifierAutoIntervalSeconds);
             scheduleNextAutoMagnifier();
         }
 

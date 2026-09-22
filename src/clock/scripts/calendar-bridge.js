@@ -1,50 +1,8 @@
-// Bridges the clock page with the extension/content script and renders the small Calendar event list.
-const CALENDAR_CLOCK_HARD_REFRESH_FALLBACK_MS = 3000;
-let calendarClockHardRefreshFallbackTimer = null;
+// Bridges the clock page with the extension/content script and applies stored Calendar events.
 function parseWindowMessageDate(value) {
             if (!value) return null;
             const date = new Date(value);
             return Number.isNaN(date.getTime()) ? null : date;
-        }
-
-function normalizeClockCaptureMetaEntry(entry, fallbackSource) {
-            if (!entry || typeof entry !== "object") return null;
-            const shownCount = Math.max(0, Math.round(Number(entry.shownCount) || 0));
-            const omittedCount = Math.max(0, Math.round(Number(entry.omittedCount) || 0));
-            const parsedCount = Math.max(shownCount, Math.round(Number(entry.parsedCount) || shownCount + omittedCount));
-            return {
-                source: String(entry.source || fallbackSource),
-                limit: Math.max(1, Math.round(Number(entry.limit) || shownCount || 1)),
-                parsedCount,
-                shownCount,
-                omittedCount: Math.max(omittedCount, parsedCount - shownCount)
-            };
-        }
-
-        function getClockCaptureMetaEntries(source) {
-            const captureMeta = source?.captureMeta || null;
-            return [
-                normalizeClockCaptureMetaEntry(captureMeta?.calendar, `${CALENDAR_CLOCK_PROVIDER_ID}-calendar-dom`),
-                normalizeClockCaptureMetaEntry(captureMeta?.task, "google-tasks-dom")
-            ].filter(Boolean);
-        }
-
-        function getClockCaptureSourceLabel(entry) {
-            return /task/i.test(entry?.source || "") ? "Tasks" : "Calendar";
-        }
-
-        function getClockCaptureOmittedCount(source) {
-            return getClockCaptureMetaEntries(source).reduce((total, entry) => total + entry.omittedCount, 0);
-        }
-
-        function getClockCaptureLimitNotice(source) {
-            return getClockCaptureMetaEntries(source)
-                .filter(entry => entry.omittedCount > 0)
-                .map(entry => {
-                    const label = getClockCaptureSourceLabel(entry);
-                    return `${label}: ${entry.shownCount} shown of ${entry.parsedCount}; ${entry.omittedCount} omitted by the ${entry.limit}-item cap`;
-                })
-                .join(" · ");
         }
 
         function normalizeClockDayPreviewState(value) {
@@ -79,18 +37,15 @@ function normalizeClockCaptureMetaEntry(entry, fallbackSource) {
                 || clockDayPreviewState.phase === "unavailable") {
                 applyCalendarEvents([], null, { force: true });
             } else {
-                renderCalendarEventList();
             }
         }
 
 function setDisplayWindow(start, end, options = {}) {
-            if (parseTimeToDayMinutes(start) !== null) displayWindowStartEl.value = start;
-            if (parseTimeToDayMinutes(end) !== null) displayWindowEndEl.value = end;
+            if (parseTimeToDayMinutes(start) !== null) displayWindowStart = start;
+            if (parseTimeToDayMinutes(end) !== null) displayWindowEnd = end;
             if (!options.skipSave) saveDisplayWindowSettings();
-            updateDisplayWindowSummary();
             updateWindowStartMarkers();
             updateTimeArcs();
-            renderCalendarEventList();
             scheduleNextAutoMagnifier();
         }
 
@@ -116,12 +71,6 @@ function setDisplayWindow(start, end, options = {}) {
             use24HourRadial = localStorage.getItem("calendarClock24HourRadial") === "1";
         }
 
-        function update24HourRadialControls() {
-            radial24HourToggleEl.checked = use24HourRadial;
-            displayWindowStartEl.disabled = use24HourRadial;
-            displayWindowEndEl.disabled = use24HourRadial;
-        }
-
         function set24HourRadial(enabled, options = {}) {
             const nextEnabled = Boolean(enabled);
             const changed = use24HourRadial !== nextEnabled;
@@ -129,14 +78,11 @@ function setDisplayWindow(start, end, options = {}) {
             if (!use24HourRadial && displayWindowDurationOverride >= 24 * 60) {
                 displayWindowDurationOverride = null;
             }
-            update24HourRadialControls();
-            updateDisplayWindowSummary();
             if (changed) {
                 buildClock();
             } else {
                 updateTimeArcs();
             }
-            renderCalendarEventList();
             if (!options.skipSave) save24HourRadialSetting();
         }
 
@@ -148,7 +94,7 @@ function setDisplayWindow(start, end, options = {}) {
         }
 
         function isTrustedCalendarPageMessage(event) {
-            if (!IS_EMBEDDED || IS_ACTION_POPUP || window.parent === window) return true;
+            if (IS_ACTION_POPUP || window.parent === window) return true;
             if (IS_DESIGN_MOCK) return event.source === window.parent;
             return event.source === window.parent && event.origin === CALENDAR_CLOCK_PROVIDER.origin;
         }
@@ -157,7 +103,7 @@ function setDisplayWindow(start, end, options = {}) {
         let lastPublishedClockFaceId = null;
 
         function postClockFaceAvailability(requestedFaceId, options = {}) {
-            if (!IS_EMBEDDED || IS_ACTION_POPUP || window.parent === window) return;
+            if (IS_ACTION_POPUP || window.parent === window) return;
             if (typeof postToCalendarPage !== "function"
                 || typeof getClockFaceOptions !== "function"
                 || typeof getActiveClockFace !== "function") return;
@@ -209,7 +155,6 @@ function setDisplayWindow(start, end, options = {}) {
                 if (!use24HourRadial && displayWindowDurationOverride >= 24 * 60) {
                     displayWindowDurationOverride = null;
                 }
-                update24HourRadialControls();
 
                 if (data.baseDate) {
                     const nextBaseDate = new Date(data.baseDate);
@@ -371,20 +316,10 @@ function setDisplayWindow(start, end, options = {}) {
                 || a.title.localeCompare(b.title);
         }
 
-        function getClockCalendarSourceLabel(source) {
-            const activeSource = String(source?.effectiveSource?.activeSource || "");
-            if (activeSource === "google-page-owned") return "Google Calendar structured data";
-            if (activeSource === "outlook-page-owned") return "Outlook Calendar structured data";
-            const providerName = typeof CALENDAR_CLOCK_PROVIDER === "object"
-                ? CALENDAR_CLOCK_PROVIDER.displayName
-                : "Google Calendar";
-            return `${providerName} DOM`;
-        }
-
         function saveDisplayWindowSettings() {
             localStorage.setItem("calendarClockDisplayWindow", JSON.stringify({
-                start: displayWindowStartEl.value,
-                end: displayWindowEndEl.value
+                start: displayWindowStart,
+                end: displayWindowEnd
             }));
         }
 
@@ -392,138 +327,25 @@ function setDisplayWindow(start, end, options = {}) {
             try {
                 const saved = JSON.parse(localStorage.getItem("calendarClockDisplayWindow") || "null");
                 if (saved?.start && parseTimeToDayMinutes(saved.start) !== null) {
-                    displayWindowStartEl.value = saved.start;
+                    displayWindowStart = saved.start;
                 }
                 if (saved?.end && parseTimeToDayMinutes(saved.end) !== null) {
-                    displayWindowEndEl.value = saved.end;
+                    displayWindowEnd = saved.end;
                 }
             } catch (_error) {
                 localStorage.removeItem("calendarClockDisplayWindow");
             }
         }
 
-        function createCalendarEventRow(event) {
-            const undatedTaskLabel = getUndatedGoogleTaskWindowLabel(event);
-            const eventTimeLabel = getCalendarEventTimeLabel(event);
-            const timeText = isCalendarClockDateParseFailed(event)
-                ? `${eventTimeLabel} · hidden: date format issue`
-                : undatedTaskLabel
-                    ? `${eventTimeLabel} · ${undatedTaskLabel}`
-                    : eventTimeLabel;
-
-            const rowEl = document.createElement("div");
-            rowEl.className = "calendar-event-row";
-
-            const dotEl = document.createElement("span");
-            dotEl.className = "calendar-event-dot";
-            dotEl.style.setProperty("--event-color", event.color);
-
-            const mainEl = document.createElement("span");
-            mainEl.className = "calendar-event-main";
-
-            const titleEl = document.createElement("span");
-            titleEl.className = "calendar-event-title";
-            titleEl.textContent = event.title;
-
-            const timeEl = document.createElement("span");
-            timeEl.className = "calendar-event-time";
-            timeEl.textContent = event.calendarName ? `${timeText} · ${event.calendarName}` : timeText;
-
-            mainEl.append(titleEl, timeEl);
-            rowEl.append(dotEl, mainEl);
-            return rowEl;
-        }
-
-        function createCalendarEventStatusRow(text) {
-            const rowEl = document.createElement("div");
-            rowEl.className = "calendar-event-time";
-            rowEl.textContent = text;
-            return rowEl;
-        }
-
-        function renderCalendarEventList() {
-            const displayWindow = getDisplayWindow();
-            const failedDateCount = calendarEvents.filter(isCalendarClockDateParseFailed).length;
-            const parsedEvents = calendarEvents.filter(event => !isCalendarClockDateParseFailed(event));
-            const visibleCount = parsedEvents.filter(event => getVisibleEventSegment(event, displayWindow)).length;
-            const outsideCount = Math.max(0, parsedEvents.length - visibleCount);
-            const hiddenLongArcCount = longDurationArcsVisible === false
-                ? parsedEvents.filter(event => getVisibleEventSegment(event, displayWindow) && isLongDurationCalendarEvent(event)).length
-                : 0;
-            const hiddenUndatedTaskCount = parsedEvents.filter(isUndatedGoogleTaskHiddenOutsideToday).length;
-            const omittedCaptureCount = getClockCaptureOmittedCount(calendarSource);
-            const captureLimitNotice = getClockCaptureLimitNotice(calendarSource);
-            const sourceAge = calendarSource?.capturedAt
-                ? Math.max(0, Math.round((Date.now() - calendarSource.capturedAt) / 1000))
-                : null;
-
-            const previewLabel = clockDayPreviewState.relativeLabel || clockDayPreviewState.dateKey || "selected day";
-            const baseStatus = clockDayPreviewState.phase === "loading"
-                ? `Loading ${previewLabel}`
-                : clockDayPreviewState.phase === "unavailable"
-                    ? `${previewLabel} unavailable`
-                    : calendarEvents.length
-                        ? failedDateCount
-                            ? `${visibleCount} visible · ${outsideCount} outside · ${failedDateCount} date issue`
-                            : hiddenUndatedTaskCount
-                                ? `${visibleCount} visible · ${outsideCount} outside · ${hiddenUndatedTaskCount} undated task hidden`
-                            : hiddenLongArcCount
-                                ? `${visibleCount} visible · ${hiddenLongArcCount} long arc hidden · ${outsideCount} outside`
-                                : `${visibleCount} visible · ${outsideCount} outside`
-                        : clockDayPreviewState.active
-                            ? `${previewLabel} · no events`
-                            : `Open ${CALENDAR_CLOCK_PROVIDER.displayName}`;
-            calendarStatusEl.textContent = omittedCaptureCount ? `${baseStatus} · ${omittedCaptureCount} omitted` : baseStatus;
-
-            const rows = calendarEvents.slice(0, 18).map(createCalendarEventRow);
-
-            if (!rows.length) {
-                rows.push(createCalendarEventStatusRow(
-                    clockDayPreviewState.phase === "loading"
-                        ? `Loading events for ${previewLabel}…`
-                        : clockDayPreviewState.phase === "unavailable"
-                            ? `Events are unavailable for ${previewLabel}.${clockDayPreviewState.reason ? ` ${clockDayPreviewState.reason}` : ""}`
-                            : clockDayPreviewState.active
-                                ? `No events found for ${previewLabel}.`
-                                : "No visible Calendar events found yet."
-                ));
-            } else if (failedDateCount) {
-                rows.push(createCalendarEventStatusRow(`${failedDateCount} event(s) hidden: Calendar Clock could not understand their date. Send safe diagnostics and your date/time format to the developer.`));
-            } else if (hiddenUndatedTaskCount) {
-                rows.push(createCalendarEventStatusRow(`${hiddenUndatedTaskCount} undated Google Task(s) hidden because this window does not overlap today.`));
-            } else if (hiddenLongArcCount) {
-                rows.push(createCalendarEventStatusRow(`${hiddenLongArcCount} long/all-day event arc(s) hidden by Arc settings.`));
-            } else if (outsideCount) {
-                const outsideWindowLabel = use24HourRadial
-                    ? "the selected 24-hour day"
-                    : `${displayWindowStartEl.value} - ${displayWindowEndEl.value}`;
-                rows.push(createCalendarEventStatusRow(`${outsideCount} event(s) outside ${outsideWindowLabel}.`));
-            }
-
-            if (captureLimitNotice) {
-                rows.push(createCalendarEventStatusRow(`Capture limit: ${captureLimitNotice}.`));
-            }
-
-            if (sourceAge !== null) {
-                rows.push(createCalendarEventStatusRow(`Captured ${sourceAge}s ago from ${getClockCalendarSourceLabel(calendarSource)}.`));
-            }
-
-            calendarEventListEl.replaceChildren(...rows);
-            updateDisplayWindowSummary();
-        }
-
         function applyCalendarEvents(events, source = null, options = {}) {
             if (options.force !== true
                 && !canAcceptClockEventPayload(String(options.previewDateKey || ""))) return false;
-            clearTimeout(calendarClockHardRefreshFallbackTimer);
-            calendarClockHardRefreshFallbackTimer = null;
             if (activeArcTooltipIndex !== null) hideArcTooltip();
             calendarEvents = normalizeCalendarEvents(events, source);
             calendarSource = source;
             setClockTimeZone(source?.timeZone, source?.systemTimeZone);
             if (typeof hideRenderedCalendarEventVisuals === "function") hideRenderedCalendarEventVisuals();
             buildClock();
-            renderCalendarEventList();
             scheduleNextAutoMagnifier();
             return true;
         }
@@ -554,8 +376,8 @@ function setDisplayWindow(start, end, options = {}) {
                 && parseTimeToDayMinutes(state.windowStart) !== null
                 && parseTimeToDayMinutes(state.windowEnd) !== null
                 && state.windowStart !== state.windowEnd) {
-                displayWindowStartEl.value = state.windowStart;
-                displayWindowEndEl.value = state.windowEnd;
+                displayWindowStart = state.windowStart;
+                displayWindowEnd = state.windowEnd;
                 displayWindowDurationOverride = null;
                 displayWindowDateRangeOverride = null;
             }
@@ -628,8 +450,6 @@ function setDisplayWindow(start, end, options = {}) {
                 if (!use24HourRadial && displayWindowDurationOverride >= 24 * 60) {
                     displayWindowDurationOverride = null;
                 }
-                update24HourRadialControls();
-                updateDisplayWindowSummary();
             }
             updateWindowStartMarkers();
             if (radial24HourChanged || clockFaceChanged) {
@@ -637,7 +457,6 @@ function setDisplayWindow(start, end, options = {}) {
             } else {
                 updateTimeArcs();
             }
-            renderCalendarEventList();
         }
 
         function getChromeApi() {
@@ -663,12 +482,10 @@ function setDisplayWindow(start, end, options = {}) {
 
         function loadStoredCalendarEvents() {
             if (!canAcceptClockEventPayload()) {
-                renderCalendarEventList();
                 return;
             }
             const chromeApi = getChromeApi();
             if (!chromeApi?.storage?.local) {
-                renderCalendarEventList();
                 return;
             }
 
@@ -681,7 +498,6 @@ function setDisplayWindow(start, end, options = {}) {
                     const runtimeError = getClockRuntimeLastError(chromeApi);
                     if (runtimeError) {
                         markClockExtensionContextInvalidated(runtimeError);
-                        renderCalendarEventList();
                         return;
                     }
 
@@ -695,79 +511,8 @@ function setDisplayWindow(start, end, options = {}) {
                 if (!markClockExtensionContextInvalidated(error)) {
                     clockWarn("failed to load stored events", error);
                 }
-                renderCalendarEventList();
             }
         }
-
-        function requestCalendarEventsFromActiveTab(options = {}) {
-            const chromeApi = getChromeApi();
-            if (!chromeApi?.tabs) return;
-
-            const hardReset = options?.hardReset === true;
-            calendarStatusEl.textContent = hardReset ? "Resetting Calendar cache" : "Refreshing Calendar";
-            try {
-                chromeApi.tabs.query({ active: true, currentWindow: true }, tabs => {
-                    const queryError = getClockRuntimeLastError(chromeApi);
-                    if (queryError) {
-                        markClockExtensionContextInvalidated(queryError);
-                        loadStoredCalendarEvents();
-                        return;
-                    }
-
-                    const tab = tabs[0];
-                    if (!tab?.id || !globalThis.CalendarClockProviders?.matchesCalendarUrl?.(
-                        CALENDAR_CLOCK_PROVIDER_ID,
-                        tab.url || ""
-                    )) {
-                        loadStoredCalendarEvents();
-                        return;
-                    }
-
-                    const handleResponse = response => {
-                        const sendError = getClockRuntimeLastError(chromeApi);
-                        if (sendError || !response) {
-                            if (sendError) markClockExtensionContextInvalidated(sendError);
-                            loadStoredCalendarEvents();
-                            return;
-                        }
-
-                        if (hardReset && response.ok === true) {
-                            applyCalendarEvents([], null);
-                            calendarStatusEl.textContent = `Reloading ${CALENDAR_CLOCK_PROVIDER.displayName}`;
-                            calendarClockHardRefreshFallbackTimer = setTimeout(() => {
-                                calendarClockHardRefreshFallbackTimer = null;
-                                loadStoredCalendarEvents();
-                            }, CALENDAR_CLOCK_HARD_REFRESH_FALLBACK_MS);
-                            return;
-                        }
-
-                        // The content response is fresh-only; storage is the canonical
-                        // merged projection and will also notify us when its write lands.
-                        loadStoredCalendarEvents();
-                    };
-                    if (hardReset) {
-                        chromeApi.runtime.sendMessage({
-                            type: "CALENDAR_CLOCK_HARD_REFRESH_EVENTS",
-                            provider: CALENDAR_CLOCK_PROVIDER_ID,
-                            tabId: tab.id
-                        }, handleResponse);
-                    } else {
-                        chromeApi.tabs.sendMessage(tab.id, {
-                            type: "CALENDAR_CLOCK_COLLECT_EVENTS"
-                        }, handleResponse);
-                    }
-                });
-            } catch (error) {
-                if (!markClockExtensionContextInvalidated(error)) {
-                    clockWarn("failed to request Calendar events", error);
-                }
-                loadStoredCalendarEvents();
-            }
-        }
-
-        refreshCalendarButtonEl.addEventListener("click", () => {
-            requestCalendarEventsFromActiveTab({ hardReset: true });
-        });
 
         const chromeApi = getChromeApi();
         if (chromeApi?.storage?.onChanged) {

@@ -28,14 +28,11 @@ function syncClockAnimationForOverlayMode() {
 function startClockApp() {
         load24HourRadialSetting();
         loadDisplayWindowSettings();
-        update24HourRadialControls();
-        updateDisplayWindowSummary();
         updateClockTimeZoneIndicator();
-        setupLensSizeSlider();
+        applyDefaultLensSize();
         buildClock();
         if (typeof postClockFaceAvailability === "function") postClockFaceAvailability();
         loadStoredCalendarEvents();
-        if (!IS_EMBEDDED) requestCalendarEventsFromActiveTab();
         syncClockAnimationForOverlayMode();
 
         let resizeTimer;

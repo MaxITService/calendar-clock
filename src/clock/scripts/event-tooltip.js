@@ -67,7 +67,7 @@ function updateArcTooltipContent(index) {
         }
 
         function usesParentArcTooltip() {
-            return IS_EMBEDDED && !IS_ACTION_POPUP && window.parent !== window;
+            return !IS_ACTION_POPUP && window.parent !== window;
         }
 
         function postParentArcTooltip(type, event, includeDetails = false) {

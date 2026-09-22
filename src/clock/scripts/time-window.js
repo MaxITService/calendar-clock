@@ -30,7 +30,7 @@ function parseTimeToDayMinutes(value) {
         }
 
         function postToCalendarPage(type, payload = {}) {
-            if (!IS_EMBEDDED || IS_ACTION_POPUP || window.parent === window || !CALENDAR_CLOCK_PROVIDER.origin) return;
+            if (IS_ACTION_POPUP || window.parent === window || !CALENDAR_CLOCK_PROVIDER.origin) return;
             window.parent.postMessage({ type, ...payload }, CALENDAR_CLOCK_PROVIDER.origin);
         }
 
@@ -144,8 +144,7 @@ function parseTimeToDayMinutes(value) {
 
             const activeTimeZone = getActiveClockTimeZone();
             const systemTimeZone = getClockSystemTimeZone();
-            const showIndicator = IS_EMBEDDED
-                && !IS_ACTION_POPUP
+            const showIndicator = !IS_ACTION_POPUP
                 && isValidClockTimeZone(clockCalendarTimeZone)
                 && activeTimeZone !== systemTimeZone;
 
@@ -168,7 +167,6 @@ function parseTimeToDayMinutes(value) {
             updateClockTimeZoneIndicator();
 
             if (changed) {
-                updateDisplayWindowSummary();
                 if (typeof setTime === "function") setTime();
                 if (typeof updateTimeArcs === "function") updateTimeArcs();
                 if (typeof scheduleNextAutoMagnifier === "function") scheduleNextAutoMagnifier();
@@ -292,44 +290,17 @@ function parseTimeToDayMinutes(value) {
             return { startDate, endDate };
         }
 
-        function formatWindowDateTime(date) {
-            if (!(date instanceof Date) || !Number.isFinite(date.getTime())) return "unavailable";
-            try {
-                return new Intl.DateTimeFormat(navigator.language || undefined, {
-                    timeZone: getActiveClockTimeZone(),
-                    day: "2-digit",
-                    month: "short",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit"
-                }).format(date);
-            } catch (_error) {
-                return "unavailable";
-            }
-        }
-
-        function updateDisplayWindowSummary() {
-            if (use24HourRadial) {
-                const { startDate, endDate } = getWindowDateRange();
-                displayWindowSummaryEl.textContent = `Showing: 24h radial range, from ${formatWindowDateTime(startDate)} to ${formatWindowDateTime(endDate)}`;
-                return;
-            }
-
-            const { startDate, endDate } = getWindowDateRange();
-            displayWindowSummaryEl.textContent = `Showing: from ${formatWindowDateTime(startDate)} to ${formatWindowDateTime(endDate)}`;
-        }
-
         function getDisplayWindow() {
             if (use24HourRadial) {
                 const duration = 24 * 60;
                 const start = displayWindowDateRangeOverride
-                    ? parseTimeToDayMinutes(displayWindowStartEl.value) ?? 0
+                    ? parseTimeToDayMinutes(displayWindowStart) ?? 0
                     : 0;
                 return { start, end: start + duration, duration };
             }
 
-            const start = parseTimeToDayMinutes(displayWindowStartEl.value);
-            const end = parseTimeToDayMinutes(displayWindowEndEl.value);
+            const start = parseTimeToDayMinutes(displayWindowStart);
+            const end = parseTimeToDayMinutes(displayWindowEnd);
 
             if (start !== null && displayWindowDurationOverride > 0) {
                 return {
@@ -385,13 +356,6 @@ function parseTimeToDayMinutes(value) {
         function isUndatedGoogleTaskHiddenOutsideToday(event) {
             return isUndatedGoogleTask(event)
                 && (clockDayPreviewState.active === true || !doesWindowOverlapToday());
-        }
-
-        function getUndatedGoogleTaskWindowLabel(event) {
-            if (!isUndatedGoogleTask(event)) return "";
-            return isUndatedGoogleTaskHiddenOutsideToday(event)
-                ? "hidden outside today"
-                : "floating task/no date";
         }
 
         function getRangeProgressInfo(event) {

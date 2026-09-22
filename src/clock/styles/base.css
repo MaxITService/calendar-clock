@@ -43,7 +43,7 @@
             --second: #d5312f;
             --lens-size: 550px;
             --magnify: 1.55;
-            --clock-margin: 48px;
+            --clock-margin: 18px;
         }
 
         html {
@@ -52,7 +52,8 @@
         }
 
         body {
-            width: 100%;
+            width: 100vw;
+            height: 100vh;
             min-height: 100vh;
             min-height: 100dvh;
             display: grid;
@@ -60,20 +61,6 @@
             overflow: hidden;
             background: var(--page-bg);
             font-family: Georgia, "Times New Roman", serif;
-        }
-
-        body.extension-popup {
-            width: 760px;
-            height: 600px;
-            min-height: 600px;
-        }
-
-        body.embedded-clock {
-            --clock-margin: 18px;
-            width: 100vw;
-            height: 100vh;
-            min-height: 100vh;
-            min-height: 100dvh;
         }
 
         .stage {

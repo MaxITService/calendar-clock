@@ -1,7 +1,6 @@
 // Owns shared DOM references, constants, and mutable state for the clock page scripts.
 const CLOCK_SEARCH_PARAMS = new URLSearchParams(window.location.search);
 const IS_ACTION_POPUP = CLOCK_SEARCH_PARAMS.get("actionPopup") === "1";
-const IS_EMBEDDED = CLOCK_SEARCH_PARAMS.get("embedded") === "1" || IS_ACTION_POPUP;
 // Design mock harness (test/design-mock) drives the frame from a non-extension parent page.
 const IS_DESIGN_MOCK = CLOCK_SEARCH_PARAMS.get("designMock") === "1"
     && !(typeof chrome !== "undefined" && chrome.runtime?.id);
@@ -16,7 +15,6 @@ const CALENDAR_CLOCK_PROVIDER = globalThis.CalendarClockProviders?.get?.(CALENDA
             eventsStorageKey: "calendarClockEvents",
             sourceStorageKey: "calendarClockSource"
         });
-        document.body.classList.add(IS_EMBEDDED ? "embedded-clock" : "extension-popup");
         document.body.classList.toggle("action-popup-clock", IS_ACTION_POPUP);
 
 const CALENDAR_CLOCK_LOG_PREFIX = "[calen.clock.ext]";
@@ -28,21 +26,8 @@ const stageEl = document.getElementById("stage");
         const lensGlassTintEl = document.getElementById("lensGlassTint");
         const magnifiedContentEl = document.getElementById("magnifiedContent");
         const magnifiedClockEl = document.getElementById("magnifiedClock");
-        const lensSizeSliderEl = document.getElementById("lensSizeSlider");
-        const autoIntervalInputEl = document.getElementById("autoIntervalInput");
-        const manualAutoButtonEl = document.getElementById("manualAutoButton");
         const arcTooltipEl = document.getElementById("arcTooltip");
-        const calendarStatusEl = document.getElementById("calendarStatus");
-        const refreshCalendarButtonEl = document.getElementById("refreshCalendarButton");
-        const calendarEventListEl = document.getElementById("calendarEventList");
-        const displayWindowStartEl = document.getElementById("displayWindowStart");
-        const displayWindowEndEl = document.getElementById("displayWindowEnd");
-        const displayWindowSummaryEl = document.getElementById("displayWindowSummary");
         const clockTimezoneIndicatorEl = document.getElementById("clockTimezoneIndicator");
-        const radial24HourToggleEl = document.getElementById("radial24HourToggle");
-        const clockFullButtonEl = document.getElementById("clockFullButton");
-        const clockMiniButtonEl = document.getElementById("clockMiniButton");
-        const clockHideButtonEl = document.getElementById("clockHideButton");
         const MAGNIFY = 1.55;
         const AUTO_PRE_MS = 10000;
         const AUTO_POST_MS = 10000;
@@ -101,6 +86,9 @@ const stageEl = document.getElementById("stage");
         let windowStartMarkerPulse = true;
         let windowStartMarkerTransparency = 8;
         let use24HourRadial = false;
+        // The displayed window lives in script state; the clock frame renders no controls for it.
+        let displayWindowStart = "08:00";
+        let displayWindowEnd = "20:00";
         let clockOverlayMode = IS_ACTION_POPUP ? "mini" : "full";
         let calendarBaseDate = null;
         let clockCalendarTimeZone = "";

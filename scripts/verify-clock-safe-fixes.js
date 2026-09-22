@@ -234,8 +234,7 @@ assert.strictEqual(Object.keys(sessionTabStateValues).length, 0);
 const clock = loadFunctions("src/clock/scripts/calendar-bridge.js", [
   "normalizeCalendarEvents",
   "getClockCalendarEventStartTimestamp",
-  "compareClockCalendarEventsChronologically",
-  "getClockCalendarSourceLabel"
+  "compareClockCalendarEventsChronologically"
 ], {
   Date,
   Number,
@@ -247,11 +246,6 @@ const clock = loadFunctions("src/clock/scripts/calendar-bridge.js", [
   }
 });
 assert.ok(clock.api.compareClockCalendarEventsChronologically(lateToday, earlyTomorrow) < 0);
-assert.strictEqual(
-  clock.api.getClockCalendarSourceLabel({ effectiveSource: { activeSource: "google-page-owned" } }),
-  "Google Calendar structured data"
-);
-assert.strictEqual(clock.api.getClockCalendarSourceLabel(null), "Google Calendar DOM");
 const normalizedClockTask = clock.api.normalizeCalendarEvents([{
   id: "dom-task",
   title: "DOM task",
@@ -303,8 +297,8 @@ const clockWindowRange = loadFunctions("src/clock/scripts/time-window.js", [
   use24HourRadial: false,
   displayWindowDateRangeOverride: null,
   displayWindowDurationOverride: null,
-  displayWindowStartEl: { value: "08:00" },
-  displayWindowEndEl: { value: "08:00" },
+  displayWindowStart: "08:00",
+  displayWindowEnd: "08:00",
   getCalendarBaseDate: () => new Date(Date.UTC(2026, 6, 21)),
   getClockZonedParts: date => ({
     year: date.getUTCFullYear(),
@@ -855,19 +849,18 @@ assert.doesNotMatch(backgroundSource, /chrome\.action\.onClicked/);
 assert.doesNotMatch(calendarContentEntrySource, /CALENDAR_CLOCK_TOGGLE_OVERLAY/);
 assert.doesNotMatch(clockAppInitSource, /IS_ACTION_POPUP\)\s*use24HourRadial\s*=\s*true/);
 assert.doesNotMatch(clockBridgeSource, /IS_ACTION_POPUP\s*\?\s*true/);
-assert.match(clockTimeWindowSource, /!IS_EMBEDDED \|\| IS_ACTION_POPUP \|\| window\.parent === window/);
-assert.match(clockBridgeSource, /displayWindowStartEl\.value\s*=\s*state\.windowStart/);
-assert.match(clockBridgeSource, /displayWindowEndEl\.value\s*=\s*state\.windowEnd/);
+assert.match(clockTimeWindowSource, /IS_ACTION_POPUP \|\| window\.parent === window/);
+assert.match(clockBridgeSource, /displayWindowStart\s*=\s*state\.windowStart/);
+assert.match(clockBridgeSource, /displayWindowEnd\s*=\s*state\.windowEnd/);
 assert.match(clockBridgeSource, /if \(chromeApi\?\.storage\?\.onChanged\)/);
 assert.match(clockBridgeSource, /IS_ACTION_POPUP \|\| nextOverlayState\?\.perTabState !== true/);
 assert.match(clockBridgeSource, /const sourceChange = changes\[CALENDAR_CLOCK_PROVIDER\.sourceStorageKey\][\s\S]*else if \(sourceChange\) \{\s*loadStoredCalendarEvents\(\)/);
-assert.match(clockBridgeSource, /CALENDAR_CLOCK_HARD_REFRESH_FALLBACK_MS[\s\S]*hardReset && response\.ok === true[\s\S]*setTimeout[\s\S]*loadStoredCalendarEvents\(\)/);
 assert.match(clockBridgeSource, /data\.type === "CALENDAR_CLOCK_CLEAR_EVENTS"[\s\S]*applyCalendarEvents\(\[\], null\)/);
 assert.match(clockBridgeSource, /data\.type === "CALENDAR_CLOCK_RELOAD_EVENTS"[\s\S]*loadStoredCalendarEvents\(\)/);
 assert.match(clockBridgeSource, /function applyCalendarEvents[\s\S]*hideRenderedCalendarEventVisuals\(\)[\s\S]*buildClock\(\)/);
-assert.match(clockBridgeSource, /chromeApi\.runtime\.sendMessage\(\{[\s\S]*type: "CALENDAR_CLOCK_HARD_REFRESH_EVENTS"[\s\S]*tabId: tab\.id/);
-assert.match(clockBridgeSource, /chromeApi\.tabs\.sendMessage\(tab\.id, \{[\s\S]*type: "CALENDAR_CLOCK_COLLECT_EVENTS"/);
-assert.match(clockBridgeSource, /refreshCalendarButtonEl\.addEventListener\("click", \(\) => \{[\s\S]*hardReset: true/);
+// Hard refresh is owned by the overlay toolbar; the clock frame only consumes stored events.
+assert.doesNotMatch(clockBridgeSource, /CALENDAR_CLOCK_HARD_REFRESH_EVENTS/);
+assert.match(overlaySource, /function hardRefreshCalendarClockEventsFromToolbar[\s\S]*type: "CALENDAR_CLOCK_HARD_REFRESH_EVENTS"/);
 assert.doesNotMatch(clockBridgeSource, /applyCalendarEvents\(response\.events/);
 assert.match(backgroundSource, /function clearCalendarClockStoredEvents[\s\S]*storage\.local\.remove\(CALENDAR_CLOCK_EVENT_STORAGE_KEYS/);
 assert.match(backgroundSource, /response\.ok && reloadTabId !== null[\s\S]*tabs\.reload/);

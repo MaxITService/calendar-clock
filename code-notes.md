@@ -31,11 +31,11 @@
 | `src/action-popup/action-popup.html` | Toolbar popup shell for the stored Calendar Clock snapshot preview. |
 | `src/action-popup/action-popup.css` | Toolbar popup styling for the mini clock, stale warning, metadata, and item list. |
 | `src/action-popup/action-popup.js` | Reads stored Calendar and Tasks snapshot data for the toolbar popup. |
-| `src/clock/popup.html` | Clock overlay document linking styles, scripts, controls, and event list markup. |
+| `src/clock/popup.html` | Clock overlay document linking the clock stage, magnifier, and page scripts. |
 | `src/clock/scripts/app-init.js` | Starts the clock app by wiring initialization, rendering, and timers. |
 | `src/clock/scripts/app-state.js` | Shared runtime state and DOM references for the clock page. |
 | `src/clock/scripts/calendar-bridge.js` | Connects the clock UI to provider storage and trusted page-local event/window messages. |
-| `src/clock/scripts/clock-controls.js` | Handles clock view buttons, lens controls, and user-triggered UI actions. |
+| `src/clock/scripts/clock-controls.js` | Applies the default lens size and handles lens drag-to-dismiss. |
 | `src/clock/scripts/clock-renderer.js` | Renders calendar event arcs and active time indicators on the clock. |
 | `src/clock/scripts/event-tooltip.js` | Shows, positions, and hides tooltips for hovered event arcs. |
 | `src/clock/scripts/face-registry.js` | Dynamically loads clock face modules and falls back to the built-in analog face. |
@@ -82,7 +82,7 @@
 | `src/clock/faces/opal-tide/opal-tide-face.css` | Pale opal, teal, brass, and coral styling for the Opal Tide face. |
 | `src/clock/faces/opal-tide/opal-tide-face.js` | Registers the Opal Tide clock face module and arc render tuning. |
 | `src/clock/styles/base.css` | Base page layout, tokens, reset, and clock app foundation styles. |
-| `src/clock/styles/controls.css` | Styling for overlay buttons, sliders, time controls, and event panels. |
+| `src/clock/styles/controls.css` | Styling for the clock frame timezone indicator. |
 | `src/clock/styles/event-tooltip.css` | Tooltip appearance for clock event arc hover details. |
 | `src/clock/styles/magnifier.css` | Magnifier lens, glass layers, shine, and motion-related presentation styles. |
 | `src/clock/scripts/event-label-layout-registry.js` | Loads optional event-label layouts and keeps missing layout folders non-fatal. |

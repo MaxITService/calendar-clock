@@ -30,18 +30,6 @@ Privacy: see [Privacy Policy](Privacy%20Policy.md).
 
 This repo contains a Manifest V3 Chrome extension.
 
-## Built with Codex and GPT-5.6
-
-Calendar Clock was built during OpenAI Build Week with Codex and GPT-5.6, primarily using the Sol model across a variety of reasoning levels.
-
-- Codex turned an initial single-page HTML clock prototype into a modular Manifest V3 extension and helped separate the overlay, background service, event pipeline, clock faces, reminders, and time projection into focused components.
-- A dedicated Chrome for Testing profile and Browser Harness let Codex inspect live Google and Outlook calendar pages, structured data, fallback DOM, and visible results.
-- Codex created regression checks for time-window projection, overlapping and overnight events, deleted and cached events, refresh behavior, stable event colors, privacy-safe diagnostics, and reminder storage and playback.
-- GPT-5.6 helped reason through Calendar's changing data and DOM behavior, event-lane layout, cross-week caching, and the modular architecture. Key decisions included keeping captured data local, preferring structured page-owned data with a resilient DOM fallback, and making clock-face modules independently removable.
-
-The toolbar popup switches between separate Google and Outlook snapshots. On both sites, Calendar Clock prefers structured calendar data already loaded by the page and falls back to visible event chips when necessary. Snapshots stay in `chrome.storage.local`; the clock turns their event ranges into arcs.
-
-After the calendar overlay appears, use its floating panel to open full or mini view, hide the clock, refresh events, open debug, and choose the displayed time span.
 
 ## Key features
 

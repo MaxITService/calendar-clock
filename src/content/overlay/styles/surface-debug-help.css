@@ -282,29 +282,49 @@
       background: transparent;
     }
 
+    /* Hover chip for event arcs; follows the menu light/dark theme. */
     #calendar-clock-root .cc-arc-tooltip {
+      --tip-bg: rgba(255, 253, 248, .97);
+      --tip-ink: rgba(38, 32, 26, .94);
+      --tip-ink-soft: rgba(38, 32, 26, .58);
+      --tip-ink-status: rgba(38, 32, 26, .8);
+      --tip-border: rgba(38, 32, 26, .14);
+      --tip-track: rgba(38, 32, 26, .08);
+      --tip-shadow: 0 8px 22px rgba(60, 40, 20, .18);
       position: fixed;
       left: 0;
       top: 0;
       z-index: 2147483647;
       box-sizing: border-box;
-      width: min(380px, calc(100vw - 28px));
-      max-width: calc(100vw - 28px);
-      padding: 18px 22px;
-      border: 1px solid rgba(110, 85, 61, .26);
-      border-left: 5px solid var(--cc-arc-tooltip-color, #b88d5a);
-      border-radius: 16px;
-      background: rgba(248, 246, 241, .96);
-      color: rgba(35, 28, 20, .96);
-      box-shadow: 0 14px 36px rgba(0, 0, 0, .22);
-      font-family: "Century Gothic", sans-serif;
-      font-size: 26px;
+      width: max-content;
+      min-width: 200px;
+      max-width: min(320px, calc(100vw - 28px));
+      padding: 10px 14px 12px;
+      overflow: hidden;
+      border: 1px solid var(--tip-border);
+      border-radius: 8px;
+      background: var(--tip-bg);
+      color: var(--tip-ink);
+      box-shadow: var(--tip-shadow);
+      font-family: "Segoe UI", system-ui, sans-serif;
+      font-size: 15px;
+      line-height: 1.3;
       opacity: 0;
       visibility: hidden;
       pointer-events: none;
       overflow-wrap: anywhere;
       transform: translate(14px, 14px) scale(.98);
       transition: opacity .14s ease, transform .14s ease, visibility .14s ease;
+    }
+
+    #calendar-clock-root.cc-menu-theme-dark .cc-arc-tooltip {
+      --tip-bg: rgba(34, 29, 24, .94);
+      --tip-ink: rgba(243, 238, 230, .96);
+      --tip-ink-soft: rgba(243, 238, 230, .6);
+      --tip-ink-status: rgba(243, 238, 230, .85);
+      --tip-border: rgba(255, 255, 255, .06);
+      --tip-track: rgba(255, 255, 255, .08);
+      --tip-shadow: 0 8px 22px rgba(0, 0, 0, .28);
     }
 
     #calendar-clock-root .cc-arc-tooltip.is-visible {
@@ -318,8 +338,7 @@
       display: flex;
       align-items: center;
       gap: 7px;
-      margin-bottom: 6px;
-      font-weight: 700;
+      font-weight: 600;
     }
 
     #calendar-clock-root .cc-arc-tooltip-title span:last-child {
@@ -328,47 +347,41 @@
 
     #calendar-clock-root .cc-arc-tooltip-dot {
       flex: 0 0 auto;
-      width: 10px;
-      height: 10px;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
       background: var(--cc-arc-tooltip-color, #b88d5a);
     }
 
-    #calendar-clock-root .cc-arc-tooltip-range {
-      margin-bottom: 7px;
-      color: rgba(70, 51, 32, .78);
-      font-size: 12px;
+    #calendar-clock-root .cc-arc-tooltip-meta {
+      margin-top: 3px;
+      color: var(--tip-ink-soft);
+      font-size: 12.5px;
+      font-variant-numeric: tabular-nums;
     }
 
-    #calendar-clock-root .cc-arc-tooltip-calendar {
-      margin: -2px 0 6px;
-      color: rgba(70, 51, 32, .72);
-      font-size: 13px;
+    #calendar-clock-root .cc-arc-tooltip-status {
+      margin-top: 7px;
+      color: var(--tip-ink-status);
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: .12em;
+      text-transform: uppercase;
     }
 
-    #calendar-clock-root .cc-arc-tooltip-row {
-      display: flex;
-      justify-content: space-between;
-      gap: 14px;
-      margin-top: 4px;
-    }
-
-    #calendar-clock-root .cc-arc-tooltip-muted {
-      color: rgba(70, 51, 32, .68);
-    }
-
+    /* Progress runs along the bottom edge of the chip. */
     #calendar-clock-root .cc-arc-tooltip-progress {
-      height: 7px;
-      margin-top: 8px;
-      overflow: hidden;
-      border-radius: 999px;
-      background: rgba(110, 85, 61, .16);
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 3px;
+      background: var(--tip-track);
     }
 
     #calendar-clock-root .cc-arc-tooltip-progress span {
       display: block;
       height: 100%;
-      border-radius: inherit;
       background: var(--cc-arc-tooltip-color, #b88d5a);
     }
 

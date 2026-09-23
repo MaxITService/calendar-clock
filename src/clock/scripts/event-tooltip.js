@@ -1,49 +1,33 @@
 // Manages hover/click tooltips for event arcs and tells the Google Calendar overlay which event to highlight.
-function updateArcTooltipContent(index) {
-            const event = calendarEvents[index];
-            if (!event) return;
+function getArcTooltipMeta(event) {
+            if (isAllDayCalendarEvent(event) || isPointCalendarEvent(event)) return getCalendarEventTimeLabel(event);
+            return `${event.start}–${event.end} · ${formatDuration(getCalendarEventDurationMinutes(event))}`;
+        }
 
-            const info = getRangeProgressInfo(event);
-            const rangeName = String(event.title || "").trim() || "(No title)";
+        function getArcTooltipStatus(info) {
+            if (info.isPoint) return "";
+            if (!info.valid) return "Invalid time range";
+            if (info.isActive) return `Now · ${formatDuration(info.remaining)} left`;
+            if (info.startsIn !== null && info.startsIn !== undefined) return `In ${formatDuration(info.startsIn)}`;
+            if (info.endedAgo !== null && info.endedAgo !== undefined) return `Ended ${formatDuration(info.endedAgo)} ago`;
+            return "";
+        }
 
-            arcTooltipEl.style.setProperty("--arc-tooltip-color", event.color);
+        function updateArcTooltipContent(index) {
+            const details = getArcTooltipDetails(index);
+            if (!details) return;
 
-            let content = `
+            arcTooltipEl.style.setProperty("--arc-tooltip-color", details.color);
+            arcTooltipEl.innerHTML = `
                 <div class="arc-tooltip-title">
                     <span class="arc-tooltip-dot"></span>
-                    <span>${escapeHtml(rangeName)}</span>
+                    <span>${escapeHtml(details.title)}</span>
                 </div>
-                ${event.calendarName ? `<div class="arc-tooltip-calendar">${escapeHtml(event.calendarName)}</div>` : ""}
-                <div class="arc-tooltip-range">${escapeHtml(getCalendarEventTimeLabel(event))}</div>
+                <div class="arc-tooltip-meta">${escapeHtml(details.meta)}</div>
+                ${details.calendarName ? `<div class="arc-tooltip-meta">${escapeHtml(details.calendarName)}</div>` : ""}
+                ${details.status ? `<div class="arc-tooltip-status">${escapeHtml(details.status)}</div>` : ""}
+                ${details.state === "active" ? `<div class="arc-tooltip-progress"><span style="width: ${details.completion}%"></span></div>` : ""}
             `;
-
-            if (info.isPoint) {
-                content += `<div class="arc-tooltip-muted">Time point</div>`;
-            } else if (!info.valid) {
-                content += `<div class="arc-tooltip-muted">Invalid time range</div>`;
-            } else if (!info.isActive) {
-                content += `<div class="arc-tooltip-muted">Not active now</div>`;
-            } else {
-                content += `
-                    <div class="arc-tooltip-row">
-                        <span>Time used</span>
-                        <strong>${formatDuration(info.used)}</strong>
-                    </div>
-                    <div class="arc-tooltip-row">
-                        <span>Time to end</span>
-                        <strong>${formatDuration(info.remaining)}</strong>
-                    </div>
-                    <div class="arc-tooltip-row">
-                        <span>Completion</span>
-                        <strong>${info.completion.toFixed(1)}%</strong>
-                    </div>
-                    <div class="arc-tooltip-progress">
-                        <span style="width: ${info.completion}%"></span>
-                    </div>
-                `;
-            }
-
-            arcTooltipEl.innerHTML = content;
         }
 
         function getArcTooltipDetails(index) {
@@ -51,19 +35,15 @@ function updateArcTooltipContent(index) {
             if (!event) return null;
 
             const info = getRangeProgressInfo(event);
-            const details = {
+            return {
                 title: String(event.title || "").trim() || "(No title)",
                 calendarName: String(event.calendarName || ""),
-                timeLabel: getCalendarEventTimeLabel(event),
+                meta: getArcTooltipMeta(event),
+                status: getArcTooltipStatus(info),
                 color: String(event.color || ""),
-                state: info.isPoint ? "point" : !info.valid ? "invalid" : !info.isActive ? "inactive" : "active"
+                state: info.isPoint ? "point" : !info.valid ? "invalid" : !info.isActive ? "inactive" : "active",
+                completion: info.isActive ? Math.min(100, Math.max(0, Number(info.completion) || 0)) : 0
             };
-            if (details.state === "active") {
-                details.used = formatDuration(info.used);
-                details.remaining = formatDuration(info.remaining);
-                details.completion = Math.min(100, Math.max(0, Number(info.completion) || 0));
-            }
-            return details;
         }
 
         function usesParentArcTooltip() {

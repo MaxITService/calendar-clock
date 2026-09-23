@@ -745,21 +745,21 @@ assert.deepStrictEqual(
   JSON.parse(JSON.stringify(tooltipPayload.api.normalizeCalendarClockArcTooltipPayload({
     title: "<img src=x onerror=alert(1)>",
     calendarName: "Work",
-    timeLabel: "09:00 – 10:00",
+    meta: "09:00 – 10:00 · 1h",
+    status: "Now · 30m left",
     color: "rgb(20, 30, 40)",
     state: "active",
-    used: "30m",
+    timeLabel: "09:00 – 10:00",
     remaining: "30m",
     completion: 50
   }))),
   {
     title: "<img src=x onerror=alert(1)>",
     calendarName: "Work",
-    timeLabel: "09:00 – 10:00",
+    meta: "09:00 – 10:00 · 1h",
+    status: "Now · 30m left",
     color: "rgb(20, 30, 40)",
     state: "active",
-    used: "30m",
-    remaining: "30m",
     completion: 50
   }
 );

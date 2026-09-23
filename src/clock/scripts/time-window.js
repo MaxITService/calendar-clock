@@ -379,6 +379,8 @@ function parseTimeToDayMinutes(value) {
                     used: Math.max(0, used),
                     remaining,
                     completion,
+                    startsIn: nowMs < startMs ? (startMs - nowMs) / (60 * 1000) : null,
+                    endedAgo: nowMs > endMs ? (nowMs - endMs) / (60 * 1000) : null,
                 };
             }
 
@@ -400,6 +402,10 @@ function parseTimeToDayMinutes(value) {
             const isActive = used <= duration;
             const remaining = Math.max(0, duration - used);
             const completion = Math.min(100, Math.max(0, used / duration * 100));
+            // Undated ranges repeat daily: report whichever of "ended" / "starts" is nearer.
+            const endedAgo = isActive ? null : used - duration;
+            const startsIn = isActive ? null : 24 * 60 - used;
+            const endedIsNearer = endedAgo !== null && endedAgo < startsIn;
 
             return {
                 valid: true,
@@ -407,5 +413,7 @@ function parseTimeToDayMinutes(value) {
                 used,
                 remaining,
                 completion,
+                startsIn: endedIsNearer ? null : startsIn,
+                endedAgo: endedIsNearer ? endedAgo : null,
             };
         }

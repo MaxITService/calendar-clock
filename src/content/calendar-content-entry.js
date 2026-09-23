@@ -244,11 +244,10 @@ function normalizeCalendarClockArcTooltipPayload(value) {
   return {
     title: normalizeCalendarClockTooltipText(value.title).trim() || "(No title)",
     calendarName: normalizeCalendarClockTooltipText(value.calendarName, 256),
-    timeLabel: normalizeCalendarClockTooltipText(value.timeLabel, 120),
+    meta: normalizeCalendarClockTooltipText(value.meta, 120),
+    status: normalizeCalendarClockTooltipText(value.status, 120),
     color: normalizeCalendarClockTooltipColor(value.color),
     state,
-    used: normalizeCalendarClockTooltipText(value.used, 80),
-    remaining: normalizeCalendarClockTooltipText(value.remaining, 80),
     completion
   };
 }
@@ -258,16 +257,6 @@ function createCalendarClockArcTooltipText(className, text, tagName = "div") {
   element.className = className;
   element.textContent = text;
   return element;
-}
-
-function createCalendarClockArcTooltipRow(label, value) {
-  const row = document.createElement("div");
-  row.className = "cc-arc-tooltip-row";
-  row.append(
-    createCalendarClockArcTooltipText("", label, "span"),
-    createCalendarClockArcTooltipText("", value, "strong")
-  );
-  return row;
 }
 
 function renderCalendarClockArcTooltip(payload) {
@@ -282,24 +271,14 @@ function renderCalendarClockArcTooltip(payload) {
     createCalendarClockArcTooltipText("", details.title, "span")
   );
 
-  const content = [title];
+  const content = [title, createCalendarClockArcTooltipText("cc-arc-tooltip-meta", details.meta)];
   if (details.calendarName) {
-    content.push(createCalendarClockArcTooltipText("cc-arc-tooltip-calendar", details.calendarName));
+    content.push(createCalendarClockArcTooltipText("cc-arc-tooltip-meta", details.calendarName));
   }
-  content.push(createCalendarClockArcTooltipText("cc-arc-tooltip-range", details.timeLabel));
-
-  if (details.state === "point") {
-    content.push(createCalendarClockArcTooltipText("cc-arc-tooltip-muted", "Time point"));
-  } else if (details.state === "invalid") {
-    content.push(createCalendarClockArcTooltipText("cc-arc-tooltip-muted", "Invalid time range"));
-  } else if (details.state === "inactive") {
-    content.push(createCalendarClockArcTooltipText("cc-arc-tooltip-muted", "Not active now"));
-  } else {
-    content.push(
-      createCalendarClockArcTooltipRow("Time used", details.used),
-      createCalendarClockArcTooltipRow("Time to end", details.remaining),
-      createCalendarClockArcTooltipRow("Completion", `${details.completion.toFixed(1)}%`)
-    );
+  if (details.status) {
+    content.push(createCalendarClockArcTooltipText("cc-arc-tooltip-status", details.status));
+  }
+  if (details.state === "active") {
     const progress = document.createElement("div");
     progress.className = "cc-arc-tooltip-progress";
     const progressValue = document.createElement("span");

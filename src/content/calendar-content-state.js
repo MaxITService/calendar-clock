@@ -140,7 +140,7 @@ const CALENDAR_CLOCK_PANEL_DEFAULT = {
   pageOwnedInfo: true,
   captureLimit: CALENDAR_CLOCK_CAPTURE_LIMIT,
   densityLevel: 50,
-  arcThicknessLevel: 50,
+  arcThicknessLevel: 60,
   arcGapLevel: 0,
   arcSameLevelNonOverlapping: false,
   longDurationArcsVisible: true,

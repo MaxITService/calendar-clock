@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Calendar Clock",
   "description": "Shows visible Google or Outlook Calendar events as dynamic arches on a liquid glass clock.",
-  "version": "0.1.22",
+  "version": "0.1.23",
   "action": {
     "default_title": "Calendar Clock",
     "default_popup": "src/action-popup/action-popup.html",

@@ -1,6 +1,5 @@
 # Local platform instructions
 - At the start of work, read `.agents/.untracked/agents-platform.md` if it exists and follow it together with this file. It contains machine- and platform-specific instructions and is intentionally untracked.
-# CRITICAL: DO NOT USE REMOTE !! NO PUSHING!!!
 
 # Testing Instructions
 - code editing tasks do not require  browser testing.  

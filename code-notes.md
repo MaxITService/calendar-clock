@@ -122,4 +122,4 @@
 | `src/content/overlay/template-loader.js` | Loads packaged overlay HTML templates for content-script rendering. |
 | `src/content/overlay/styles/*.css` | Focused CSS chunks joined by the overlay style injector. |
 | `src/content/overlay/templates/*.html` | Static HTML templates used by the calendar overlay UI. |
-| `Документация/Руководство пользователя.md` | Russian user guide for installing and using the Calendar Clock extension. |
+| `Documentation/User Guide.md` | English user guide for using the Calendar Clock extension. |

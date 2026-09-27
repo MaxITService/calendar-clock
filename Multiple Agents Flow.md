@@ -24,7 +24,7 @@ This workflow coordinates three agents communicating via the `messages.md` file.
 ### User Commands
 
 - `MV` means "move": read `Multiple Agents Flow.md` and `messages.md`, check messages addressed to your tag/name and active task updates, then respond with a timestamped status/action message. If nothing is actionable, say that briefly.
-- `Запиши` means the user is assigning the addressed/current agent to write changes for a named task. Treat that agent as Writer unless the user says otherwise.
+- `Write` means the user is assigning the addressed/current agent to write changes for a named task. Treat that agent as Writer unless the user says otherwise.
 - `clean` means force a `messages.md` cleanup attempt. Remove obsolete completed-task chatter, stale addressed messages, and old protocol notes when they are no longer useful. Preserve the header, active tasks, unresolved feedback, latest coordination closures, latest change notes, and active agent names. If cleanup risk is unclear, ask the user what to remove.
 - Commands wake only the agent/thread where the user sends them. If another agent must react, ask the user to send that command to that agent too.
 

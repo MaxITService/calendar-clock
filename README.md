@@ -1,5 +1,7 @@
 # Calendar Clock Chrome Extension
 
+[![Install from Chrome Web Store](https://img.shields.io/badge/Chrome_Web_Store-Install-4285F4?style=flat-square&logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/calendar-clock/ofhinlhleecncknbdfokadanpbfdhlhn)
+[![Chrome Web Store Version](https://img.shields.io/chrome-web-store/v/ofhinlhleecncknbdfokadanpbfdhlhn?style=flat-square&logo=google-chrome&logoColor=white&label=version)](https://chromewebstore.google.com/detail/calendar-clock/ofhinlhleecncknbdfokadanpbfdhlhn)
 [![Hits](https://hits.sh/github.com/MaxITService/calendar-clock.svg?style=flat)](https://hits.sh/github.com/MaxITService/calendar-clock/)
 
 ![Calendar Clock demo](Promo/Gif%20Demo.gif)
@@ -17,14 +19,28 @@
 
 ![Calendar Clock displayed over Google Calendar](Promo/How_Clock_Looks.png)
 
-> **Chrome Web Store status:** Calendar Clock is currently awaiting review. Until the store listing is approved, you can install the extension manually:
->
-> 1. Download or clone this repository.
-> 2. Open `chrome://extensions` in Google Chrome.
-> 3. Enable **Developer mode** in the top-right corner.
-> 4. Click **Load unpacked**.
-> 5. Select the downloaded `calendar-clock` folder.
-> 6. Open or refresh [Google Calendar](https://calendar.google.com/) or [Outlook Calendar](https://outlook.live.com/calendar/view/workweek). Pin the extension and click its icon to open the snapshot popup. Enable site access if needed.
+## Installation
+
+<p align="center">
+  <a href="https://chromewebstore.google.com/detail/calendar-clock/ofhinlhleecncknbdfokadanpbfdhlhn">
+    <img src="Promo/chrome-web-store-badge.png" alt="Available in the Chrome Web Store" height="58">
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://chromewebstore.google.com/detail/calendar-clock/ofhinlhleecncknbdfokadanpbfdhlhn">
+    <strong>Install from Chrome Web Store</strong>
+  </a>
+</p>
+
+### Manual installation (Developer mode)
+
+1. Download or clone this repository.
+2. Open `chrome://extensions` in Google Chrome.
+3. Enable **Developer mode** in the top-right corner.
+4. Click **Load unpacked**.
+5. Select the downloaded `calendar-clock` folder.
+6. Open or refresh [Google Calendar](https://calendar.google.com/) or [Outlook Calendar](https://outlook.live.com/calendar/view/workweek). Pin the extension and click its icon to open the snapshot popup. Enable site access if needed.
 
 Privacy: see [Privacy Policy](Privacy%20Policy.md).
 

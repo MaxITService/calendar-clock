@@ -682,6 +682,13 @@ function cleanTitle(text, range) {
   return title;
 }
 
+function readCalendarClockDomTitle(node, rawText, range) {
+  // Google all-day chips repeat their title in a screen-reader description.
+  const visibleTitle = node.querySelector("[aria-hidden='true'] .WBi6vc");
+  const title = String(visibleTitle?.textContent || "").trim();
+  return title || cleanTitle(rawText, range);
+}
+
 function cleanCalendarName(value) {
   const name = String(value || "")
     .replace(/^calendar\s*:\s*/i, "")
@@ -873,7 +880,7 @@ function extractCalendarEvents() {
     const datedRange = buildDatedEventRange(range, rawText, eventNode);
     const dateKey = datedRange.date
       || (datedRange.dateParseStatus === "failed" ? `unparsed:${hashString(datedRange.dateParseContext || rawText)}` : "floating");
-    const title = String(providerEvent?.title || cleanTitle(rawText, range)).trim().slice(0, 90) || "(No title)";
+    const title = String(providerEvent?.title || readCalendarClockDomTitle(eventNode, rawText, range)).trim().slice(0, 90) || "(No title)";
     const fallbackKey = `${dateKey}|${range.start}|${range.end}|${title}`;
     const stableId = providerEvent?.stableId
       || eventNode.getAttribute("data-eventid")

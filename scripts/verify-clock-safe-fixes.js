@@ -328,6 +328,27 @@ assert.strictEqual(
   "2026-07-21T20:00:00.000Z"
 );
 
+const domTitleReader = loadFunctions("src/content/calendar-dom-reader.js", [
+  "readCalendarClockDomTitle", "cleanTitle", "extractPrimaryCalendarTitle",
+  "stripCalendarTimesFromTitle", "isCalendarTitleMetadata"
+], {
+  findExplicitCalendarEventDate: () => null,
+  parseTimeRange: () => null,
+  parseSingleTime: () => null
+});
+const untimedTaskTitle = "Task that does not have a time";
+const untimedTaskRaw = untimedTaskTitle + "task: " + untimedTaskTitle
+  + ", Not completed, 12 October 2026, All day";
+assert.strictEqual(domTitleReader.api.readCalendarClockDomTitle({
+  querySelector: () => ({ textContent: untimedTaskTitle })
+}, untimedTaskRaw), untimedTaskTitle);
+const repeatedTaskTitle = "Review, review";
+assert.strictEqual(domTitleReader.api.readCalendarClockDomTitle({
+  querySelector: () => ({ textContent: repeatedTaskTitle })
+}, repeatedTaskTitle + "task: " + repeatedTaskTitle + ", Not completed, All day"), repeatedTaskTitle);
+assert.strictEqual(domTitleReader.api.readCalendarClockDomTitle({
+  querySelector: () => null
+}, "10:00 to 11:00, Design review, Calendar: Work"), "Design review");
 const domDraftFilter = loadFunctions("src/content/calendar-dom-reader.js", [
   "shouldIgnoreCalendarClockDomEventNode"
 ]);

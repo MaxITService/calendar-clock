@@ -10,6 +10,7 @@ Calendar Clock works on the visible Google Calendar page, not through the Google
 - Stable-ID replacements and explicit tombstones are date-independent. Missing-event purge requires a trusted `dated-url` or `visible-dom` capture scope; title and today fallbacks only guide display.
 - The clock display is normally anchored to today/real now. [[Day Preview]] temporarily anchors the same wall-clock window to another civil date; windows that cross midnight can include either adjacent date.
 - Day and week views are the best test views because event chips expose time labels.
+- All-day chips repeat titles in screen-reader text; read their visible [aria-hidden='true'] .WBi6vc title separately from date/time metadata.
 - Parsed events are saved to `chrome.storage.local` as `calendarClockEvents`.
 - The Tasks side panel is a `tasks.google.com` iframe, so timed tasks are collected by a separate iframe content script and merged with Calendar events.
 - The extension overlay iframe reads those stored events and draws them as arcs.

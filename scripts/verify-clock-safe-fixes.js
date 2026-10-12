@@ -50,6 +50,7 @@ const calendarClockMessageContract = new Set([
   "CALENDAR_CLOCK_EVENT_TOOLTIP_ENTER",
   "CALENDAR_CLOCK_EVENT_TOOLTIP_LEAVE",
   "CALENDAR_CLOCK_FACE_AVAILABILITY",
+  "CALENDAR_CLOCK_FRAME_READY",
   "CALENDAR_CLOCK_HARD_REFRESH_EVENTS",
   "CALENDAR_CLOCK_HIDE_EVENT_TOOLTIP",
   "CALENDAR_CLOCK_HIGHLIGHT_EVENT",
@@ -820,6 +821,103 @@ const actionPopupHtmlSource = read("src/action-popup/action-popup.html");
 const clockTimeWindowSource = read("src/clock/scripts/time-window.js");
 const clockPopupHtmlSource = read("src/clock/popup.html");
 const rootTemplateSource = read("src/content/overlay/templates/root.html");
+
+// An initial about:blank iframe belongs to Calendar until the clock announces readiness.
+const frameOrigin = "chrome-extension://calendar-clock-test";
+const frameMessages = [];
+const frameListeners = {};
+const frameWindow = {
+  postMessage(message, targetOrigin) { frameMessages.push({ message, targetOrigin }); }
+};
+class FrameTestUrl extends URL {
+  get origin() {
+    return this.protocol === "chrome-extension:" ? `${this.protocol}//${this.host}` : super.origin;
+  }
+}
+const frameMessaging = loadFunctions("src/content/overlay/overlay-menu.js", [
+  "getCalendarClockFrameTargetOrigin",
+  "postCalendarClockFrameMessage",
+  "syncClockFrame",
+  "sendToClockFrame"
+], {
+  URL: FrameTestUrl,
+  chrome: { runtime: { getURL: () => `${frameOrigin}/` } },
+  canUseCalendarClockExtensionApi: () => true,
+  calendarClockRoot: {},
+  calendarClockFrame: { contentWindow: frameWindow },
+  calendarClockFrameReady: false,
+  calendarClockPendingFrameRebuild: false,
+  calendarClockState: { mode: "full" },
+  window: { addEventListener(type, listener) { frameListeners[type] = listener; } },
+  calendarClockWarn() {},
+  getDisplayWindow: () => ({ start: 0, end: 720, duration: 720 }),
+  getWindowDateRange: () => ({ startDate: new Date("2026-10-12T00:00:00Z"), endDate: new Date("2026-10-12T12:00:00Z") }),
+  getWindowAnchorDate: () => new Date("2026-10-12T00:00:00Z"),
+  makeCalendarClockZonedDate: (year, month, day) => new Date(Date.UTC(year, month, day)),
+  formatClockMinutes: value => String(value),
+  getCalendarClockEventLabelFontSizeForMode: () => 22
+});
+vm.runInContext([
+  extractFunction(calendarContentEntrySource, "getCalendarClockExtensionOrigin"),
+  extractFunction(calendarContentEntrySource, "isTrustedCalendarClockFrameMessage")
+].join("\n"), frameMessaging.context);
+const frameMessageListenerStart = calendarContentEntrySource.indexOf('window.addEventListener("message", event => {');
+const frameMessageListenerEnd = calendarContentEntrySource.indexOf("chrome.runtime.onMessage", frameMessageListenerStart);
+assert.ok(frameMessageListenerStart >= 0 && frameMessageListenerEnd > frameMessageListenerStart);
+vm.runInContext(calendarContentEntrySource.slice(frameMessageListenerStart, frameMessageListenerEnd), frameMessaging.context);
+assert.strictEqual(frameMessaging.api.postCalendarClockFrameMessage({ type: "CALENDAR_CLOCK_EVENT_TOOLTIP_ENTER" }, frameOrigin), false);
+frameMessaging.api.sendToClockFrame({ type: "CALENDAR_CLOCK_EVENT_HOVER" });
+frameMessaging.api.syncClockFrame({ rebuild: true });
+frameMessaging.api.syncClockFrame();
+assert.strictEqual(frameMessages.length, 0);
+assert.strictEqual(frameMessaging.context.calendarClockPendingFrameRebuild, true);
+const readyMessage = { data: { type: "CALENDAR_CLOCK_FRAME_READY" }, source: frameWindow, origin: frameOrigin };
+frameListeners.message({ ...readyMessage, origin: "https://calendar.google.com" });
+frameListeners.message({ ...readyMessage, source: {} });
+frameListeners.message({ ...readyMessage, source: null });
+assert.strictEqual(frameMessaging.context.calendarClockFrameReady, false);
+assert.strictEqual(frameMessages.length, 0);
+frameListeners.message(readyMessage);
+assert.strictEqual(frameMessaging.context.calendarClockFrameReady, true);
+assert.strictEqual(frameMessaging.context.calendarClockPendingFrameRebuild, false);
+assert.strictEqual(frameMessages[0].message.type, "CALENDAR_CLOCK_SET_WINDOW");
+assert.strictEqual(frameMessages.at(-1).message.type, "CALENDAR_CLOCK_REBUILD");
+assert.ok(frameMessages.every(item => item.targetOrigin === frameOrigin));
+frameMessaging.api.syncClockFrame();
+assert.strictEqual(frameMessages.filter(item => item.message.type === "CALENDAR_CLOCK_REBUILD").length, 1);
+frameMessaging.api.sendToClockFrame({ type: "CALENDAR_CLOCK_EVENT_HOVER" });
+assert.strictEqual(frameMessages.at(-1).message.type, "CALENDAR_CLOCK_EVENT_HOVER");
+assert.strictEqual(frameMessaging.api.postCalendarClockFrameMessage({}, null), false);
+frameMessaging.context.calendarClockFrame = null;
+assert.strictEqual(frameMessaging.api.postCalendarClockFrameMessage({}, frameOrigin), false);
+// Native load events (including about:blank) must never mark the iframe ready.
+assert.doesNotMatch(extractFunction(overlaySource, "buildCalendarClockUi"), /calendarClockFrame\.addEventListener\("load"/);
+
+let clockReadyAnnounced = false;
+let clockBuiltForReady = false;
+const readyClock = loadFunctions("src/clock/scripts/app-init.js", ["startClockApp"], {
+  IS_DESIGN_MOCK: false,
+  load24HourRadialSetting() {},
+  loadDisplayWindowSettings() {},
+  updateClockTimeZoneIndicator() {},
+  applyDefaultLensSize() {},
+  buildClock() { clockBuiltForReady = true; },
+  loadStoredCalendarEvents() {},
+  syncClockAnimationForOverlayMode() {},
+  window: { addEventListener() {} },
+  postToCalendarPage(type) {
+    assert.strictEqual(clockBuiltForReady, true);
+    assert.strictEqual(type, "CALENDAR_CLOCK_FRAME_READY");
+    clockReadyAnnounced = true;
+  }
+});
+readyClock.api.startClockApp();
+assert.strictEqual(clockReadyAnnounced, true);
+clockReadyAnnounced = false;
+readyClock.context.IS_DESIGN_MOCK = true;
+readyClock.api.startClockApp();
+assert.strictEqual(clockReadyAnnounced, false);
+
 const miniDimension = loadFunctions("src/content/overlay/overlay-menu.js", [
   "clampMiniClockDimension"
 ], {

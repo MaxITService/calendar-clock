@@ -359,7 +359,13 @@ window.addEventListener("message", event => {
   const data = event.data;
   if (!data || typeof data !== "object") return;
 
-  if (data.type === "CALENDAR_CLOCK_SET_MODE") {
+  if (data.type === "CALENDAR_CLOCK_FRAME_READY") {
+    if (!isTrustedCalendarClockFrameMessage(event)) return;
+    calendarClockFrameReady = true;
+    const shouldRebuild = calendarClockPendingFrameRebuild;
+    calendarClockPendingFrameRebuild = false;
+    syncClockFrame({ rebuild: shouldRebuild });
+  } else if (data.type === "CALENDAR_CLOCK_SET_MODE") {
     if (!isTrustedCalendarClockFrameMessage(event)) return;
     setClockMode(data.mode);
   } else if (data.type === "CALENDAR_CLOCK_FACE_AVAILABILITY") {

@@ -45,6 +45,7 @@ function startClockApp() {
             buildClock();
             rebuildLensLiquidGlass();
         });
+        if (!IS_DESIGN_MOCK) postToCalendarPage("CALENDAR_CLOCK_FRAME_READY");
 }
 
 const clockVisualModulesReady = Promise.all([

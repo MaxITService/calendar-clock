@@ -244,6 +244,7 @@ async function ensureCalendarClockUi() {
     calendarClockRoot?.remove();
     calendarClockRoot = null;
     calendarClockFrame = null;
+    calendarClockFrameReady = false;
     calendarClockPanel = null;
     calendarClockTimePanel = null;
     calendarClockDebug = null;
@@ -269,24 +270,18 @@ async function buildCalendarClockUi() {
   const extensionVersion = calendarClockRoot.querySelector("[data-cc-extension-version]");
   if (extensionVersion) extensionVersion.textContent = `v${manifest.version}`;
 
-  document.documentElement.appendChild(calendarClockRoot);
   calendarClockFrame = requireCalendarClockElement(calendarClockRoot, "[data-cc-clock-frame]", "clock iframe");
   const frameUrl = new URL(chrome.runtime.getURL("src/clock/popup.html"));
   frameUrl.searchParams.set("embedded", "1");
   frameUrl.searchParams.set("provider", globalThis.getCalendarClockProvider?.()?.id || "google");
+  calendarClockFrameReady = false;
   calendarClockFrame.src = frameUrl.href;
   calendarClockPanel = calendarClockRoot.querySelector(".cc-panel-view");
   calendarClockTimePanel = calendarClockRoot.querySelector(".cc-panel-time");
   calendarClockDebug = calendarClockRoot.querySelector(".cc-debug");
   calendarClockHelp = calendarClockRoot.querySelector(".cc-help");
 
-  calendarClockFrameReady = false;
-  calendarClockFrame.addEventListener("load", () => {
-    calendarClockFrameReady = true;
-    const shouldRebuild = calendarClockPendingFrameRebuild;
-    calendarClockPendingFrameRebuild = false;
-    syncClockFrame({ rebuild: shouldRebuild });
-  });
+  document.documentElement.appendChild(calendarClockRoot);
   await loadCalendarClockWarningTemplates();
   await loadCalendarClockDebugTemplates();
   bindPanelControls();
@@ -2456,6 +2451,8 @@ function getCalendarClockFrameTargetOrigin() {
 }
 
 function postCalendarClockFrameMessage(message, targetOrigin) {
+  if (!targetOrigin || !calendarClockFrameReady || !calendarClockFrame?.contentWindow) return false;
+
   try {
     calendarClockFrame.contentWindow.postMessage(message, targetOrigin);
     return true;

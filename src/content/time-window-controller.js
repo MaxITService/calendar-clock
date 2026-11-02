@@ -1092,6 +1092,13 @@ function applyLoadedCalendarClockState(savedState = {}) {
   normalizeMiniClockPosition();
 }
 
+function getCalendarClockPersistedState() {
+  return {
+    ...calendarClockState,
+    timers: globalThis.calendarClockTimers?.snapshot?.() ?? calendarClockState.timers
+  };
+}
+
 function persistCalendarClockState(onComplete) {
   if (!canUseCalendarClockExtensionApi()) {
     onComplete?.(false);
@@ -1102,7 +1109,7 @@ function persistCalendarClockState(onComplete) {
     if (calendarClockState.perTabState) {
       chrome.runtime.sendMessage({
         type: "CALENDAR_CLOCK_SAVE_TAB_STATE",
-        state: { ...calendarClockState }
+        state: getCalendarClockPersistedState()
       }, response => {
         const runtimeError = getCalendarClockRuntimeLastError();
         if (runtimeError) {
@@ -1122,7 +1129,7 @@ function persistCalendarClockState(onComplete) {
       return;
     }
 
-    chrome.storage.local.set({ [CALENDAR_CLOCK_STATE_KEY]: { ...calendarClockState } }, () => {
+    chrome.storage.local.set({ [CALENDAR_CLOCK_STATE_KEY]: getCalendarClockPersistedState() }, () => {
       const runtimeError = getCalendarClockRuntimeLastError();
       if (runtimeError) {
         markCalendarClockExtensionContextInvalidated(runtimeError);
@@ -1176,7 +1183,7 @@ function setCalendarClockPerTabState(enabled) {
     chrome.runtime.sendMessage({
       type: "CALENDAR_CLOCK_SET_PER_TAB_STATE",
       enabled: nextEnabled,
-      state: { ...calendarClockState }
+      state: getCalendarClockPersistedState()
     }, response => {
       const runtimeError = getCalendarClockRuntimeLastError();
       if (runtimeError) {

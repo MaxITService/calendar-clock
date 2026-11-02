@@ -1,4 +1,4 @@
-// Timestamp-based timers keep accurate time while the page is hidden or throttled.
+// Live timers use timestamps; persisted snapshots are paused and exclude offline time.
 export function createTimer(id) {
   return { id, mode: "up", phase: "idle", initialMs: 0, valueMs: 0, startedAt: null };
 }
@@ -24,6 +24,17 @@ export function normalizeTimers(value) {
 export function timerValue(timer, now = Date.now()) {
   const elapsed = timer.phase === "running" ? Math.max(0, now - timer.startedAt) : 0;
   return Math.max(0, timer.valueMs + (timer.mode === "down" ? -elapsed : elapsed));
+}
+
+export function snapshotTimers(timers, now = Date.now()) {
+  return normalizeTimers(timers).map(timer => timer.phase === "running"
+    ? changeTimer(timer, timerFinished(timer, now) ? "stop" : "pause", now) : timer);
+}
+
+export function restoreTimers(timers) {
+  // Never apply a persisted running timestamp to time spent outside the app.
+  return normalizeTimers(timers).map(timer => timer.phase === "running"
+    ? { ...timer, phase: "paused", startedAt: null } : timer);
 }
 
 export function timerFinished(timer, now = Date.now()) {

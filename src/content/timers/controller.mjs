@@ -1,4 +1,4 @@
-import { createTimer, normalizeTimers, timerValue, timerFinished, formatTimerTime, parseTimerTime, changeTimer } from "./model.mjs";
+import { createTimer, normalizeTimers, timerValue, timerFinished, formatTimerTime, parseTimerTime, changeTimer, snapshotTimers, restoreTimers } from "./model.mjs";
 
 export async function install({ root, getState, saveState, onContextInvalidated }) {
   const document = root.ownerDocument;
@@ -60,6 +60,23 @@ export async function install({ root, getState, saveState, onContextInvalidated 
   let signature = "";
   let interval = null;
   let destroyed = false;
+  let lastSavedAt = Date.now();
+  getState().timers = restoreTimers(getState().timers);
+
+  function snapshot() {
+    return snapshotTimers(getState().timers);
+  }
+
+  function pauseTimers() {
+    if (!normalizeTimers(getState().timers).some(timer => timer.phase === "running")) return;
+    getState().timers = snapshot();
+    saveState();
+  }
+
+  function onPageHide() {
+    pauseTimers();
+    render();
+  }
 
   function commit(id, action, options) {
     getState().timers = normalizeTimers(getState().timers).map(timer => timer.id === id
@@ -145,6 +162,12 @@ export async function install({ root, getState, saveState, onContextInvalidated 
       row.play.disabled = timer.mode === "down" && timerValue(timer, now) === 0 && timer.initialMs === 0;
       row.stop.disabled = ["idle", "stopped"].includes(timer.phase) || finished;
     }
+    if (rows.some(row => row.timer.phase === "running")
+        && (now - lastSavedAt >= 1000 || rows.some(row => timerFinished(row.timer, now)))) {
+      lastSavedAt = now;
+      // A paused checkpoint also survives abrupt shutdowns where pagehide cannot run.
+      saveState();
+    }
     if (interval !== null && !rows.some(row => row.timer.phase === "running" && !timerFinished(row.timer, now))) {
       window.clearInterval(interval);
       interval = null;
@@ -160,6 +183,7 @@ export async function install({ root, getState, saveState, onContextInvalidated 
     panel.dataset.side = side.value;
     panel.hidden = !enabled.checked || state.mode !== "full";
     if (panel.hidden) {
+      pauseTimers();
       window.clearInterval(interval);
       interval = null;
       return;
@@ -193,13 +217,17 @@ export async function install({ root, getState, saveState, onContextInvalidated 
     render();
   });
   function destroy() {
+    if (destroyed) return;
     destroyed = true;
+    pauseTimers();
+    window.removeEventListener("pagehide", onPageHide);
     window.clearInterval(interval);
     panel.remove();
     settings.remove();
     style.remove();
   }
+  window.addEventListener("pagehide", onPageHide);
   onContextInvalidated(destroy);
   render();
-  return { update: render, destroy };
+  return { update: render, destroy, snapshot };
 }

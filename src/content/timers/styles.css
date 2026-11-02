@@ -34,8 +34,8 @@
 #calendar-clock-root .cc-timers-heading:focus-visible { outline: 2px solid #b88d5a; outline-offset: 3px; }
 #calendar-clock-root .cc-timer-heading strong { flex: 1; font-size: 12px; }
 #calendar-clock-root .cc-timer-list { display: grid; gap: 12px; }
-#calendar-clock-root .cc-timer-section + .cc-timer-section { margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(128, 110, 90, .25); }
-#calendar-clock-root .cc-timer-section-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 12px; }
+#calendar-clock-root .cc-timer-direction { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 11px; }
+#calendar-clock-root .cc-timer-direction select { flex: 1; min-width: 0; }
 #calendar-clock-root .cc-timer-card + .cc-timer-card { border-top: 1px solid rgba(128, 110, 90, .25); padding-top: 12px; }
 #calendar-clock-root .cc-timer-display {
   display: block;

@@ -3,7 +3,7 @@
 | File | Short description |
 | --- | --- |
 | `src/content/timers/drag.mjs` | Timer header dragging, saved coordinates, keyboard movement, and viewport bounds. |
-| `src/content/timers/controller.mjs` | Optional Full-mode stopwatch/countdown sections and settings; missing module leaves the overlay usable. |
+| `src/content/timers/controller.mjs` | Optional Full-mode timers with visible direction selectors and starting-time settings. |
 | `src/content/timers/model.mjs` | Count-up/countdown state and paused persistence snapshots that exclude offline time. |
 | `src/content/timers/styles.css` | Side panel, timer controls, and expandable settings. |
 | `scripts/verify-timers.mjs` | Verifies timer transitions, reload accuracy, panel controls, and optional-module wiring. |

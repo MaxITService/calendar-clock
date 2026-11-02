@@ -44,29 +44,18 @@ export async function install({ root, getState, saveState, onContextInvalidated 
   panel.setAttribute("aria-label", "Timers");
   const heading = element("div", "cc-timers-heading");
   const cards = element("div", "cc-timer-list");
-  const countdownCards = element("div", "cc-timer-list");
-  function addTimer(mode) {
+  function addTimer() {
     const state = getState();
     if (state.timers.length >= 100) return;
     const timer = createTimer(window.crypto.randomUUID());
-    state.timers = [...normalizeTimers(state.timers), mode === "down"
-      ? changeTimer(timer, "configure", Date.now(), { mode: "down", valueMs: 300000 }) : timer];
+    state.timers = [...normalizeTimers(state.timers), timer];
     saveState();
     render();
-    (mode === "down" ? countdownCards : cards).lastElementChild?.querySelector("button")?.focus();
+    cards.lastElementChild?.querySelector("button")?.focus();
   }
-  const add = button("+", "Add a stopwatch", () => addTimer("up"), "cc-timer-add");
-  const addCountdown = button("+", "Add a countdown", () => addTimer("down"), "cc-timer-add cc-timer-add-down");
-  function section(title, list, addButton) {
-    const container = element("section", "cc-timer-section");
-    container.setAttribute("aria-label", title);
-    const header = element("div", "cc-timer-section-heading");
-    header.append(element("strong", "", title), addButton);
-    container.append(header, list);
-    return container;
-  }
-  heading.append(element("strong", "", "Timers"));
-  panel.append(heading, section("Stopwatches", cards, add), section("Countdown", countdownCards, addCountdown));
+  const add = button("+", "Add a timer", addTimer, "cc-timer-add");
+  heading.append(element("strong", "", "Timers"), add);
+  panel.append(heading, cards);
   root.append(style);
   root.querySelector(".cc-clock-surface").after(panel);
   host.append(settings);
@@ -93,13 +82,13 @@ export async function install({ root, getState, saveState, onContextInvalidated 
     render();
   }
 
-  function commit(id, action, options) {
+  function commit(id, action, options, focusSelector) {
     getState().timers = normalizeTimers(getState().timers).map(timer => timer.id === id
       ? changeTimer(timer, action, Date.now(), options) : timer);
     saveState();
     render();
     const row = rows.find(item => item.timer.id === id);
-    row?.card.querySelector(action === "configure" ? ".cc-divider-settings-btn" : ".cc-timer-controls button")?.focus();
+    row?.card.querySelector(focusSelector ?? (action === "configure" ? ".cc-divider-settings-btn" : ".cc-timer-controls button"))?.focus();
   }
 
   function makeCard(timer, index) {
@@ -108,7 +97,7 @@ export async function install({ root, getState, saveState, onContextInvalidated 
     const name = element("strong", "", `Timer ${index + 1}`);
     const details = element("div", "cc-timer-settings");
     details.hidden = true;
-    const gear = button("⚙️", "Timer settings: direction and starting time", () => {
+    const gear = button("⚙️", "Timer settings: starting time", () => {
       details.hidden = !details.hidden;
       gear.setAttribute("aria-expanded", String(!details.hidden));
       if (!details.hidden) {
@@ -136,14 +125,18 @@ export async function install({ root, getState, saveState, onContextInvalidated 
     const stop = button("Stop", "Stop and keep the result. Start begins again from the configured time.", () => commit(timer.id, "stop"));
     const reset = button("Reset", "Reset to the configured starting time", () => commit(timer.id, "reset"));
     controls.append(play, stop, reset);
-    const directionLabel = element("label", "", "Direction");
+    const directionLabel = element("label", "cc-timer-direction", "Direction");
     const direction = document.createElement("select");
+    direction.title = "Changing direction keeps the current reading and pauses the timer.";
     for (const [value, text] of [["up", "Count up"], ["down", "Count down to zero"]]) {
       const option = element("option", "", text);
       option.value = value;
       direction.append(option);
     }
     direction.value = timer.mode;
+    direction.addEventListener("change", () => {
+      commit(timer.id, "configure", { mode: direction.value }, ".cc-timer-direction select");
+    });
     directionLabel.append(direction);
     const timeLabel = element("label", "", "Starting time (HH:MM:SS)");
     const time = document.createElement("input");
@@ -154,14 +147,14 @@ export async function install({ root, getState, saveState, onContextInvalidated 
     time.spellcheck = false;
     time.addEventListener("input", () => time.setCustomValidity(""));
     timeLabel.append(time);
-    const apply = button("Apply", "Set starting time and direction; timer will be ready to start", () => {
+    const apply = button("Apply", "Set starting time; timer will be ready to start", () => {
       const valueMs = parseTimerTime(time.value);
       time.setCustomValidity(valueMs === null ? "Enter hours, minutes and seconds, for example 00:05:00." : "");
       if (!time.reportValidity()) return;
       commit(timer.id, "configure", { mode: direction.value, valueMs });
     });
-    details.append(directionLabel, timeLabel, element("small", "", "Uses the current reading. Edit it or choose a direction, then Apply and Start."), apply);
-    card.append(header, display, status, controls, details);
+    details.append(timeLabel, element("small", "", "Uses the current reading. Edit it, then Apply and Start."), apply);
+    card.append(header, directionLabel, display, status, controls, details);
     return { card, display, status, play, stop, timer };
   }
 
@@ -214,11 +207,9 @@ export async function install({ root, getState, saveState, onContextInvalidated 
     if (signature !== nextSignature) {
       signature = nextSignature;
       rows = timers.map(makeCard);
-      cards.replaceChildren(...rows.filter(row => row.timer.mode === "up").map(row => row.card));
-      countdownCards.replaceChildren(...rows.filter(row => row.timer.mode === "down").map(row => row.card));
+      cards.replaceChildren(...rows.map(row => row.card));
     }
     add.disabled = timers.length >= 100;
-    addCountdown.disabled = add.disabled;
     dragging.update();
     tick();
     if (interval === null && timers.some(timer => timer.phase === "running" && !timerFinished(timer))) {

@@ -73,6 +73,8 @@ const CALENDAR_CLOCK_PANEL_DEFAULT = {
   clockFaceId: "analog",
   timersEnabled: false,
   timersSide: "right",
+  timersX: null,
+  timersY: null,
   timers: [],
   windowStartMarker: true,
   windowStartMarkerStyle: "dots",

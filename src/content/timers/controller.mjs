@@ -1,4 +1,5 @@
 import { createTimer, normalizeTimers, timerValue, timerFinished, formatTimerTime, parseTimerTime, changeTimer, snapshotTimers, restoreTimers } from "./model.mjs";
+import { installDragging } from "./drag.mjs";
 
 export async function install({ root, getState, saveState, onContextInvalidated }) {
   const document = root.ownerDocument;
@@ -43,16 +44,29 @@ export async function install({ root, getState, saveState, onContextInvalidated 
   panel.setAttribute("aria-label", "Timers");
   const heading = element("div", "cc-timers-heading");
   const cards = element("div", "cc-timer-list");
-  const add = button("+", "Add a timer", () => {
+  const countdownCards = element("div", "cc-timer-list");
+  function addTimer(mode) {
     const state = getState();
     if (state.timers.length >= 100) return;
-    state.timers = [...normalizeTimers(state.timers), createTimer(window.crypto.randomUUID())];
+    const timer = createTimer(window.crypto.randomUUID());
+    state.timers = [...normalizeTimers(state.timers), mode === "down"
+      ? changeTimer(timer, "configure", Date.now(), { mode: "down", valueMs: 300000 }) : timer];
     saveState();
     render();
-    cards.lastElementChild?.querySelector("button")?.focus();
-  }, "cc-timer-add");
-  heading.append(element("strong", "", "Timers"), add);
-  panel.append(heading, cards);
+    (mode === "down" ? countdownCards : cards).lastElementChild?.querySelector("button")?.focus();
+  }
+  const add = button("+", "Add a stopwatch", () => addTimer("up"), "cc-timer-add");
+  const addCountdown = button("+", "Add a countdown", () => addTimer("down"), "cc-timer-add cc-timer-add-down");
+  function section(title, list, addButton) {
+    const container = element("section", "cc-timer-section");
+    container.setAttribute("aria-label", title);
+    const header = element("div", "cc-timer-section-heading");
+    header.append(element("strong", "", title), addButton);
+    container.append(header, list);
+    return container;
+  }
+  heading.append(element("strong", "", "Timers"));
+  panel.append(heading, section("Stopwatches", cards, add), section("Countdown", countdownCards, addCountdown));
   root.append(style);
   root.querySelector(".cc-clock-surface").after(panel);
   host.append(settings);
@@ -61,6 +75,7 @@ export async function install({ root, getState, saveState, onContextInvalidated 
   let interval = null;
   let destroyed = false;
   let lastSavedAt = Date.now();
+  const dragging = installDragging({ panel, handle: heading, window, getState, saveState });
   getState().timers = restoreTimers(getState().timers);
 
   function snapshot() {
@@ -183,6 +198,7 @@ export async function install({ root, getState, saveState, onContextInvalidated 
     panel.dataset.side = side.value;
     panel.hidden = !enabled.checked || state.mode !== "full";
     if (panel.hidden) {
+      dragging.update();
       pauseTimers();
       window.clearInterval(interval);
       interval = null;
@@ -198,9 +214,12 @@ export async function install({ root, getState, saveState, onContextInvalidated 
     if (signature !== nextSignature) {
       signature = nextSignature;
       rows = timers.map(makeCard);
-      cards.replaceChildren(...rows.map(row => row.card));
+      cards.replaceChildren(...rows.filter(row => row.timer.mode === "up").map(row => row.card));
+      countdownCards.replaceChildren(...rows.filter(row => row.timer.mode === "down").map(row => row.card));
     }
     add.disabled = timers.length >= 100;
+    addCountdown.disabled = add.disabled;
+    dragging.update();
     tick();
     if (interval === null && timers.some(timer => timer.phase === "running" && !timerFinished(timer))) {
       interval = window.setInterval(tick, 250);
@@ -213,12 +232,15 @@ export async function install({ root, getState, saveState, onContextInvalidated 
   });
   side.addEventListener("change", () => {
     getState().timersSide = side.value;
+    getState().timersX = null;
+    getState().timersY = null;
     saveState();
     render();
   });
   function destroy() {
     if (destroyed) return;
     destroyed = true;
+    dragging.destroy();
     pauseTimers();
     window.removeEventListener("pagehide", onPageHide);
     window.clearInterval(interval);

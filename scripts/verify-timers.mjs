@@ -52,6 +52,8 @@ class Node {
     this.value = "";
     this.hidden = false;
     this.validityMessage = "";
+    this.style = { removeProperty(name) { delete this[name]; } };
+    this.capturedPointer = null;
   }
   append(...nodes) { for (const node of nodes) { node.parent = this; this.children.push(node); } }
   after(node) { node.parent = this.parent; this.parent.children.splice(this.parent.children.indexOf(this) + 1, 0, node); }
@@ -59,6 +61,17 @@ class Node {
   remove() { this.parent.children = this.parent.children.filter(node => node !== this); }
   setAttribute(name, value) { this.attributes[name] = value; }
   addEventListener(type, listener) { this.handlers[type] = listener; }
+  removeEventListener(type) { delete this.handlers[type]; }
+  closest(selector) {
+    if (this.tagName === selector) return this;
+    return this.parent?.closest(selector) ?? null;
+  }
+  getBoundingClientRect() {
+    return { left: parseFloat(this.style.left) || 100, top: parseFloat(this.style.top) || 100, width: 248, height: 200 };
+  }
+  setPointerCapture(id) { this.capturedPointer = id; }
+  hasPointerCapture(id) { return this.capturedPointer === id; }
+  releasePointerCapture() { this.capturedPointer = null; }
   click() { if (!this.disabled) this.handlers.click?.(); }
   focus() {}
   setCustomValidity(message) { this.validityMessage = message; }
@@ -85,6 +98,8 @@ let sequence = 0;
 let intervals = new Map();
 const listeners = new Map();
 const window = {
+  innerWidth: 1200,
+  innerHeight: 800,
   crypto: { randomUUID: () => `timer-${++sequence}` },
   setInterval: callback => { const id = ++sequence; intervals.set(id, callback); return id; },
   clearInterval: id => intervals.delete(id),
@@ -121,8 +136,39 @@ try {
   enabled.handlers.change();
   assert.equal(panel.hidden, false);
   assert.equal(state.timers.length, 1);
+  const handle = root.querySelector(".cc-timers-heading");
+  const pointer = { button: 0, pointerId: 1, clientX: 110, clientY: 110, target: handle, preventDefault() {} };
+  handle.handlers.pointerdown({ ...pointer, target: root.querySelector(".cc-timer-add") });
+  assert.equal(handle.capturedPointer, null, "Header buttons must not start dragging");
+  handle.handlers.pointerdown(pointer);
+  handle.handlers.pointermove({ ...pointer, clientX: 400, clientY: 300 });
+  handle.handlers.pointerup(pointer);
+  assert.equal(persisted.timersX, 390);
+  assert.equal(persisted.timersY, 290);
+  assert.equal(handle.capturedPointer, null);
+  state = JSON.parse(JSON.stringify(persisted));
+  api.update();
+  assert.equal(panel.style.left, "390px", "Saved position must survive state restore");
+  window.innerWidth = 320;
+  window.innerHeight = 240;
+  listeners.get("resize")();
+  assert.equal(state.timersX, 64, "Panel must remain inside a narrower viewport");
+  assert.equal(state.timersY, 32);
+  window.innerWidth = 1200;
+  window.innerHeight = 800;
+  handle.handlers.keydown({ target: handle, key: "ArrowRight", preventDefault() {} });
+  assert.equal(state.timersX, 74, "Arrow keys move the focused header");
+  const side = visuals.querySelector("select");
+  side.value = "left";
+  side.handlers.change();
+  assert.equal(state.timersX, null, "Side selection resets manual positioning");
+  assert.equal(panel.style.left, undefined);
   root.querySelector(".cc-timer-add").click();
   assert.equal(state.timers.length, 2);
+  root.querySelector(".cc-timer-add-down").click();
+  assert.equal(state.timers.length, 3);
+  assert.equal(state.timers[2].mode, "down");
+  assert.equal(state.timers[2].valueMs, 300000, "Countdown section creates an editable five-minute countdown");
   const first = state.timers[0].id;
   root.querySelector(".cc-timer-controls button").click();
   assert.equal(state.timers[0].phase, "running");
@@ -143,6 +189,9 @@ try {
   assert.equal(state.timers[0].mode, "down");
   assert.equal(state.timers[0].initialMs, 300000);
   assert.equal(state.timers[0].phase, "idle");
+  assert.equal(root.querySelector(".cc-timer-list").children.length, 1, "Changing direction moves the timer to the matching section");
+  state.timers = state.timers.filter(item => item.id === first);
+  api.update();
   root.querySelector(".cc-timer-controls button").click();
   state.mode = "mini";
   api.update();

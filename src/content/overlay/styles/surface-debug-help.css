@@ -266,12 +266,25 @@
       color: rgba(36, 27, 19, .62);
       font: 11px Inter, Roboto, Arial, sans-serif;
       line-height: 1.25;
-      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0s;
+      pointer-events: auto;
       user-select: none;
     }
 
     #calendar-clock-root.cc-mode-full .cc-version-note {
       display: block;
+    }
+
+    #calendar-clock-root.cc-mode-full .cc-version-note:hover {
+      opacity: 1;
+      transition: opacity 300ms ease;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #calendar-clock-root.cc-mode-full .cc-version-note:hover {
+        transition: none;
+      }
     }
 
     #calendar-clock-root iframe {

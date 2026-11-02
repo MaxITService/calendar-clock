@@ -416,11 +416,6 @@
         return placed.flat();
     }
 
-    function getTargetMinutes(targetX, targetY, centerX, centerY, cycleMinutes) {
-        const angle = Math.atan2(targetX - centerX, centerY - targetY);
-        return normalizeCycleValue(angle / (Math.PI * 2) * cycleMinutes, cycleMinutes);
-    }
-
     function makeSvgElement(name, className = "") {
         const element = document.createElementNS(XMLNS, name);
         if (className) element.setAttribute("class", className);
@@ -815,13 +810,9 @@
         const targetY = item.corner
             ? labelY + Math.sign(frame.centerY - labelY) * item.labelHeight / 2
             : labelY;
-        const targetMinutes = getTargetMinutes(innerEdge, targetY, frame.centerX, frame.centerY, frame.cycleMinutes);
-        const anchorMinutes = getClosestArcMinutes(
-            targetMinutes,
-            item.segment.clockStartMinutes,
-            item.segment.clockEndMinutes,
-            frame.cycleMinutes
-        );
+        // Match the visible arc midpoint used to position this plate.
+        const anchorMinutes = item.segment.clockStartMinutes
+            + Math.max(0, item.segment.clockEndMinutes - item.segment.clockStartMinutes) / 2;
         const anchor = pointAtMinutes(frame.centerX, frame.centerY, item.radius * item.scale, anchorMinutes, frame.cycleMinutes);
         return getLeaderPoints(
             anchor,

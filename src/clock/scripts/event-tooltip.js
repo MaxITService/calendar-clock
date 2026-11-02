@@ -7,7 +7,10 @@ function getArcTooltipMeta(event) {
         function getArcTooltipStatus(info) {
             if (info.isPoint) return "";
             if (!info.valid) return "Invalid time range";
-            if (info.isActive) return `Now · ${formatDuration(info.remaining)} left`;
+            if (info.isActive) {
+                const remainingPercent = Math.round(100 - Math.min(100, Math.max(0, Number(info.completion) || 0)));
+                return `Now · ${formatDuration(info.remaining)} left · ${remainingPercent}% remaining`;
+            }
             if (info.startsIn !== null && info.startsIn !== undefined) return `In ${formatDuration(info.startsIn)}`;
             if (info.endedAgo !== null && info.endedAgo !== undefined) return `Ended ${formatDuration(info.endedAgo)} ago`;
             return "";
@@ -86,6 +89,7 @@ function getArcTooltipMeta(event) {
         }
 
         function showArcTooltip(event) {
+            if (!eventTooltipEnabled) return;
             clearTimeout(arcTooltipHideTimer);
 
             const nextIndex = Number(event.currentTarget.dataset.rangeIndex);
@@ -129,6 +133,7 @@ function getArcTooltipMeta(event) {
         }
 
         function hideArcTooltip(index = activeArcTooltipIndex) {
+            clearTimeout(arcTooltipHideTimer);
             if (index !== null) {
                 setArcHoverState(index, false);
             }
@@ -143,14 +148,25 @@ function getArcTooltipMeta(event) {
         }
 
         function queueHideArcTooltip(event) {
-            clearTimeout(arcTooltipHideTimer);
             const leavingIndex = Number(event.currentTarget.dataset.rangeIndex);
+            scheduleArcTooltipHide(leavingIndex);
+        }
 
+        function scheduleArcTooltipHide(index = activeArcTooltipIndex) {
+            clearTimeout(arcTooltipHideTimer);
             arcTooltipHideTimer = setTimeout(() => {
                 if (!arcTooltipHovered) {
-                    hideArcTooltip(leavingIndex);
+                    hideArcTooltip(index);
                 }
-            }, 120);
+            }, 1000);
+        }
+
+        function setEventTooltipEnabled(enabled) {
+            eventTooltipEnabled = enabled !== false;
+            if (!eventTooltipEnabled) {
+                arcTooltipHovered = false;
+                hideArcTooltip();
+            }
         }
 
         function attachArcTooltipEvents(arc) {
@@ -174,7 +190,7 @@ function getArcTooltipMeta(event) {
 
         arcTooltipEl.addEventListener("pointerleave", () => {
             arcTooltipHovered = false;
-            hideArcTooltip();
+            scheduleArcTooltipHide();
         });
 
         function updateVisibleArcTooltip() {

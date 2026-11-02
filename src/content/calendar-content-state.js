@@ -83,6 +83,7 @@ const CALENDAR_CLOCK_PANEL_DEFAULT = {
   windowStartMarkerTransparency: 8,
   windowStartMarkerSettingsExpanded: false,
   arcsVisible: true,
+  eventTooltipEnabled: true,
   arcSettingsExpanded: false,
   eventLabelDefaultVersion: 3,
   eventLabels: true,

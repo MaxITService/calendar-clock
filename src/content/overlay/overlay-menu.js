@@ -572,6 +572,7 @@ function bindPanelControls() {
   const magnifierAutoIntervalEl = calendarClockRoot.querySelector("[data-cc-magnifier-auto-interval]");
   const magnifierLaunchAutoEl = calendarClockRoot.querySelector("[data-cc-action='magnifier-launch-auto']");
   const arcsVisibleEl = calendarClockRoot.querySelector("[data-cc-arcs-visible]");
+  const eventTooltipEnabledEl = calendarClockRoot.querySelector("[data-cc-event-tooltip-enabled]");
   const arcSettingsToggleEl = calendarClockRoot.querySelector("[data-cc-action='arc-settings-toggle']");
   const arcSettingsPanelEl = calendarClockRoot.querySelector("[data-cc-arc-settings-panel]");
   const eventLabelsEl = calendarClockRoot.querySelector("[data-cc-event-labels]");
@@ -894,6 +895,13 @@ function bindPanelControls() {
   arcSettingsToggleEl.addEventListener("click", () => {
     calendarClockState.arcSettingsExpanded = arcSettingsPanelEl.classList.toggle("expanded");
     saveCalendarClockState();
+  });
+
+  eventTooltipEnabledEl.addEventListener("change", () => {
+    calendarClockState.eventTooltipEnabled = eventTooltipEnabledEl.checked;
+    if (!eventTooltipEnabledEl.checked) hideCalendarClockArcTooltip();
+    saveCalendarClockState();
+    syncClockFrame();
   });
 
   eventLabelsEl.addEventListener("change", () => {
@@ -2154,6 +2162,7 @@ function updatePanelControls() {
   calendarClockState.arcsVisible = areArcsVisible;
   calendarClockState.arcSettingsExpanded = calendarClockState.arcSettingsExpanded === true;
   calendarClockRoot.querySelector("[data-cc-arcs-visible]").checked = areArcsVisible;
+  calendarClockRoot.querySelector("[data-cc-event-tooltip-enabled]").checked = calendarClockState.eventTooltipEnabled !== false;
   arcSettingsBtn.style.display = areArcsVisible ? "" : "none";
   arcSettingsPanel.classList.toggle("expanded", areArcsVisible && calendarClockState.arcSettingsExpanded === true);
 
@@ -2566,6 +2575,7 @@ function syncClockFrame(options = {}) {
   if (!postCalendarClockFrameMessage({
     type: "CALENDAR_CLOCK_SET_DENSITY",
     visible: calendarClockState.arcsVisible !== false,
+    tooltipEnabled: calendarClockState.eventTooltipEnabled !== false,
     densityLevel: calendarClockState.densityLevel,
     arcThicknessLevel: calendarClockState.arcThicknessLevel,
     arcGapLevel: calendarClockState.arcGapLevel,

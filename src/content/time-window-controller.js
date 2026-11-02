@@ -983,6 +983,7 @@ function applyLoadedCalendarClockState(savedState = {}) {
   calendarClockState.eventLabelDefaultVersion = CALENDAR_CLOCK_PANEL_DEFAULT.eventLabelDefaultVersion;
   calendarClockState.eventLabels = calendarClockState.eventLabels !== false;
   calendarClockState.arcsVisible = calendarClockState.arcsVisible !== false;
+  calendarClockState.eventTooltipEnabled = calendarClockState.eventTooltipEnabled !== false;
   calendarClockState.arcSettingsExpanded = calendarClockState.arcSettingsExpanded === true;
   calendarClockState.windowStartMarker = calendarClockState.windowStartMarker !== false;
   calendarClockState.windowStartMarkerStyle = normalizeWindowStartMarkerStyle(calendarClockState.windowStartMarkerStyle);

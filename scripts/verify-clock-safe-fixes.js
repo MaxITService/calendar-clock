@@ -763,6 +763,56 @@ const tooltipPayload = loadFunctions("src/content/calendar-content-entry.js", [
   "normalizeCalendarClockTooltipColor",
   "normalizeCalendarClockArcTooltipPayload"
 ], { String, Number, Math });
+
+// Keep the remaining percentage and hover lifecycle working in both tooltip hosts.
+const tooltipTimers = new Map();
+const tooltipMessages = [];
+let tooltipTimerId = 0;
+const tooltipHover = loadFunctions("src/clock/scripts/event-tooltip.js", [
+  "getArcTooltipStatus", "showArcTooltip", "hideArcTooltip", "queueHideArcTooltip",
+  "scheduleArcTooltipHide", "setEventTooltipEnabled"
+], {
+  eventTooltipEnabled: true,
+  activeArcTooltipIndex: 2,
+  arcTooltipHovered: false,
+  arcTooltipHideTimer: null,
+  formatDuration: minutes => `${minutes}m`,
+  setArcHoverState() {},
+  arcTooltipEl: { classList: { remove() {} }, setAttribute() {} },
+  usesParentArcTooltip: () => true,
+  postToCalendarPage: type => tooltipMessages.push(type),
+  setTimeout(callback, delay) {
+    const id = ++tooltipTimerId;
+    tooltipTimers.set(id, { callback, delay });
+    return id;
+  },
+  clearTimeout: id => tooltipTimers.delete(id)
+});
+assert.strictEqual(tooltipHover.api.getArcTooltipStatus({
+  valid: true, isActive: true, remaining: 45, completion: 25
+}), "Now · 45m left · 75% remaining");
+assert.strictEqual(tooltipHover.api.getArcTooltipStatus({ isPoint: true }), "");
+tooltipHover.api.queueHideArcTooltip({ currentTarget: { dataset: { rangeIndex: "2" } } });
+assert.strictEqual(tooltipHover.context.activeArcTooltipIndex, 2, "Leaving an arc must not hide immediately");
+assert.strictEqual(tooltipTimers.get(tooltipTimerId).delay, 1000);
+tooltipHover.context.arcTooltipHovered = true;
+tooltipTimers.get(tooltipTimerId).callback();
+assert.strictEqual(tooltipHover.context.activeArcTooltipIndex, 2, "Entering the card must keep it open");
+tooltipHover.context.arcTooltipHovered = false;
+tooltipHover.api.scheduleArcTooltipHide();
+assert.strictEqual(tooltipTimers.get(tooltipTimerId).delay, 1000);
+tooltipTimers.get(tooltipTimerId).callback();
+assert.strictEqual(tooltipHover.context.activeArcTooltipIndex, null);
+assert.ok(tooltipMessages.includes("CALENDAR_CLOCK_HIDE_EVENT_TOOLTIP"));
+tooltipHover.context.activeArcTooltipIndex = 2;
+tooltipHover.api.scheduleArcTooltipHide();
+tooltipHover.api.setEventTooltipEnabled(false);
+assert.strictEqual(tooltipHover.context.activeArcTooltipIndex, null, "Disabling must close the current card");
+assert.strictEqual(tooltipTimers.size, 0, "Disabling must cancel delayed hides");
+tooltipHover.api.showArcTooltip({});
+assert.strictEqual(tooltipHover.context.activeArcTooltipIndex, null, "Disabled cards must not reopen");
+tooltipHover.api.setEventTooltipEnabled(true);
+assert.strictEqual(tooltipHover.context.eventTooltipEnabled, true);
 assert.deepStrictEqual(
   JSON.parse(JSON.stringify(tooltipPayload.api.normalizeCalendarClockArcTooltipPayload({
     title: "<img src=x onerror=alert(1)>",

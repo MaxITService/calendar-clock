@@ -95,6 +95,7 @@ const stageEl = document.getElementById("stage");
         let clockSystemTimeZone = "";
         let consoleLogsEnabled = false;
         let eventArcsVisible = true;
+        let eventTooltipEnabled = true;
         let eventLabelsVisible = true;
         let eventLabelStyle = "ink";
         let eventLabelPlacement = "hybrid";

@@ -334,6 +334,7 @@ function positionCalendarClockArcTooltip(clientX, clientY) {
 }
 
 function showCalendarClockArcTooltip(data) {
+  if (calendarClockState.eventTooltipEnabled === false) return;
   const tooltip = getCalendarClockArcTooltip();
   if (!tooltip || !renderCalendarClockArcTooltip(data.tooltip)) return;
   bindCalendarClockArcTooltipHover(tooltip);

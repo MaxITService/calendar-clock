@@ -204,6 +204,7 @@ function setDisplayWindow(start, end, options = {}) {
                 updateTimeArcs();
             } else if (data.type === "CALENDAR_CLOCK_SET_DENSITY") {
                 eventArcsVisible = data.visible !== false;
+                setEventTooltipEnabled(data.tooltipEnabled);
                 arcDensityLevel = clampClockPercentLevel(data.densityLevel, arcDensityLevel);
                 arcThicknessLevel = clampClockPercentLevel(data.arcThicknessLevel, arcThicknessLevel);
                 arcGapLevel = clampClockPercentLevel(data.arcGapLevel, arcGapLevel);
@@ -235,7 +236,7 @@ function setDisplayWindow(start, end, options = {}) {
                 clearTimeout(arcTooltipHideTimer);
             } else if (data.type === "CALENDAR_CLOCK_EVENT_TOOLTIP_LEAVE") {
                 arcTooltipHovered = false;
-                hideArcTooltip();
+                scheduleArcTooltipHide();
             } else if (data.type === "CALENDAR_CLOCK_REBUILD") {
                 buildClock();
             }
@@ -397,6 +398,7 @@ function setDisplayWindow(start, end, options = {}) {
             if (state.windowStartMarkerPulse !== undefined) windowStartMarkerPulse = state.windowStartMarkerPulse !== false;
             if (state.windowStartMarkerTransparency !== undefined) windowStartMarkerTransparency = Number(state.windowStartMarkerTransparency);
             if (typeof state.arcsVisible === "boolean") eventArcsVisible = state.arcsVisible;
+            setEventTooltipEnabled(state.eventTooltipEnabled);
             if (typeof state.eventLabels === "boolean") eventLabelsVisible = state.eventLabels;
             if (state.eventLabelStyle !== undefined) {
                 eventLabelStyle = EVENT_LABEL_STYLES.includes(state.eventLabelStyle) ? state.eventLabelStyle : "ink";

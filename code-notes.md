@@ -2,6 +2,10 @@
 
 | File | Short description |
 | --- | --- |
+| `src/content/timers/controller.mjs` | Optional Full-mode timer panel and settings; missing module leaves the overlay usable. |
+| `src/content/timers/model.mjs` | Timestamp-based count-up/countdown state, custom starting times, and whole-second formatting. |
+| `src/content/timers/styles.css` | Side panel, timer controls, and expandable settings. |
+| `scripts/verify-timers.mjs` | Verifies timer transitions, reload accuracy, panel controls, and optional-module wiring. |
 | `.gitattributes` | Normalizes repository text files to LF while preserving CRLF for Windows batch scripts. |
 | `.gitignore` | Ignores local VS Code settings and agent scratch notes. |
 | `.agents/.gitkeep` | Keeps the otherwise-empty agent metadata directory in git. |

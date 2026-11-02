@@ -241,6 +241,7 @@ async function ensureCalendarClockUi() {
   }
 
   calendarClockUiPromise = buildCalendarClockUi().catch(error => {
+    globalThis.calendarClockTimers?.destroy?.();
     calendarClockRoot?.remove();
     calendarClockRoot = null;
     calendarClockFrame = null;
@@ -282,6 +283,18 @@ async function buildCalendarClockUi() {
   calendarClockHelp = calendarClockRoot.querySelector(".cc-help");
 
   document.documentElement.appendChild(calendarClockRoot);
+  try {
+    const timers = await import(chrome.runtime.getURL("src/content/timers/controller.mjs"));
+    globalThis.calendarClockTimers?.destroy?.();
+    globalThis.calendarClockTimers = await timers.install({
+      root: calendarClockRoot,
+      getState: () => calendarClockState,
+      saveState: saveCalendarClockState,
+      onContextInvalidated: onCalendarClockContextInvalidated
+    });
+  } catch (error) {
+    calendarClockWarn("optional timers module is unavailable", error);
+  }
   await loadCalendarClockWarningTemplates();
   await loadCalendarClockDebugTemplates();
   bindPanelControls();
@@ -1890,6 +1903,7 @@ function bindMiniClockResizing() {
 
 function updateRootClasses() {
   if (!calendarClockRoot) return;
+  globalThis.calendarClockTimers?.update?.();
   const timePanelToggle = calendarClockRoot.querySelector("[data-cc-action='time-panel-toggle']");
   const settingsPanelOpen = calendarClockState.timePanelOpen === true;
 
@@ -2006,6 +2020,7 @@ function updateEventLabelFontControls(fontFamily) {
 
 function updatePanelControls() {
   if (!calendarClockRoot) return;
+  globalThis.calendarClockTimers?.update?.();
 
   updateCalendarClockSettingsTabs();
   const presetEl = calendarClockRoot.querySelector("[data-cc-window-preset]");

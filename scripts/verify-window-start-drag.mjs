@@ -72,16 +72,18 @@ function harness(lensVisible) {
     // Magnified center is translated and scaled, as in the real glass lens.
     const zoomRect = { left: -110, top: -110, width: 620, height: 620 };
     const changes = [];
+    const state = { enabled: true, followNow: true, pastHours: 3, startMinutes: 0, cycleMinutes: 720, size: 400, lensVisible };
     const controller = installWindowStartDrag({
         stage, clock: surface(mainRect), magnifiedClock: surface(zoomRect),
         lens: { getBoundingClientRect: () => ({ left: 100, top: -40, width: 200, height: 200 }) },
-        getState: () => ({ enabled: true, followNow: true, pastHours: 3, startMinutes: 0, cycleMinutes: 720, size: 400, lensVisible }),
+        getState: () => state,
         onChange: value => changes.push(value)
     });
     const point = (type, x, y, pointerId = 1) => {
         const event = { target: stage, button: 0, pointerId, clientX: x, clientY: y,
-            preventDefault() {}, stopImmediatePropagation() {} };
+            preventDefault() { this.prevented = true; }, stopImmediatePropagation() { this.stopped = true; } };
         (handlers.get(type) || []).forEach(listener => listener(event));
+        return event;
     };
     point("pointerdown", 210, 60); // Includes dot gaps and the invisible hit margin.
     assert.equal(controller.isDragging(), true);
@@ -113,9 +115,60 @@ function harness(lensVisible) {
     assert.equal(controller.isDragging(), false);
     assert.equal(changes.length, 1);
     assert.equal(controller.getPreview(), null);
+    return { controller, point, handlers, state, changes };
 }
-harness(false);
-harness(true);
+for (const test of [harness(false), harness(true)]) {
+    const { controller, point, handlers, state, changes } = test;
+    // A click or a tiny tremor must not round a preexisting half-hour setting.
+    for (const followNow of [true, false]) {
+        Object.assign(state, { followNow, pastHours: 2.5, startMinutes: 510 });
+        point("pointerdown", 210, 60);
+        point("pointermove", 211, 61);
+        point("pointerup", 211, 61);
+        assert.equal(changes.length, 1);
+        assert.equal(point("click", 211, 61).stopped, true);
+        assert.equal(point("dblclick", 211, 61).prevented, true);
+    }
+    // A genuine drag with the same rounded result also avoids a redundant save.
+    Object.assign(state, { followNow: true, pastHours: 3, startMinutes: 0 });
+    point("pointerdown", 210, 60);
+    point("pointermove", 225, 60);
+    point("pointerup", 225, 60);
+    assert.equal(changes.length, 1);
+    // Manual dragging also works when the original grab happened through the loupe.
+    Object.assign(state, { followNow: false, startMinutes: 510 });
+    point("pointerdown", 210, 60);
+    point("pointermove", 300, 25);
+    point("pointerup", 300, 25);
+    assert.equal(changes.at(-1).startMinutes, 540);
+    assert.equal(changes.length, 2);
+    assert.equal(controller.getPreview().landingAngle, null, "Hold landing until the parent applies the value");
+    state.startMinutes = 540;
+    assert.equal(controller.getPreview(), null);
+    for (const cancel of ["escape", "blur", "mode-change"]) {
+        Object.assign(state, { followNow: true, pastHours: 3, startMinutes: 0 });
+        point("pointerdown", 210, 60);
+        point("pointermove", 300, 25);
+        if (cancel === "escape") handlers.get("keydown").forEach(listener => listener({ key: "Escape", preventDefault() {} }));
+        if (cancel === "blur") point("blur", 300, 25);
+        if (cancel === "mode-change") { state.followNow = false; point("pointermove", 310, 25); }
+        assert.equal(controller.isDragging(), false);
+        assert.equal(changes.length, 2);
+    }
+}
+
+// Settings received while the loupe is suppressed must still update its live configuration.
+const magnifierSource = fs.readFileSync(new URL("../src/clock/scripts/magnifier-motion.js", import.meta.url), "utf8");
+const applyMagnifier = magnifierSource.slice(magnifierSource.indexOf("function applyMagnifierSettings("));
+const appliedSettings = [];
+const magnifierContext = { windowStartDragController: { isDragging: () => true } };
+for (const setter of ["setMagnifierLensSize", "setMagnifierAutoIntervalSeconds", "setMagnifierHoverEnabled", "setMagnifierCenterCursorVisible", "setMagnifierAutoEnabled", "setMagnifierAutoTriggers", "setMagnifierEnabled"]) {
+    magnifierContext[setter] = value => appliedSettings.push([setter, value]);
+}
+vm.runInNewContext(applyMagnifier, magnifierContext);
+magnifierContext.applyMagnifierSettings({ lensSize: 600, enabled: false });
+assert.ok(appliedSettings.some(([setter, value]) => setter === "setMagnifierLensSize" && value === 600));
+assert.ok(appliedSettings.some(([setter, value]) => setter === "setMagnifierEnabled" && value === false));
 
 // Check the receiving side, including bounds, persistence, and preserved Follow Now.
 const state = { followNow: true, followRadiusHours: 3, windowStartMarker: true, mode: "full", radial24Hour: false };

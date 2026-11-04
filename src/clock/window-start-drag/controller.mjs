@@ -51,6 +51,7 @@ export function installWindowStartDrag({ stage, clock, magnifiedClock, lens, get
     let drag = null;
     let hovered = false;
     let pendingLanding = null;
+    let suppressClickUntil = 0;
     const ghosts = new Map();
     const originalCursor = stage.style.cursor;
     const setCursor = value => {
@@ -72,7 +73,8 @@ export function installWindowStartDrag({ stage, clock, magnifiedClock, lens, get
         if (!marker) return null;
         const line = Object.fromEntries(["x1", "y1", "x2", "y2"].map(key => [key, Number(marker.getAttribute(key))]));
         const rect = surface.getBoundingClientRect();
-        return isNearMarker(event, rect, line, state.size, event.pointerType === "touch" ? 40 : 30)
+        const tolerance = event.pointerType === "touch" ? Math.min(40, rect.width * 0.09) : Math.min(30, rect.width * 0.07);
+        return isNearMarker(event, rect, line, state.size, tolerance)
             ? { state, surface, rect } : null;
     }
 
@@ -84,12 +86,16 @@ export function installWindowStartDrag({ stage, clock, magnifiedClock, lens, get
     function finish(event, cancelled = false) {
         if (!drag || (event?.pointerId !== undefined && event.pointerId !== drag.pointerId)) return;
         const pointerId = drag.pointerId;
-        if (!cancelled) {
-            const value = drag.motion.value();
+        const value = drag.motion.value();
+        const state = getState();
+        const unchanged = value.followNow ? state.pastHours === value.pastHours : state.startMinutes === value.startMinutes;
+        if (!cancelled && drag.moved && !unchanged && state.enabled
+            && state.followNow === drag.followNow && state.cycleMinutes === drag.cycleMinutes) {
             pendingLanding = { value, angle: drag.motion.preview().landingAngle, until: Date.now() + 800 };
             onChange({ ...value, final: true });
         }
         drag = null;
+        suppressClickUntil = Date.now() + 400;
         clearGhosts();
         hovered = false;
         stage.classList.remove("is-window-start-dragging");
@@ -106,6 +112,9 @@ export function installWindowStartDrag({ stage, clock, magnifiedClock, lens, get
         event.stopImmediatePropagation();
         drag = {
             pointerId: event.pointerId,
+            downX: event.clientX, downY: event.clientY,
+            threshold: event.pointerType === "touch" ? 6 : 4,
+            moved: false,
             surface: clock,
             followNow: target.state.followNow,
             cycleMinutes: target.state.cycleMinutes,
@@ -116,6 +125,7 @@ export function installWindowStartDrag({ stage, clock, magnifiedClock, lens, get
         setCursor("grabbing");
         stage.setPointerCapture(event.pointerId);
         pendingLanding = null;
+        suppressClickUntil = Date.now() + 400;
     }, true);
 
     doc.addEventListener("pointermove", event => {
@@ -133,6 +143,8 @@ export function installWindowStartDrag({ stage, clock, magnifiedClock, lens, get
             return;
         }
         const rect = drag.surface.getBoundingClientRect();
+        drag.moved ||= Math.hypot(event.clientX - drag.downX, event.clientY - drag.downY) > drag.threshold;
+        if (!drag.moved) return;
         // Near the center a tiny movement can flip the pointer angle.
         if (Math.hypot(event.clientX - rect.left - rect.width / 2,
             event.clientY - rect.top - rect.height / 2) < rect.width * 0.08) return;
@@ -144,12 +156,21 @@ export function installWindowStartDrag({ stage, clock, magnifiedClock, lens, get
         event.preventDefault();
         event.stopImmediatePropagation();
         const rect = clock.getBoundingClientRect();
-        if (Math.hypot(event.clientX - rect.left - rect.width / 2,
+        drag.moved ||= Math.hypot(event.clientX - drag.downX, event.clientY - drag.downY) > drag.threshold;
+        if (drag.moved && Math.hypot(event.clientX - rect.left - rect.width / 2,
             event.clientY - rect.top - rect.height / 2) >= rect.width * 0.08) {
             drag.motion.move(pointerAngle(event, rect));
         }
         finish(event);
     }, true);
+    for (const type of ["click", "dblclick"]) {
+        doc.addEventListener(type, event => {
+            if (event.detail !== 0 && stage.contains(event.target) && (drag || Date.now() < suppressClickUntil)) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+            }
+        }, true);
+    }
     doc.addEventListener("pointercancel", event => finish(event, true), true);
     stage.addEventListener("lostpointercapture", event => finish(event, true));
     doc.addEventListener("keydown", event => {

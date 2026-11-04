@@ -420,7 +420,6 @@ function updateMagnifier() {
         }
 
         function applyMagnifierSettings(settings = {}) {
-            if (windowStartDragController?.isDragging()) return;
             if (settings.lensSize !== undefined) setMagnifierLensSize(settings.lensSize);
             if (settings.autoIntervalSeconds !== undefined) setMagnifierAutoIntervalSeconds(settings.autoIntervalSeconds);
             if (settings.hoverEnabled !== undefined) setMagnifierHoverEnabled(settings.hoverEnabled);

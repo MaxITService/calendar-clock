@@ -3,9 +3,11 @@ import fs from "node:fs";
 import vm from "node:vm";
 import { createHourDrag, isNearMarker, pointerAngle, installWindowStartDrag } from "../src/clock/window-start-drag/controller.mjs";
 
-const follow = (pastHours = 3, cycleMinutes = 720, angle = 0) => createHourDrag({ followNow: true, pastHours, cycleMinutes }, angle);
+const follow = (pastHours = 3, cycleMinutes = 720, angle = 0) => createHourDrag({ followNow: true, pastHours, startMinutes: 0, cycleMinutes }, angle);
 let motion = follow();
 assert.equal(motion.move(14).pastHours, 3);
+assert.ok(Math.abs(motion.preview().angle - 14) < 1e-9);
+assert.equal(motion.preview().landingAngle, 0);
 assert.equal(motion.move(16).pastHours, 2);
 assert.equal(motion.move(60).pastHours, 1);
 assert.equal(motion.move(120).pastHours, 0);
@@ -30,7 +32,8 @@ const rect = { left: 10, top: 20, width: 400, height: 400 };
 const line = { x1: 200, y1: 158, x2: 200, y2: 30 };
 assert.equal(pointerAngle({ clientX: 210, clientY: 20 }, rect), 0);
 assert.equal(isNearMarker({ clientX: 222, clientY: 100 }, rect, line, 400), true);
-assert.equal(isNearMarker({ clientX: 240, clientY: 100 }, rect, line, 400), false);
+assert.equal(isNearMarker({ clientX: 238, clientY: 100 }, rect, line, 400), true);
+assert.equal(isNearMarker({ clientX: 245, clientY: 100 }, rect, line, 400), false);
 assert.equal(isNearMarker({ clientX: 210, clientY: 220 }, rect, line, 400), false);
 
 // Exercise real pointer handlers with transformed geometry and pointer capture.
@@ -42,7 +45,18 @@ function harness(lensVisible) {
     };
     const classes = new Set();
     let capture = null;
-    const doc = { addEventListener: listen, defaultView: { addEventListener: listen } };
+    const node = () => ({
+        isConnected: true, attributes: {}, children: [],
+        style: { setProperty() {} },
+        setAttribute(key, value) { this.attributes[key] = value; },
+        removeAttribute(key) { delete this.attributes[key]; },
+        querySelectorAll() { return []; },
+        append(child) { this.children.push(child); },
+        cloneNode() { return node(); },
+        remove() { this.isConnected = false; }
+    });
+    const doc = { addEventListener: listen, createElementNS: node,
+        defaultView: { addEventListener: listen, getComputedStyle: () => ({ getPropertyValue: () => "none" }) } };
     const stage = {
         ownerDocument: doc, style: { cursor: "" }, contains: target => target === stage,
         classList: { add: value => classes.add(value), remove: value => classes.delete(value),
@@ -76,12 +90,29 @@ function harness(lensVisible) {
     assert.equal(controller.isDragging(), true);
     // Same angular motion through either surface must produce the same hour.
     point("pointermove", 300, 200 - Math.sqrt(3) * 100);
-    assert.equal(changes.at(-1).pastHours, 2);
+    assert.equal(changes.length, 0); // Moving only previews; releasing applies the value.
+    assert.equal(Math.round(controller.getPreview().landingAngle), 30);
+    let ghost = null;
+    const svg = { insertBefore: child => { ghost = child; } };
+    controller.updateGhost(svg, node(), node(), controller.getPreview(), 400);
+    assert.equal(ghost.attributes.opacity, "0.3");
+    assert.equal(ghost.attributes["pointer-events"], "none");
+    assert.equal(ghost.children.length, 2); // Preserve both line/dots and emoji appearances.
+    assert.match(ghost.attributes.transform, /^rotate\(/);
     point("pointerup", 300, 25);
     assert.equal(controller.isDragging(), false);
     assert.equal(capture, null);
+    assert.equal(ghost.isConnected, false);
     assert.equal(changes.at(-1).final, true);
+    assert.equal(changes.at(-1).pastHours, 2);
+    assert.equal(changes.length, 1);
     assert.equal(stage.style.cursor, "");
+    point("pointerdown", 225, 60); // Wider hit margin, including gaps between dots.
+    assert.equal(controller.isDragging(), true);
+    point("pointercancel", 300, 25);
+    assert.equal(controller.isDragging(), false);
+    assert.equal(changes.length, 1);
+    assert.equal(controller.getPreview(), null);
 }
 harness(false);
 harness(true);
@@ -118,4 +149,4 @@ assert.equal(context.applyWindowStartDrag({ followNow: false, startMinutes: 23 *
 assert.equal(calls.at(-1).value, "23:00");
 state.windowStartMarker = false;
 assert.equal(context.applyWindowStartDrag({ followNow: false, startMinutes: 0 }), false);
-console.log("Window-start drag verifier passed (hour snapping, bounds, normal/lens capture, persistence).");
+console.log("Window-start drag verifier passed (continuous preview, hour landing, wide normal/lens capture, cancellation, persistence).");

@@ -632,10 +632,11 @@ function buildClock() {
             const cx = clockSize / 2;
             const cy = clockSize / 2;
             const targetAngle = showMarker ? displayWindow.start / getClockCycleMinutes() * 360 : 0;
-            const angle = getWindowStartMarkerRenderAngle(targetAngle, showMarker);
+            const dragPreview = windowStartDragController?.getPreview();
+            const angle = dragPreview?.angle ?? getWindowStartMarkerRenderAngle(targetAngle, showMarker);
             const inner = pointOnClockArc(cx, cy, clockSize * 0.105, angle);
             const outer = pointOnClockArc(cx, cy, clockSize * 0.425, angle);
-            const markerPulse = getWindowStartMarkerPulse(showMarker && windowStartMarkerPulse !== false, angle, getCurrentClockAngle());
+            const markerPulse = getWindowStartMarkerPulse(showMarker && !dragPreview && windowStartMarkerPulse !== false, angle, getCurrentClockAngle());
 
             document.querySelectorAll(".window-start-marker").forEach(marker => {
                 const svg = marker.closest("svg");
@@ -714,6 +715,7 @@ function buildClock() {
                 const lineLength = clockSize * (0.425 - 0.105);
                 const gap = dots > 1 ? (lineLength / (dots - 1)) - 0.01 : 99999;
                 marker.style.setProperty("--window-start-marker-dasharray", shape === "line" ? "none" : `0.01 ${gap}`);
+                windowStartDragController?.updateGhost(svg, marker, emojiGroup, dragPreview, clockSize);
             });
         }
 

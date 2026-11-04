@@ -91,6 +91,12 @@
             user-select: none;
         }
 
+        .stage.is-window-start-dragging .magnifier {
+            visibility: hidden;
+            opacity: 0 !important;
+            pointer-events: none;
+        }
+
         .time-arcs {
             overflow: visible;
         }

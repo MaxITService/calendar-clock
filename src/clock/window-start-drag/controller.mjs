@@ -7,7 +7,7 @@ export function pointerAngle(point, rect) {
         -(point.clientY - rect.top - rect.height / 2)) * 180 / Math.PI, 360);
 }
 
-export function isNearMarker(point, rect, line, size, tolerance = 14) {
+export function isNearMarker(point, rect, line, size, tolerance = 30) {
     if (!size || !rect.width || !rect.height) return false;
     const ax = rect.left + line.x1 / size * rect.width;
     const ay = rect.top + line.y1 / size * rect.height;
@@ -23,13 +23,18 @@ export function isNearMarker(point, rect, line, size, tolerance = 14) {
 
 export function createHourDrag({ followNow, pastHours, startMinutes, cycleMinutes }, angle) {
     const maxPast = cycleMinutes / 60 - 1;
-    let position = followNow ? clamp(Math.round(pastHours), 0, maxPast) : Math.round(startMinutes / 60);
+    const initialPosition = followNow ? pastHours : startMinutes / 60;
+    let position = followNow ? clamp(initialPosition, 0, maxPast) : initialPosition;
+    const degreesPerHour = 360 / (cycleMinutes / 60);
+    const direction = followNow ? -1 : 1;
+    const angleFor = hours => startMinutes / cycleMinutes * 360 + (hours - initialPosition) * degreesPerHour * direction;
     let previousAngle = angle;
     const value = () => followNow
         ? { followNow: true, pastHours: clamp(Math.round(position), 0, maxPast) }
         : { followNow: false, startMinutes: wrap(Math.round(position), 24) * 60 };
     return {
         value,
+        preview: () => ({ angle: angleFor(position), landingAngle: angleFor(Math.round(position)) }),
         move(nextAngle) {
             const delta = wrap(nextAngle - previousAngle + 180, 360) - 180;
             previousAngle = nextAngle;
@@ -45,6 +50,8 @@ export function installWindowStartDrag({ stage, clock, magnifiedClock, lens, get
     const doc = stage.ownerDocument;
     let drag = null;
     let hovered = false;
+    let pendingLanding = null;
+    const ghosts = new Map();
     const originalCursor = stage.style.cursor;
     const setCursor = value => {
         stage.style.cursor = value || originalCursor;
@@ -65,22 +72,25 @@ export function installWindowStartDrag({ stage, clock, magnifiedClock, lens, get
         if (!marker) return null;
         const line = Object.fromEntries(["x1", "y1", "x2", "y2"].map(key => [key, Number(marker.getAttribute(key))]));
         const rect = surface.getBoundingClientRect();
-        return isNearMarker(event, rect, line, state.size, event.pointerType === "touch" ? 22 : 14)
+        return isNearMarker(event, rect, line, state.size, event.pointerType === "touch" ? 40 : 30)
             ? { state, surface, rect } : null;
     }
 
-    function publish(value, final = false) {
-        const key = JSON.stringify(value);
-        if (!final && key === drag.lastKey) return;
-        drag.lastKey = key;
-        onChange({ ...value, final });
+    function clearGhosts() {
+        ghosts.forEach(ghost => ghost.node.remove());
+        ghosts.clear();
     }
 
-    function finish(event) {
+    function finish(event, cancelled = false) {
         if (!drag || (event?.pointerId !== undefined && event.pointerId !== drag.pointerId)) return;
         const pointerId = drag.pointerId;
-        publish(drag.motion.value(), true);
+        if (!cancelled) {
+            const value = drag.motion.value();
+            pendingLanding = { value, angle: drag.motion.preview().landingAngle, until: Date.now() + 800 };
+            onChange({ ...value, final: true });
+        }
         drag = null;
+        clearGhosts();
         hovered = false;
         stage.classList.remove("is-window-start-dragging");
         setCursor("");
@@ -96,15 +106,16 @@ export function installWindowStartDrag({ stage, clock, magnifiedClock, lens, get
         event.stopImmediatePropagation();
         drag = {
             pointerId: event.pointerId,
-            surface: target.surface,
+            surface: clock,
             followNow: target.state.followNow,
             cycleMinutes: target.state.cycleMinutes,
-            motion: createHourDrag(target.state, pointerAngle(event, target.rect))
+            // Switch to the unzoomed coordinate system before hiding the lens.
+            motion: createHourDrag(target.state, pointerAngle(event, clock.getBoundingClientRect()))
         };
         stage.classList.add("is-window-start-dragging");
         setCursor("grabbing");
         stage.setPointerCapture(event.pointerId);
-        publish(drag.motion.value());
+        pendingLanding = null;
     }, true);
 
     doc.addEventListener("pointermove", event => {
@@ -118,27 +129,77 @@ export function installWindowStartDrag({ stage, clock, magnifiedClock, lens, get
         event.stopImmediatePropagation();
         const state = getState();
         if (!state.enabled || state.followNow !== drag.followNow || state.cycleMinutes !== drag.cycleMinutes) {
-            finish(event);
+            finish(event, true);
             return;
         }
         const rect = drag.surface.getBoundingClientRect();
         // Near the center a tiny movement can flip the pointer angle.
         if (Math.hypot(event.clientX - rect.left - rect.width / 2,
             event.clientY - rect.top - rect.height / 2) < rect.width * 0.08) return;
-        publish(drag.motion.move(pointerAngle(event, rect)));
+        drag.motion.move(pointerAngle(event, rect));
     }, true);
 
     doc.addEventListener("pointerup", event => {
         if (!drag || event.pointerId !== drag.pointerId) return;
         event.preventDefault();
         event.stopImmediatePropagation();
+        const rect = clock.getBoundingClientRect();
+        if (Math.hypot(event.clientX - rect.left - rect.width / 2,
+            event.clientY - rect.top - rect.height / 2) >= rect.width * 0.08) {
+            drag.motion.move(pointerAngle(event, rect));
+        }
         finish(event);
     }, true);
-    doc.addEventListener("pointercancel", finish, true);
-    stage.addEventListener("lostpointercapture", finish);
+    doc.addEventListener("pointercancel", event => finish(event, true), true);
+    stage.addEventListener("lostpointercapture", event => finish(event, true));
+    doc.addEventListener("keydown", event => {
+        if (event.key === "Escape" && drag) { event.preventDefault(); finish(undefined, true); }
+    }, true);
     stage.addEventListener("pointerleave", () => {
         if (!drag) { hovered = false; setCursor(""); }
     });
-    doc.defaultView.addEventListener("blur", () => finish());
-    return { isDragging: () => drag !== null };
+    doc.defaultView.addEventListener("blur", () => finish(undefined, true));
+    return {
+        isDragging: () => drag !== null,
+        getPreview() {
+            if (drag) return drag.motion.preview();
+            if (!pendingLanding) return null;
+            const state = getState();
+            const applied = pendingLanding.value.followNow
+                ? state.pastHours === pendingLanding.value.pastHours
+                : state.startMinutes === pendingLanding.value.startMinutes;
+            if (applied || Date.now() > pendingLanding.until || !state.enabled) {
+                pendingLanding = null;
+                return null;
+            }
+            return { angle: pendingLanding.angle, landingAngle: null };
+        },
+        updateGhost(svg, marker, emojiGroup, preview, size) {
+            if (!drag || preview?.landingAngle == null) { clearGhosts(); return; }
+            let ghost = ghosts.get(svg);
+            if (!ghost || !ghost.node.isConnected) {
+                const node = doc.createElementNS("http://www.w3.org/2000/svg", "g");
+                node.setAttribute("opacity", "0.3");
+                node.setAttribute("pointer-events", "none");
+                node.setAttribute("aria-hidden", "true");
+                // Keep the face's exact dot/line/emoji styling without duplicating IDs or marker selectors.
+                for (const source of [marker, emojiGroup].filter(Boolean)) {
+                    const copy = source.cloneNode(true);
+                    copy.removeAttribute("id");
+                    copy.removeAttribute("class");
+                    copy.querySelectorAll("[id]").forEach(child => child.removeAttribute("id"));
+                    if (source === marker) {
+                        for (const name of ["stroke", "stroke-width", "stroke-dasharray", "stroke-linecap", "opacity", "filter"]) {
+                            copy.style.setProperty(name, doc.defaultView.getComputedStyle(source).getPropertyValue(name));
+                        }
+                    }
+                    node.append(copy);
+                }
+                svg.insertBefore(node, marker);
+                ghost = { node, angle: preview.angle };
+                ghosts.set(svg, ghost);
+            }
+            ghost.node.setAttribute("transform", `rotate(${preview.landingAngle - ghost.angle} ${size / 2} ${size / 2})`);
+        }
+    };
 }

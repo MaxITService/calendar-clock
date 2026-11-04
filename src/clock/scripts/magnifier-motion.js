@@ -212,6 +212,7 @@ function updateMagnifier() {
         }
 
         function startAutoMagnifier(targetRunTime = Date.now() + AUTO_PRE_MS, options = {}) {
+            if (windowStartDragController?.isDragging()) return;
             if (!shouldRunAutoMagnifier() || autoMagnifierActive) return;
 
             lensSize = magnifierEl.offsetWidth;
@@ -258,6 +259,7 @@ function updateMagnifier() {
         }
 
         function updateAutoMagnifier(nowMs) {
+            if (windowStartDragController?.isDragging()) return;
             if (!autoMagnifierActive) return;
 
             lensSize = magnifierEl.offsetWidth;
@@ -307,6 +309,7 @@ function updateMagnifier() {
         }
 
         function moveFromEvent(event) {
+            if (windowStartDragController?.isDragging()) return;
             if (!magnifierEnabled || !magnifierHoverEnabled || autoMagnifierActive || mouseMagnifierHidden) return;
 
             const rect = stageEl.getBoundingClientRect();
@@ -323,6 +326,7 @@ function updateMagnifier() {
         stageEl.addEventListener("pointermove", moveFromEvent);
 
         stageEl.addEventListener("pointerleave", () => {
+            if (windowStartDragController?.isDragging()) return;
             stageEl.classList.remove("is-hovering");
             mouseMagnifierHidden = false;
         });
@@ -416,6 +420,7 @@ function updateMagnifier() {
         }
 
         function applyMagnifierSettings(settings = {}) {
+            if (windowStartDragController?.isDragging()) return;
             if (settings.lensSize !== undefined) setMagnifierLensSize(settings.lensSize);
             if (settings.autoIntervalSeconds !== undefined) setMagnifierAutoIntervalSeconds(settings.autoIntervalSeconds);
             if (settings.hoverEnabled !== undefined) setMagnifierHoverEnabled(settings.hoverEnabled);

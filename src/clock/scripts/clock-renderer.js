@@ -742,6 +742,12 @@ function buildClock() {
             }
 
             const normalizedTargetAngle = normalizeClockAngle(targetAngle);
+            if (windowStartDragController?.isDragging()) {
+                windowStartMarkerAnimatedAngle = normalizedTargetAngle;
+                windowStartMarkerLastTargetAngle = normalizedTargetAngle;
+                windowStartMarkerPulseRequested = false;
+                return normalizedTargetAngle;
+            }
             if (windowStartMarkerAnimatedAngle === null || windowStartMarkerLastTargetAngle === null) {
                 windowStartMarkerAnimatedAngle = normalizedTargetAngle;
                 windowStartMarkerLastTargetAngle = normalizedTargetAngle;

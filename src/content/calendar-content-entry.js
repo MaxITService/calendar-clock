@@ -369,6 +369,9 @@ window.addEventListener("message", event => {
   } else if (data.type === "CALENDAR_CLOCK_SET_MODE") {
     if (!isTrustedCalendarClockFrameMessage(event)) return;
     setClockMode(data.mode);
+  } else if (data.type === "CALENDAR_CLOCK_DRAG_WINDOW_START") {
+    if (!isTrustedCalendarClockFrameMessage(event)) return;
+    applyWindowStartDrag(data);
   } else if (data.type === "CALENDAR_CLOCK_FACE_AVAILABILITY") {
     if (!isTrustedCalendarClockFrameMessage(event)) return;
     applyCalendarClockFaceAvailability(data);

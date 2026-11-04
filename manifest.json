@@ -111,6 +111,7 @@
         "src/clock/popup.html",
         "src/clock/styles/*.css",
         "src/clock/scripts/*.js",
+        "src/clock/window-start-drag/*.mjs",
         "src/clock/faces/*/*.js",
         "src/clock/faces/*/*.css",
         "src/content/overlay/styles/*.css",

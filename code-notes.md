@@ -2,6 +2,8 @@
 
 | File | Short description |
 | --- | --- |
+| `scripts/verify-window-start-drag.mjs` | Exercises hour snapping, limits, normal/lens pointer capture, and persisted window updates. |
+| `src/clock/window-start-drag/controller.mjs` | Hour snapping and broad marker hit detection for normal and magnified clocks. |
 | `src/content/timers/drag.mjs` | Timer header dragging, saved coordinates, keyboard movement, and viewport bounds. |
 | `src/content/timers/controller.mjs` | Optional Full-mode timers with visible direction selectors and starting-time settings. |
 | `src/content/timers/model.mjs` | Count-up/countdown state and paused persistence snapshots that exclude offline time. |

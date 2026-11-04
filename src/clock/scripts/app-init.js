@@ -25,12 +25,38 @@ function syncClockAnimationForOverlayMode() {
         scheduleNextAutoMagnifier();
 }
 
+function loadWindowStartDragging() {
+        import("../window-start-drag/controller.mjs").then(({ installWindowStartDrag }) => {
+                windowStartDragController = installWindowStartDrag({
+                        stage: stageEl, clock: clockEl, magnifiedClock: magnifiedClockEl, lens: lensWindowEl,
+                        getState: () => ({
+                                enabled: !IS_ACTION_POPUP && windowStartMarkerVisible && clockOverlayMode !== "hidden"
+                                        && (!use24HourRadial || windowStartDragSettings.followNow),
+                                followNow: windowStartDragSettings.followNow,
+                                pastHours: windowStartDragSettings.pastHours,
+                                startMinutes: getDisplayWindow().start,
+                                cycleMinutes: getClockCycleMinutes(),
+                                size: clockSize,
+                                lensVisible: magnifierEnabled && (stageEl.classList.contains("is-hovering")
+                                        || stageEl.classList.contains("is-auto-magnifying"))
+                        }),
+                        onChange: value => postToCalendarPage("CALENDAR_CLOCK_DRAG_WINDOW_START", value),
+                        onEnd: event => {
+                                if (autoMagnifierActive) startAutoMagnifierExit();
+                                else if (event && stageEl.matches(":hover")) moveFromEvent(event);
+                                else stageEl.classList.remove("is-hovering");
+                        }
+                });
+        }).catch(error => clockWarn("optional window-start dragging unavailable", error));
+}
+
 function startClockApp() {
         load24HourRadialSetting();
         loadDisplayWindowSettings();
         updateClockTimeZoneIndicator();
         applyDefaultLensSize();
         buildClock();
+        loadWindowStartDragging();
         if (typeof postClockFaceAvailability === "function") postClockFaceAvailability();
         loadStoredCalendarEvents();
         syncClockAnimationForOverlayMode();

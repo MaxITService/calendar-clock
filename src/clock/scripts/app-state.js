@@ -19,6 +19,8 @@ const CALENDAR_CLOCK_PROVIDER = globalThis.CalendarClockProviders?.get?.(CALENDA
 
 const CALENDAR_CLOCK_LOG_PREFIX = "[calen.clock.ext]";
 const stageEl = document.getElementById("stage");
+let windowStartDragSettings = { followNow: false, pastHours: 3 };
+let windowStartDragController = null;
         const clockEl = document.getElementById("clock");
         const magnifierEl = document.getElementById("magnifier");
         const lensWindowEl = document.getElementById("lensWindow");

@@ -2433,7 +2433,7 @@ function updatePanelStats() {
 function persistWindowAndSync(options = {}) {
   if (!options.skipSave) saveCalendarClockState({ debounceMs: options.saveDebounceMs });
   updatePanelControls();
-  syncClockFrame({ rebuild: options.rebuild === true });
+  syncClockFrame({ rebuild: options.rebuild === true, snapWindowStart: options.snapWindowStart === true });
   renderDebugPanel();
   if (options.recapture === true) queuePublishCalendarEvents();
 }
@@ -2527,6 +2527,9 @@ function syncClockFrame(options = {}) {
   }, targetOrigin)) return;
   if (!postCalendarClockFrameMessage({
     type: "CALENDAR_CLOCK_SET_WINDOW",
+    snapWindowStart: options.snapWindowStart === true,
+    followNow: calendarClockState.followNow,
+    pastHours: calendarClockState.followRadiusHours,
     mode: calendarClockState.mode,
     start: formatClockMinutes(displayWindow.start),
     end: formatClockMinutes(displayWindow.end),

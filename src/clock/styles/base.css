@@ -80,6 +80,17 @@
             overflow: hidden;
         }
 
+        .stage.is-window-start-grabbable,
+        .stage.is-window-start-grabbable * {
+            cursor: grab !important;
+        }
+
+        .stage.is-window-start-dragging,
+        .stage.is-window-start-dragging * {
+            cursor: grabbing !important;
+            user-select: none;
+        }
+
         .time-arcs {
             overflow: visible;
         }

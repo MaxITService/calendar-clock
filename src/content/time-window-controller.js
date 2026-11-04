@@ -636,6 +636,22 @@ function clampFollowRadiusHours(value, windowMinutes = getFollowWindowMinutes())
   return Math.min(maxPastHours, Math.max(0, parsed));
 }
 
+function applyWindowStartDrag(data) {
+  if (!calendarClockState.windowStartMarker || calendarClockState.mode === "hidden"
+      || data.followNow !== calendarClockState.followNow) return false;
+  const options = { saveDebounceMs: data.final === true ? 0 : 350, recapture: data.final === true, snapWindowStart: true };
+  if (calendarClockState.followNow) {
+    const maxPastHours = getFollowWindowMinutes() / 60 - 1;
+    if (!Number.isInteger(data.pastHours) || data.pastHours < 0 || data.pastHours > maxPastHours) return false;
+    calendarClockState.followRadiusHours = data.pastHours;
+    return applyFollowNowWindow({ ...options, force: true });
+  }
+  // Manual 24-hour mode is a fixed calendar day; its midnight boundary stays fixed.
+  if (calendarClockState.radial24Hour || !Number.isInteger(data.startMinutes)
+      || data.startMinutes < 0 || data.startMinutes >= 1440 || data.startMinutes % 60 !== 0) return false;
+  return setCustomDividerWindow(formatClockMinutes(data.startMinutes), { ...options, force: true });
+}
+
 function formatFollowRadiusHours(value) {
   const rounded = Math.round(clampFollowRadiusHours(value) * 10) / 10;
   return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
@@ -868,6 +884,7 @@ function setDisplayWindowRange(startMinutes, endMinutes, preset = "generated", o
   if (!followNow) rememberManualWindowState();
   persistWindowAndSync({
     skipSave: options.skipSave,
+    snapWindowStart: options.snapWindowStart,
     rebuild: options.rebuild,
     saveDebounceMs: options.saveDebounceMs,
     recapture: options.recapture === true
@@ -903,6 +920,7 @@ function applyFollowNowWindow(options = {}) {
     "generated",
     {
       keepFollowNow: true,
+      snapWindowStart: options.snapWindowStart,
       skipSave: options.skipSave,
       force: options.force,
       saveDebounceMs: options.saveDebounceMs,

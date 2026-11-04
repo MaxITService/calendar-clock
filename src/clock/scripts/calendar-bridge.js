@@ -31,8 +31,9 @@ function parseWindowMessageDate(value) {
         function applyClockDayPreviewState(value) {
             clockDayPreviewState = normalizeClockDayPreviewState(value);
             if (clockDayPreviewState.active
-                || ["loading", "unavailable"].includes(clockDayPreviewState.phase)) stopAutoMagnifier();
-            else scheduleNextAutoMagnifier();
+                || ["loading", "unavailable"].includes(clockDayPreviewState.phase)) {
+                if (!windowStartDragController?.isDragging()) stopAutoMagnifier();
+            } else scheduleNextAutoMagnifier();
             if (clockDayPreviewState.phase === "loading"
                 || clockDayPreviewState.phase === "unavailable") {
                 applyCalendarEvents([], null, { force: true });
@@ -137,6 +138,10 @@ function setDisplayWindow(start, end, options = {}) {
             if (data.type === "CALENDAR_CLOCK_SET_DAY_PREVIEW") {
                 applyClockDayPreviewState(data);
             } else if (data.type === "CALENDAR_CLOCK_SET_WINDOW") {
+                windowStartDragSettings = {
+                    followNow: data.followNow === true,
+                    pastHours: Number.isFinite(data.pastHours) ? data.pastHours : 3
+                };
                 if (["full", "mini", "hidden"].includes(data.mode)) {
                     const modeChanged = clockOverlayMode !== data.mode;
                     clockOverlayMode = data.mode;
@@ -169,6 +174,7 @@ function setDisplayWindow(start, end, options = {}) {
                     ? { startDate: windowStartDate, endDate: windowEndDate }
                     : null;
                 if (radial24HourChanged || clockFaceChanged) buildClock();
+                if (data.snapWindowStart === true) resetWindowStartMarkerMotion();
                 setDisplayWindow(data.start, data.end, { skipSave: data.transient });
                 postClockFaceAvailability(String(data.clockFaceId || "").trim());
             } else if (data.type === "CALENDAR_CLOCK_SET_WINDOW_START_MARKER") {

@@ -74,6 +74,7 @@ class Node {
   releasePointerCapture() { this.capturedPointer = null; }
   click() { if (!this.disabled) this.handlers.click?.(); }
   focus() {}
+  select() {}
   setCustomValidity(message) { this.validityMessage = message; }
   reportValidity() { return !this.validityMessage; }
   get lastElementChild() { return this.children.at(-1); }
@@ -190,6 +191,36 @@ try {
   assert.equal(state.timers[0].valueMs, 5000);
   root.querySelector(".cc-timer-direction select").value = "down";
   root.querySelector(".cc-timer-direction select").handlers.change();
+  let display = root.querySelector(".cc-timer-display");
+  assert.equal(display.tagName, "button", "Countdown numbers must be keyboard-accessible");
+  display.click();
+  let editor = root.querySelector(".cc-timer-time-editor");
+  assert.equal(editor.hidden, false);
+  assert.equal(editor.value, "00:00:05");
+  editor.value = "00:12:30";
+  editor.handlers.keydown({ key: "Enter", preventDefault() {} });
+  assert.equal(state.timers[0].valueMs, 750000, "Enter saves the directly edited countdown");
+  assert.equal(persisted.timers[0].initialMs, 750000);
+  display = root.querySelector(".cc-timer-display");
+  display.click();
+  editor = root.querySelector(".cc-timer-time-editor");
+  editor.value = "00:99:00";
+  editor.handlers.keydown({ key: "Enter", preventDefault() {} });
+  assert.ok(editor.validityMessage, "Invalid time must be rejected");
+  assert.equal(state.timers[0].valueMs, 750000);
+  editor.handlers.keydown({ key: "Escape", preventDefault() {} });
+  editor.handlers.blur();
+  assert.equal(editor.hidden, true);
+  assert.equal(state.timers[0].valueMs, 750000, "Escape followed by blur must not save");
+  display.click();
+  editor.value = "00:02:00";
+  editor.handlers.blur();
+  assert.equal(state.timers[0].initialMs, 120000, "Clicking away saves a valid edited time");
+  root.querySelector(".cc-timer-controls button").click();
+  now += 1000;
+  root.querySelector(".cc-timer-display").click();
+  root.querySelector(".cc-timer-time-editor").handlers.blur();
+  assert.equal(state.timers[0].phase, "running", "Opening without changing the time must preserve a running timer");
   const gear = root.querySelector(".cc-divider-settings-btn");
   gear.click();
   const details = root.querySelector(".cc-timer-settings");

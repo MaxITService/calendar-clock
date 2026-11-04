@@ -37,7 +37,8 @@
 #calendar-clock-root .cc-timer-direction { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 11px; }
 #calendar-clock-root .cc-timer-direction select { flex: 1; min-width: 0; }
 #calendar-clock-root .cc-timer-card + .cc-timer-card { border-top: 1px solid rgba(128, 110, 90, .25); padding-top: 12px; }
-#calendar-clock-root .cc-timer-display {
+#calendar-clock-root .cc-timer-display,
+#calendar-clock-root .cc-timer-time-editor {
   display: block;
   margin: 12px 0 2px;
   font-size: 32px;
@@ -46,6 +47,19 @@
   letter-spacing: -.5px;
   overflow-wrap: anywhere;
 }
+#calendar-clock-root button.cc-timer-display {
+  width: 100%;
+  height: auto;
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: text;
+}
+#calendar-clock-root .cc-timer-time-editor { width: 100%; height: auto; box-sizing: border-box; line-height: 1.25; }
+#calendar-clock-root .cc-timer-display[hidden],
+#calendar-clock-root .cc-timer-time-editor[hidden] { display: none; }
 #calendar-clock-root .cc-timer-status { display: block; font-size: 11px; opacity: .7; margin-bottom: 12px; }
 #calendar-clock-root .cc-timer-controls { display: flex; gap: 6px; }
 #calendar-clock-root .cc-timer-controls button { flex: 1; min-width: 0; padding: 0 6px; }

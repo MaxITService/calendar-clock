@@ -114,8 +114,52 @@ export async function install({ root, getState, saveState, onContextInvalidated 
       render();
     }, "cc-timer-remove");
     header.append(name, gear, remove);
-    const display = element("output", "cc-timer-display");
-    display.setAttribute("aria-label", `Timer ${index + 1} time`);
+    const display = element(timer.mode === "down" ? "button" : "output", "cc-timer-display");
+    display.setAttribute("aria-label", timer.mode === "down" ? `Edit timer ${index + 1} countdown time` : `Timer ${index + 1} time`);
+    const editor = element("input", "cc-timer-time-editor");
+    editor.type = "text";
+    editor.hidden = true;
+    editor.maxLength = 12;
+    editor.spellcheck = false;
+    editor.setAttribute("aria-label", "Countdown time (HH:MM:SS)");
+    let editing = false;
+    let originalTime = "";
+    function cancelEdit() {
+      editing = false;
+      editor.hidden = true;
+      display.hidden = false;
+      display.focus();
+    }
+    function saveEdit() {
+      if (!editing) return;
+      if (editor.value === originalTime) { cancelEdit(); return; }
+      const valueMs = parseTimerTime(editor.value);
+      editor.setCustomValidity(valueMs === null ? "Enter hours, minutes and seconds, for example 00:05:00." : "");
+      if (!editor.reportValidity()) return;
+      cancelEdit();
+      commit(timer.id, "configure", { mode: "down", valueMs }, ".cc-timer-display");
+    }
+    if (timer.mode === "down") {
+      display.type = "button";
+      display.title = "Click to edit countdown time (HH:MM:SS). Save with Enter or click away; Escape cancels.";
+      display.addEventListener("click", () => {
+        const current = normalizeTimers(getState().timers).find(item => item.id === timer.id);
+        originalTime = formatTimerTime(timerValue(current), "down");
+        editor.value = originalTime;
+        editor.setCustomValidity("");
+        editing = true;
+        display.hidden = true;
+        editor.hidden = false;
+        editor.focus();
+        editor.select();
+      });
+      editor.addEventListener("input", () => editor.setCustomValidity(""));
+      editor.addEventListener("blur", saveEdit);
+      editor.addEventListener("keydown", event => {
+        if (event.key === "Enter") { event.preventDefault(); saveEdit(); }
+        if (event.key === "Escape") { event.preventDefault(); cancelEdit(); }
+      });
+    }
     const status = element("span", "cc-timer-status");
     const controls = element("div", "cc-timer-controls");
     const play = button("Start", "Start timer", () => {
@@ -154,7 +198,7 @@ export async function install({ root, getState, saveState, onContextInvalidated 
       commit(timer.id, "configure", { mode: direction.value, valueMs });
     });
     details.append(timeLabel, element("small", "", "Uses the current reading. Edit it, then Apply and Start."), apply);
-    card.append(header, directionLabel, display, status, controls, details);
+    card.append(header, directionLabel, display, editor, status, controls, details);
     return { card, display, status, play, stop, timer };
   }
 

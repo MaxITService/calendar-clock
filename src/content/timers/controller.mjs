@@ -54,7 +54,13 @@ export async function install({ root, getState, saveState, onContextInvalidated 
     cards.lastElementChild?.querySelector("button")?.focus();
   }
   const add = button("+", "Add a timer", addTimer, "cc-timer-add");
-  heading.append(element("strong", "", "Timers"), add);
+  const close = button("×", "Close timers", () => {
+    getState().timersEnabled = false;
+    render();
+    saveState();
+    root.querySelector('[data-cc-action="time-panel-toggle"]')?.focus();
+  }, "cc-timers-close");
+  heading.append(element("strong", "", "Timers"), add, close);
   panel.append(heading, cards);
   root.append(style);
   root.querySelector(".cc-clock-surface").after(panel);

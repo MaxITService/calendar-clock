@@ -31,6 +31,7 @@
   touch-action: none;
 }
 #calendar-clock-root .cc-timers-heading[data-dragging] { cursor: grabbing; }
+#calendar-clock-root .cc-timers-heading > strong { flex: 1; }
 #calendar-clock-root .cc-timers-heading:focus-visible { outline: 2px solid #b88d5a; outline-offset: 3px; }
 #calendar-clock-root .cc-timer-heading strong { flex: 1; font-size: 12px; }
 #calendar-clock-root .cc-timer-list { display: grid; gap: 12px; }

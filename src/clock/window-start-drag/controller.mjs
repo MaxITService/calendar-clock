@@ -1,4 +1,4 @@
-// Hour-snapped dragging shared by every face, including its magnified copy.
+// Half-hour landing positions shared by every face, including its magnified copy.
 const wrap = (value, cycle) => ((value % cycle) + cycle) % cycle;
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
@@ -21,8 +21,10 @@ export function isNearMarker(point, rect, line, size, tolerance = 30) {
     return Math.hypot(point.clientX - ax - t * dx, point.clientY - ay - t * dy) <= tolerance;
 }
 
-export function createHourDrag({ followNow, pastHours, startMinutes, cycleMinutes }, angle) {
-    const maxPast = cycleMinutes / 60 - 1;
+export function createBoundaryDrag({ followNow, pastHours, startMinutes, cycleMinutes }, angle) {
+    const stepHours = 0.5;
+    const snap = hours => Math.round(hours / stepHours) * stepHours;
+    const maxPast = cycleMinutes / 60 - stepHours;
     const initialPosition = followNow ? pastHours : startMinutes / 60;
     let position = followNow ? clamp(initialPosition, 0, maxPast) : initialPosition;
     const degreesPerHour = 360 / (cycleMinutes / 60);
@@ -30,11 +32,11 @@ export function createHourDrag({ followNow, pastHours, startMinutes, cycleMinute
     const angleFor = hours => startMinutes / cycleMinutes * 360 + (hours - initialPosition) * degreesPerHour * direction;
     let previousAngle = angle;
     const value = () => followNow
-        ? { followNow: true, pastHours: clamp(Math.round(position), 0, maxPast) }
-        : { followNow: false, startMinutes: wrap(Math.round(position), 24) * 60 };
+        ? { followNow: true, pastHours: clamp(snap(position), 0, maxPast) }
+        : { followNow: false, startMinutes: wrap(snap(position), 24) * 60 };
     return {
         value,
-        preview: () => ({ angle: angleFor(position), landingAngle: angleFor(Math.round(position)) }),
+        preview: () => ({ angle: angleFor(position), landingAngle: angleFor(snap(position)) }),
         move(nextAngle) {
             const delta = wrap(nextAngle - previousAngle + 180, 360) - 180;
             previousAngle = nextAngle;
@@ -119,7 +121,7 @@ export function installWindowStartDrag({ stage, clock, magnifiedClock, lens, get
             followNow: target.state.followNow,
             cycleMinutes: target.state.cycleMinutes,
             // Switch to the unzoomed coordinate system before hiding the lens.
-            motion: createHourDrag(target.state, pointerAngle(event, clock.getBoundingClientRect()))
+            motion: createBoundaryDrag(target.state, pointerAngle(event, clock.getBoundingClientRect()))
         };
         stage.classList.add("is-window-start-dragging");
         setCursor("grabbing");

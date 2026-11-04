@@ -1,31 +1,36 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import vm from "node:vm";
-import { createHourDrag, isNearMarker, pointerAngle, installWindowStartDrag } from "../src/clock/window-start-drag/controller.mjs";
+import { createBoundaryDrag, isNearMarker, pointerAngle, installWindowStartDrag } from "../src/clock/window-start-drag/controller.mjs";
 
-const follow = (pastHours = 3, cycleMinutes = 720, angle = 0) => createHourDrag({ followNow: true, pastHours, startMinutes: 0, cycleMinutes }, angle);
+const follow = (pastHours = 3, cycleMinutes = 720, angle = 0) => createBoundaryDrag({ followNow: true, pastHours, startMinutes: 0, cycleMinutes }, angle);
 let motion = follow();
-assert.equal(motion.move(14).pastHours, 3);
+assert.equal(motion.move(7).pastHours, 3);
+assert.equal(motion.move(8).pastHours, 2.5);
+assert.equal(motion.move(14).pastHours, 2.5);
 assert.ok(Math.abs(motion.preview().angle - 14) < 1e-9);
-assert.equal(motion.preview().landingAngle, 0);
-assert.equal(motion.move(16).pastHours, 2);
+assert.equal(motion.preview().landingAngle, 15);
+assert.equal(motion.move(16).pastHours, 2.5);
+assert.equal(motion.move(23).pastHours, 2);
 assert.equal(motion.move(60).pastHours, 1);
 assert.equal(motion.move(120).pastHours, 0);
 assert.equal(motion.move(240).pastHours, 0);
-assert.equal(motion.move(224).pastHours, 1); // No accumulated overshoot at the limit.
+assert.equal(motion.move(224).pastHours, 0.5); // No accumulated overshoot at the limit.
 motion = follow(10);
-assert.equal(motion.move(300).pastHours, 11);
-assert.equal(motion.move(240).pastHours, 11);
-assert.equal(motion.move(256).pastHours, 10);
-assert.equal(follow(11.5).value().pastHours, 11);
-assert.equal(follow(23.5, 1440).value().pastHours, 23);
+assert.equal(motion.move(300).pastHours, 11.5);
+assert.equal(motion.move(240).pastHours, 11.5);
+assert.equal(motion.move(256).pastHours, 11);
+assert.equal(follow(11.5).value().pastHours, 11.5);
+assert.equal(follow(23.5, 1440).value().pastHours, 23.5);
+assert.equal(follow(3, 1440).move(4).pastHours, 2.5);
 assert.equal(follow(3, 1440).move(15).pastHours, 2);
 assert.equal(follow(3, 720, 350).move(20).pastHours, 2);
-motion = createHourDrag({ followNow: false, startMinutes: 23 * 60, cycleMinutes: 720 }, 330);
+motion = createBoundaryDrag({ followNow: false, startMinutes: 23 * 60, cycleMinutes: 720 }, 330);
+assert.equal(motion.move(345).startMinutes, 23 * 60 + 30);
 assert.equal(motion.move(0).startMinutes, 0);
 assert.equal(motion.move(330).startMinutes, 23 * 60);
 for (let angle = 0; angle < 1440; angle += 0.37) {
-    assert.equal(motion.move(angle % 360).startMinutes % 60, 0);
+    assert.equal(motion.move(angle % 360).startMinutes % 30, 0);
 }
 
 const rect = { left: 10, top: 20, width: 400, height: 400 };
@@ -140,10 +145,10 @@ for (const test of [harness(false), harness(true)]) {
     point("pointerdown", 210, 60);
     point("pointermove", 300, 25);
     point("pointerup", 300, 25);
-    assert.equal(changes.at(-1).startMinutes, 540);
+    assert.equal(changes.at(-1).startMinutes, 570);
     assert.equal(changes.length, 2);
     assert.equal(controller.getPreview().landingAngle, null, "Hold landing until the parent applies the value");
-    state.startMinutes = 540;
+    state.startMinutes = 570;
     assert.equal(controller.getPreview(), null);
     for (const cancel of ["escape", "blur", "mode-change"]) {
         Object.assign(state, { followNow: true, pastHours: 3, startMinutes: 0 });
@@ -178,7 +183,7 @@ vm.runInContext(fs.readFileSync(new URL("../src/content/time-window-controller.j
 context.applyFollowNowWindow = options => { calls.push(options); return true; };
 context.setCustomDividerWindow = (value, options) => { calls.push({ value, ...options }); return true; };
 context.formatClockMinutes = minutes => `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
-for (const pastHours of [-1, 12, 3.5, NaN, "3"]) {
+for (const pastHours of [-1, 12, 3.25, NaN, "3"]) {
     assert.equal(context.applyWindowStartDrag({ followNow: true, pastHours }), false);
 }
 assert.equal(context.applyWindowStartDrag({ followNow: true, pastHours: 11 }), true);
@@ -189,9 +194,12 @@ assert.equal(calls.at(-1).snapWindowStart, true);
 context.applyWindowStartDrag({ followNow: true, pastHours: 11, final: true });
 assert.equal(calls.at(-1).saveDebounceMs, 0);
 assert.equal(calls.at(-1).recapture, true);
+assert.equal(context.applyWindowStartDrag({ followNow: true, pastHours: 11.5 }), true);
+assert.equal(state.followRadiusHours, 11.5);
 state.radial24Hour = true;
 assert.equal(context.applyWindowStartDrag({ followNow: true, pastHours: 23 }), true);
 assert.equal(context.applyWindowStartDrag({ followNow: true, pastHours: 24 }), false);
+assert.equal(context.applyWindowStartDrag({ followNow: true, pastHours: 23.5 }), true);
 state.followNow = false;
 assert.equal(context.applyWindowStartDrag({ followNow: false, startMinutes: 60 }), false);
 state.radial24Hour = false;
@@ -200,6 +208,8 @@ assert.equal(context.applyWindowStartDrag({ followNow: false, startMinutes: 1440
 assert.equal(context.applyWindowStartDrag({ followNow: true, pastHours: 2 }), false);
 assert.equal(context.applyWindowStartDrag({ followNow: false, startMinutes: 23 * 60, final: true }), true);
 assert.equal(calls.at(-1).value, "23:00");
+assert.equal(context.applyWindowStartDrag({ followNow: false, startMinutes: 1410, final: true }), true);
+assert.equal(calls.at(-1).value, "23:30");
 state.windowStartMarker = false;
 assert.equal(context.applyWindowStartDrag({ followNow: false, startMinutes: 0 }), false);
-console.log("Window-start drag verifier passed (continuous preview, hour landing, wide normal/lens capture, cancellation, persistence).");
+console.log("Window-start drag verifier passed (continuous preview, half-hour landing, wide normal/lens capture, cancellation, persistence).");

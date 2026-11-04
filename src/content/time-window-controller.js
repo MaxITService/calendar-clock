@@ -641,14 +641,15 @@ function applyWindowStartDrag(data) {
       || data.followNow !== calendarClockState.followNow) return false;
   const options = { saveDebounceMs: data.final === true ? 0 : 350, recapture: data.final === true, snapWindowStart: true };
   if (calendarClockState.followNow) {
-    const maxPastHours = getFollowWindowMinutes() / 60 - 1;
-    if (!Number.isInteger(data.pastHours) || data.pastHours < 0 || data.pastHours > maxPastHours) return false;
+    const maxPastHours = getFollowWindowMinutes() / 60 - 0.5;
+    if (!Number.isFinite(data.pastHours) || !Number.isInteger(data.pastHours * 2)
+        || data.pastHours < 0 || data.pastHours > maxPastHours) return false;
     calendarClockState.followRadiusHours = data.pastHours;
     return applyFollowNowWindow({ ...options, force: true });
   }
   // Manual 24-hour mode is a fixed calendar day; its midnight boundary stays fixed.
   if (calendarClockState.radial24Hour || !Number.isInteger(data.startMinutes)
-      || data.startMinutes < 0 || data.startMinutes >= 1440 || data.startMinutes % 60 !== 0) return false;
+      || data.startMinutes < 0 || data.startMinutes >= 1440 || data.startMinutes % 30 !== 0) return false;
   return setCustomDividerWindow(formatClockMinutes(data.startMinutes), { ...options, force: true });
 }
 

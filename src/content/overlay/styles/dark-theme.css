@@ -83,6 +83,10 @@
       color: #f4ede3;
     }
 
+    #calendar-clock-root.cc-menu-theme-dark .cc-panel-version {
+      color: #d7c3a5;
+    }
+
     #calendar-clock-root.cc-menu-theme-dark .cc-section-title,
     #calendar-clock-root.cc-menu-theme-dark .cc-field-label,
     #calendar-clock-root.cc-menu-theme-dark .cc-window-summary,

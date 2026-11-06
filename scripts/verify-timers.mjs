@@ -58,6 +58,15 @@ assert.equal(resettable.initialMs, 300000, "Adding while running keeps the start
 assert.deepEqual(normalizeTimers([null, {}, { id: "bad id" }]), []);
 assert.equal(normalizeTimers([timer, timer]).length, 1);
 assert.equal(changeTimer(createTimer("zero"), "configure", 0, { valueMs: NaN }).valueMs, 0);
+// Regression: switching direction used to turn the current reading into the Reset target (e.g. 3 seconds).
+let flipped = changeTimer(changeTimer(createTimer("flip"), "start", 0), "configure", 3000, { mode: "down" });
+assert.equal(flipped.valueMs, 3000, "Direction change keeps the reading");
+assert.equal(flipped.initialMs, 0, "Direction change must not move the Reset target");
+assert.equal(flipped.phase, "paused");
+let countdown = changeTimer(createTimer("flip-down"), "configure", 0, { mode: "down", valueMs: 300000 });
+countdown = changeTimer(changeTimer(countdown, "start", 0), "configure", 3000, { mode: "up" });
+countdown = changeTimer(countdown, "configure", 3000, { mode: "down" });
+assert.equal(changeTimer(countdown, "reset", 3000).valueMs, 300000, "Reset returns to the time the user set");
 
 // Exercise the panel without browser globals or a running extension.
 class Node {
@@ -208,7 +217,8 @@ try {
   direction.handlers.change();
   assert.equal(state.timers[0].mode, "down", "Direction can be changed without opening settings");
   assert.equal(state.timers[0].valueMs, 5000, "Switching direction preserves the current reading");
-  assert.equal(state.timers[0].phase, "idle", "Changing direction waits for Start");
+  assert.equal(state.timers[0].phase, "paused", "Changing direction waits for Resume");
+  assert.equal(state.timers[0].initialMs, 0, "Changing direction keeps the Reset target");
   assert.equal(state.timers[1].mode, "up", "Each timer has its own direction");
   const reverse = root.querySelector(".cc-timer-direction select");
   reverse.value = "up";

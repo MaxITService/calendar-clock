@@ -97,9 +97,15 @@ export function changeTimer(timer, action, now = Date.now(), settings = {}) {
     return { ...timer, initialMs: next, valueMs: next, startedAt: null, phase: "idle" };
   }
   if (action === "configure") {
-    const initialMs = settings.valueMs ?? valueMs;
+    const mode = settings.mode === "down" ? "down" : "up";
+    if (settings.valueMs === undefined) {
+      // Direction change keeps the reading but never moves the Reset target.
+      return { ...timer, mode, valueMs, startedAt: null,
+        phase: valueMs === timer.initialMs ? "idle" : "paused" };
+    }
+    const initialMs = settings.valueMs;
     if (!Number.isFinite(initialMs) || initialMs < 0) return timer;
-    return { ...timer, mode: settings.mode === "down" ? "down" : "up", initialMs,
+    return { ...timer, mode, initialMs,
       valueMs: initialMs, startedAt: null, phase: "idle" };
   }
   return timer;

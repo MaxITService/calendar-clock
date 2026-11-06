@@ -161,6 +161,11 @@ try {
   assert.equal(handle.capturedPointer, null, "Header buttons must not start dragging");
   handle.handlers.pointerdown({ ...pointer, target: root.querySelector(".cc-timers-close") });
   assert.equal(handle.capturedPointer, null, "Close must not start dragging");
+  const grip = root.querySelector(".cc-timers-grip");
+  assert.ok(grip, "Header shows a visible drag grip");
+  handle.handlers.pointerdown({ ...pointer, target: grip });
+  assert.equal(handle.capturedPointer, 1, "The grip starts dragging");
+  handle.handlers.pointerup(pointer);
   handle.handlers.pointerdown(pointer);
   handle.handlers.pointermove({ ...pointer, clientX: 400, clientY: 300 });
   handle.handlers.pointerup(pointer);

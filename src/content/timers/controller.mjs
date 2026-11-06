@@ -60,7 +60,9 @@ export async function install({ root, getState, saveState, onContextInvalidated 
     saveState();
     root.querySelector('[data-cc-action="time-panel-toggle"]')?.focus();
   }, "cc-timers-close");
-  heading.append(element("strong", "", "Timers"), add, close);
+  const grip = element("span", "cc-timers-grip", "⠿");
+  grip.setAttribute("aria-hidden", "true");
+  heading.append(grip, element("strong", "", "Timers"), add, close);
   panel.append(heading, cards);
   root.append(style);
   root.querySelector(".cc-clock-surface").after(panel);

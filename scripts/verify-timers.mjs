@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import vm from "node:vm";
-import { createTimer, normalizeTimers, timerValue, timerFinished, formatTimerTime, parseTimerTime, changeTimer, snapshotTimers, restoreTimers } from "../src/content/timers/model.mjs";
+import { createTimer, normalizeTimers, timerValue, timerAtStart, timerFinished, formatTimerTime, parseTimerTime, changeTimer, snapshotTimers, restoreTimers } from "../src/content/timers/model.mjs";
 import { install } from "../src/content/timers/controller.mjs";
 
 let timer = createTimer("first");
@@ -36,7 +36,25 @@ assert.equal(restoreTimers([timer])[0].valueMs, timer.valueMs, "Stored timestamp
 assert.equal(snapshotTimers([timer], 90000)[0].phase, "stopped", "Finished countdown saves at zero");
 assert.equal(parseTimerTime("02:03:04"), 7384000);
 assert.equal(formatTimerTime(7384999), "02:03:04");
-for (const value of ["abc", "00:60:00", "-1:00:00", "00:00:99", "1.5"]) assert.equal(parseTimerTime(value), null);
+for (const value of ["abc", "-1:00:00", "1.5", "1:2:3:4", "1000:00:00", "5x"]) assert.equal(parseTimerTime(value), null);
+for (const [text, seconds] of [["", 0], ["  ", 0], ["5:00", 300], ["500", 300], ["90", 90], ["00:99:00", 5940],
+  ["25m", 1500], ["1h 30m", 5400], ["1,5h", 5400], ["45s", 45], ["999:59:59", 3599999]]) {
+  assert.equal(parseTimerTime(text), seconds * 1000, `Lenient entry: ${JSON.stringify(text)}`);
+}
+let resettable = changeTimer(createTimer("reset"), "configure", 0, { mode: "down", valueMs: 60000 });
+assert.equal(timerAtStart(resettable), true);
+resettable = changeTimer(changeTimer(resettable, "start", 0), "pause", 10000);
+resettable = changeTimer(resettable, "reset", 10000);
+assert.equal(resettable.valueMs, 60000, "First Reset returns to the starting time");
+resettable = changeTimer(resettable, "reset", 10000);
+assert.equal(resettable.valueMs + resettable.initialMs, 0, "Reset at the starting time clears to zero");
+resettable = changeTimer(resettable, "adjust", 0, { deltaMs: 300000 });
+assert.equal(resettable.initialMs, 300000, "Adding to an idle countdown sets its starting time");
+resettable = changeTimer(resettable, "start", 0);
+resettable = changeTimer(resettable, "adjust", 400000, { deltaMs: 60000 });
+assert.equal(resettable.phase, "running", "Adding time to a finished countdown keeps it running");
+assert.equal(timerValue(resettable, 430000), 30000);
+assert.equal(resettable.initialMs, 300000, "Adding while running keeps the starting time");
 assert.deepEqual(normalizeTimers([null, {}, { id: "bad id" }]), []);
 assert.equal(normalizeTimers([timer, timer]).length, 1);
 assert.equal(changeTimer(createTimer("zero"), "configure", 0, { valueMs: NaN }).valueMs, 0);
@@ -180,7 +198,7 @@ try {
   assert.equal(persisted.timers[0].valueMs, 5000, "Active timers save regular paused checkpoints");
   assert.equal(state.timers[0].phase, "running", "Checkpoint does not pause the live timer");
   const direction = root.querySelector(".cc-timer-direction select");
-  assert.equal(root.querySelector(".cc-timer-settings").hidden, true);
+  assert.equal(root.querySelector(".cc-timer-settings"), null, "Time is edited directly, not in a settings panel");
   direction.value = "down";
   direction.handlers.change();
   assert.equal(state.timers[0].mode, "down", "Direction can be changed without opening settings");
@@ -206,7 +224,7 @@ try {
   display = root.querySelector(".cc-timer-display");
   display.click();
   editor = root.querySelector(".cc-timer-time-editor");
-  editor.value = "00:99:00";
+  editor.value = "abc";
   editor.handlers.keydown({ key: "Enter", preventDefault() {} });
   assert.ok(editor.validityMessage, "Invalid time must be rejected");
   assert.equal(state.timers[0].valueMs, 750000);
@@ -223,16 +241,35 @@ try {
   root.querySelector(".cc-timer-display").click();
   root.querySelector(".cc-timer-time-editor").handlers.blur();
   assert.equal(state.timers[0].phase, "running", "Opening without changing the time must preserve a running timer");
-  const gear = root.querySelector(".cc-divider-settings-btn");
-  gear.click();
-  const details = root.querySelector(".cc-timer-settings");
-  assert.equal(details.hidden, false);
-  assert.equal(details.querySelector("select"), null, "Settings contain only starting time");
-  details.querySelector("input").value = "00:05:00";
-  details.querySelector("button").click();
+  display = root.querySelector(".cc-timer-display");
+  display.click();
+  editor = root.querySelector(".cc-timer-time-editor");
+  editor.value = "";
+  editor.handlers.keydown({ key: "Enter", preventDefault() {} });
+  assert.equal(state.timers[0].valueMs, 0, "Deleting everything means 00:00:00");
+  assert.equal(state.timers[0].phase, "idle");
+  root.querySelector(".cc-timer-display").click();
+  editor = root.querySelector(".cc-timer-time-editor");
+  editor.value = "zzz";
+  editor.handlers.blur();
+  assert.equal(editor.hidden, true, "Clicking away from an invalid entry cancels instead of trapping");
+  root.querySelector(".cc-timer-adjust button").click();
+  assert.equal(state.timers[0].initialMs, 60000, "+1m sets a countdown time");
+  const resetButton = root.querySelector(".cc-timer-reset");
+  assert.equal(resetButton.textContent, "Clear");
+  resetButton.click();
+  assert.equal(state.timers[0].initialMs, 0, "Clear empties the starting time");
+  assert.equal(root.querySelector(".cc-timer-reset").disabled, true);
+  root.querySelector(".cc-timer-display").click();
+  editor = root.querySelector(".cc-timer-time-editor");
+  editor.value = "5m";
+  editor.handlers.keydown({ key: "Enter", preventDefault() {} });
   assert.equal(state.timers[0].mode, "down");
   assert.equal(state.timers[0].initialMs, 300000);
   assert.equal(state.timers[0].phase, "idle");
+  const upDisplay = root.querySelector(".cc-timer-list").children[1].querySelector(".cc-timer-display");
+  assert.equal(upDisplay.tagName, "button", "Count-up time is editable too");
+  assert.equal(root.querySelector(".cc-timer-list").children[1].querySelector(".cc-timer-adjust").hidden, true);
   assert.equal(root.querySelector(".cc-timer-list").children.length, 2, "Direction changes retain the timer's list position");
   state.timers = state.timers.filter(item => item.id === first);
   api.update();

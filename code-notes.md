@@ -5,9 +5,9 @@
 | `scripts/verify-window-start-drag.mjs` | Exercises half-hour snapping, limits, normal/lens pointer capture, and persisted window updates. |
 | `src/clock/window-start-drag/controller.mjs` | Broad marker capture, continuous dragging with a snapped landing ghost, and release-only updates. |
 | `src/content/timers/drag.mjs` | Timer header dragging, saved coordinates, keyboard movement, and viewport bounds. |
-| `src/content/timers/controller.mjs` | Optional Full-mode timers with visible direction selectors and starting-time settings. |
-| `src/content/timers/model.mjs` | Count-up/countdown state and paused persistence snapshots that exclude offline time. |
-| `src/content/timers/styles.css` | Side panel, timer controls, and expandable settings. |
+| `src/content/timers/controller.mjs` | Optional Full-mode timers: inline time editing, Start/Pause + Reset/Clear, countdown +minutes buttons. |
+| `src/content/timers/model.mjs` | Count-up/countdown state, lenient time parsing, and paused persistence snapshots that exclude offline time. |
+| `src/content/timers/styles.css` | Side panel, timer controls, and finished-countdown highlight. |
 | `scripts/verify-timers.mjs` | Verifies timer transitions, reload accuracy, panel controls, and optional-module wiring. |
 | `.gitattributes` | Normalizes repository text files to LF while preserving CRLF for Windows batch scripts. |
 | `.gitignore` | Ignores local VS Code settings and agent scratch notes. |

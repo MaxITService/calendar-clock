@@ -1,4 +1,4 @@
-import { createTimer, normalizeTimers, timerValue, timerFinished, formatTimerTime, parseTimerTime, changeTimer, snapshotTimers, restoreTimers } from "./model.mjs";
+import { createTimer, normalizeTimers, timerValue, timerFinished, timerAtStart, formatTimerTime, parseTimerTime, changeTimer, snapshotTimers, restoreTimers } from "./model.mjs";
 import { installDragging } from "./drag.mjs";
 
 export async function install({ root, getState, saveState, onContextInvalidated }) {
@@ -94,87 +94,85 @@ export async function install({ root, getState, saveState, onContextInvalidated 
     saveState();
     render();
     const row = rows.find(item => item.timer.id === id);
-    row?.card.querySelector(focusSelector ?? (action === "configure" ? ".cc-divider-settings-btn" : ".cc-timer-controls button"))?.focus();
+    row?.card.querySelector(focusSelector ?? ".cc-timer-play")?.focus();
   }
 
   function makeCard(timer, index) {
     const card = element("article", "cc-timer-card");
     const header = element("div", "cc-timer-heading");
     const name = element("strong", "", `Timer ${index + 1}`);
-    const details = element("div", "cc-timer-settings");
-    details.hidden = true;
-    const gear = button("⚙️", "Timer settings: starting time", () => {
-      details.hidden = !details.hidden;
-      gear.setAttribute("aria-expanded", String(!details.hidden));
-      if (!details.hidden) {
-        const current = normalizeTimers(getState().timers).find(item => item.id === timer.id);
-        direction.value = current.mode;
-        time.value = formatTimerTime(timerValue(current), current.mode);
-      }
-    }, "cc-divider-settings-btn");
-    gear.setAttribute("aria-expanded", "false");
     const remove = button("×", "Remove timer", () => {
       getState().timers = getState().timers.filter(item => item.id !== timer.id);
       if (!getState().timers.length) getState().timers = [createTimer(window.crypto.randomUUID())];
       saveState();
       render();
     }, "cc-timer-remove");
-    header.append(name, gear, remove);
-    const display = element(timer.mode === "down" ? "button" : "output", "cc-timer-display");
-    display.setAttribute("aria-label", timer.mode === "down" ? `Edit timer ${index + 1} countdown time` : `Timer ${index + 1} time`);
+    header.append(name, remove);
+    const display = button("", `Edit timer ${index + 1} time`, () => startEdit(), "cc-timer-display");
+    display.title = "Click to set the time. Empty = 00:00:00.";
     const editor = element("input", "cc-timer-time-editor");
     editor.type = "text";
     editor.hidden = true;
-    editor.maxLength = 12;
+    editor.maxLength = 20;
     editor.spellcheck = false;
-    editor.setAttribute("aria-label", "Countdown time (HH:MM:SS)");
+    editor.placeholder = "00:00:00";
+    editor.setAttribute("aria-label", "Timer time");
+    const hint = element("small", "cc-timer-hint", "5:00 · 25m · 1h30m · 500 = 5:00 · empty = 0. Enter saves, Esc cancels.");
+    hint.hidden = true;
     let editing = false;
     let originalTime = "";
+    function startEdit() {
+      const current = normalizeTimers(getState().timers).find(item => item.id === timer.id);
+      originalTime = formatTimerTime(timerValue(current), current.mode);
+      editor.value = originalTime;
+      editor.setCustomValidity("");
+      editing = true;
+      display.hidden = true;
+      editor.hidden = false;
+      hint.hidden = false;
+      editor.focus();
+      editor.select();
+    }
     function cancelEdit() {
       editing = false;
       editor.hidden = true;
+      hint.hidden = true;
       display.hidden = false;
       display.focus();
     }
     function saveEdit() {
       if (!editing) return;
-      if (editor.value === originalTime) { cancelEdit(); return; }
+      if (editor.value.trim() === originalTime) { cancelEdit(); return; }
       const valueMs = parseTimerTime(editor.value);
-      editor.setCustomValidity(valueMs === null ? "Enter hours, minutes and seconds, for example 00:05:00." : "");
+      editor.setCustomValidity(valueMs === null ? "Try 5:00, 25m, 1h30m or 1:30:00." : "");
       if (!editor.reportValidity()) return;
       cancelEdit();
-      commit(timer.id, "configure", { mode: "down", valueMs }, ".cc-timer-display");
+      commit(timer.id, "configure", { mode: timer.mode, valueMs }, ".cc-timer-display");
     }
-    if (timer.mode === "down") {
-      display.type = "button";
-      display.title = "Click to edit countdown time (HH:MM:SS). Save with Enter or click away; Escape cancels.";
-      display.addEventListener("click", () => {
-        const current = normalizeTimers(getState().timers).find(item => item.id === timer.id);
-        originalTime = formatTimerTime(timerValue(current), "down");
-        editor.value = originalTime;
-        editor.setCustomValidity("");
-        editing = true;
-        display.hidden = true;
-        editor.hidden = false;
-        editor.focus();
-        editor.select();
-      });
-      editor.addEventListener("input", () => editor.setCustomValidity(""));
-      editor.addEventListener("blur", saveEdit);
-      editor.addEventListener("keydown", event => {
-        if (event.key === "Enter") { event.preventDefault(); saveEdit(); }
-        if (event.key === "Escape") { event.preventDefault(); cancelEdit(); }
-      });
-    }
+    editor.addEventListener("input", () => editor.setCustomValidity(""));
+    editor.addEventListener("blur", () => {
+      // Leaving an invalid entry must not trap the user; it simply cancels.
+      if (editing && parseTimerTime(editor.value) === null) cancelEdit();
+      else saveEdit();
+    });
+    editor.addEventListener("keydown", event => {
+      if (event.key === "Enter") { event.preventDefault(); saveEdit(); }
+      if (event.key === "Escape") { event.preventDefault(); cancelEdit(); }
+    });
     const status = element("span", "cc-timer-status");
+    const adjust = element("div", "cc-timer-adjust");
+    adjust.hidden = timer.mode !== "down";
+    for (const minutes of [1, 5, 15]) {
+      adjust.append(button(`+${minutes}m`, `Add ${minutes} minute${minutes > 1 ? "s" : ""}`,
+        () => commit(timer.id, "adjust", { deltaMs: minutes * 60000 }, ".cc-timer-adjust button")));
+    }
     const controls = element("div", "cc-timer-controls");
     const play = button("Start", "Start timer", () => {
       const current = normalizeTimers(getState().timers).find(item => item.id === timer.id);
       commit(timer.id, current.phase === "running" && !timerFinished(current) ? "pause" : "start");
-    });
-    const stop = button("Stop", "Stop and keep the result. Start begins again from the configured time.", () => commit(timer.id, "stop"));
-    const reset = button("Reset", "Reset to the configured starting time", () => commit(timer.id, "reset"));
-    controls.append(play, stop, reset);
+    }, "cc-timer-play");
+    const reset = button("Reset", "Reset", () => commit(timer.id, "reset", {}, ".cc-timer-reset"), "cc-timer-reset");
+    controls.append(play, reset);
     const directionLabel = element("label", "cc-timer-direction", "Direction");
     const direction = document.createElement("select");
     direction.title = "Changing direction keeps the current reading and pauses the timer.";
@@ -188,24 +186,8 @@ export async function install({ root, getState, saveState, onContextInvalidated 
       commit(timer.id, "configure", { mode: direction.value }, ".cc-timer-direction select");
     });
     directionLabel.append(direction);
-    const timeLabel = element("label", "", "Starting time (HH:MM:SS)");
-    const time = document.createElement("input");
-    time.type = "text";
-    time.value = formatTimerTime(timerValue(timer), timer.mode);
-    time.placeholder = "00:05:00";
-    time.maxLength = 12;
-    time.spellcheck = false;
-    time.addEventListener("input", () => time.setCustomValidity(""));
-    timeLabel.append(time);
-    const apply = button("Apply", "Set starting time; timer will be ready to start", () => {
-      const valueMs = parseTimerTime(time.value);
-      time.setCustomValidity(valueMs === null ? "Enter hours, minutes and seconds, for example 00:05:00." : "");
-      if (!time.reportValidity()) return;
-      commit(timer.id, "configure", { mode: direction.value, valueMs });
-    });
-    details.append(timeLabel, element("small", "", "Uses the current reading. Edit it, then Apply and Start."), apply);
-    card.append(header, directionLabel, display, editor, status, controls, details);
-    return { card, display, status, play, stop, timer };
+    card.append(header, directionLabel, display, editor, hint, status, adjust, controls);
+    return { card, display, status, play, reset, timer };
   }
 
   function tick() {
@@ -213,12 +195,25 @@ export async function install({ root, getState, saveState, onContextInvalidated 
     for (const row of rows) {
       const { timer } = row;
       const finished = timerFinished(timer, now);
-      row.display.textContent = formatTimerTime(timerValue(timer, now), timer.mode);
-      row.status.textContent = finished ? "Finished" : `${timer.mode === "down" ? "Count down" : "Count up"} · ${timer.phase}`;
-      row.play.textContent = timer.phase === "running" && !finished ? "Pause" : timer.phase === "paused" ? "Resume" : "Start";
+      const value = timerValue(timer, now);
+      row.display.textContent = formatTimerTime(value, timer.mode);
+      row.card.dataset.finished = String(finished);
+      const running = timer.phase === "running" && !finished;
+      row.status.textContent = finished ? "Time's up"
+        : running ? (timer.mode === "down" ? "Counting down" : "Counting up")
+        : timer.phase === "paused" ? "Paused"
+        : timer.mode === "down" && value === 0 ? "Set a time to count down"
+        : "Ready";
+      row.play.textContent = running ? "Pause" : timer.phase === "paused" ? "Resume"
+        : finished || timer.phase === "stopped" ? "Restart" : "Start";
       row.play.setAttribute("aria-label", `${row.play.textContent} timer`);
-      row.play.disabled = timer.mode === "down" && timerValue(timer, now) === 0 && timer.initialMs === 0;
-      row.stop.disabled = ["idle", "stopped"].includes(timer.phase) || finished;
+      row.play.disabled = timer.mode === "down" && value === 0 && timer.initialMs === 0;
+      const clears = timerAtStart(timer);
+      row.reset.textContent = clears ? "Clear" : "Reset";
+      row.reset.title = clears ? "Clear the time to 00:00:00"
+        : `Back to ${formatTimerTime(timer.initialMs, timer.mode)}`;
+      row.reset.setAttribute("aria-label", row.reset.title);
+      row.reset.disabled = clears && timer.initialMs === 0;
     }
     if (rows.some(row => row.timer.phase === "running")
         && (now - lastSavedAt >= 1000 || rows.some(row => timerFinished(row.timer, now)))) {

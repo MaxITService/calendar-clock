@@ -20,7 +20,8 @@
 }
 #calendar-clock-root .cc-timers[data-side="left"] { right: auto; left: 24px; }
 #calendar-clock-root .cc-timers[hidden],
-#calendar-clock-root .cc-timer-settings[hidden],
+#calendar-clock-root .cc-timer-adjust[hidden],
+#calendar-clock-root .cc-timer-hint[hidden],
 #calendar-clock-root:not(.cc-mode-full) .cc-timers { display: none; }
 #calendar-clock-root .cc-timers-heading,
 #calendar-clock-root .cc-timer-heading { display: flex; align-items: center; gap: 8px; }
@@ -66,8 +67,13 @@
 #calendar-clock-root .cc-timer-controls button { flex: 1; min-width: 0; padding: 0 6px; }
 #calendar-clock-root .cc-timer-add { min-width: 28px; font-size: 20px; }
 #calendar-clock-root .cc-timer-remove { font-size: 18px; min-width: 24px; padding: 0 4px; }
-#calendar-clock-root .cc-timer-settings { display: grid; gap: 10px; margin-top: 12px; }
-#calendar-clock-root .cc-timer-settings label { display: grid; gap: 5px; font-size: 11px; }
-#calendar-clock-root .cc-timer-settings select,
-#calendar-clock-root .cc-timer-settings input { width: 100%; min-width: 0; box-sizing: border-box; }
-#calendar-clock-root .cc-timer-settings small { font-size: 11px; opacity: .7; line-height: 1.4; }
+#calendar-clock-root .cc-timer-hint { display: block; font-size: 10.5px; line-height: 1.4; opacity: .7; margin-bottom: 6px; }
+#calendar-clock-root .cc-timer-adjust { display: flex; gap: 6px; margin-bottom: 8px; }
+#calendar-clock-root .cc-timer-adjust button { flex: 1; min-width: 0; height: 24px; padding: 0 4px; font-size: 11px; }
+#calendar-clock-root .cc-timer-card[data-finished="true"] .cc-timer-display,
+#calendar-clock-root .cc-timer-card[data-finished="true"] .cc-timer-status { color: #c0392b; opacity: 1; font-weight: 600; }
+#calendar-clock-root .cc-timer-card[data-finished="true"] .cc-timer-display { animation: cc-timer-done 1s ease-in-out infinite; }
+@keyframes cc-timer-done { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) {
+  #calendar-clock-root .cc-timer-card[data-finished="true"] .cc-timer-display { animation: none; }
+}

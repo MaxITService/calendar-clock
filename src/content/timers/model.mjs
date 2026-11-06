@@ -47,9 +47,31 @@ export function formatTimerTime(ms, mode = "up") {
     .map(value => String(value).padStart(2, "0")).join(":");
 }
 
+const MAX_TIMER_SECONDS = 1000 * 3600 - 1;
+
+// Lenient entry: "" = 0, "5:00", "1:30:00", "25m", "1h 30m", "90s"; bare digits fill from the right (500 = 5:00).
 export function parseTimerTime(text) {
-  const match = /^(\d{1,6}):([0-5]\d):([0-5]\d)$/.exec(String(text).trim());
-  return match ? (Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3])) * 1000 : null;
+  const value = String(text ?? "").trim().toLowerCase().replace(/,/g, ".");
+  if (!value) return 0;
+  let seconds;
+  if (/[a-z]/.test(value)) {
+    const match = /^(?:(\d+(?:\.\d+)?)\s*h(?:ours?|rs?)?)?\s*(?:(\d+(?:\.\d+)?)\s*m(?:in(?:utes?|s)?)?)?\s*(?:(\d+)\s*s(?:ec(?:onds?|s)?)?)?$/.exec(value);
+    if (!match) return null;
+    seconds = Number(match[1] ?? 0) * 3600 + Number(match[2] ?? 0) * 60 + Number(match[3] ?? 0);
+  } else if (/^\d+$/.test(value)) {
+    const digits = value.replace(/^0+(?=\d)/, "").padStart(6, "0");
+    seconds = Number(digits.slice(0, -4)) * 3600 + Number(digits.slice(-4, -2)) * 60 + Number(digits.slice(-2));
+  } else {
+    const parts = value.split(":");
+    if (parts.length > 3 || parts.some(part => !/^\d+$/.test(part))) return null;
+    seconds = parts.reduce((total, part) => total * 60 + Number(part), 0);
+  }
+  seconds = Math.round(seconds);
+  return Number.isFinite(seconds) && seconds <= MAX_TIMER_SECONDS ? seconds * 1000 : null;
+}
+
+export function timerAtStart(timer) {
+  return timer.phase === "idle" && timer.valueMs === timer.initialMs;
 }
 
 export function changeTimer(timer, action, now = Date.now(), settings = {}) {
@@ -63,7 +85,17 @@ export function changeTimer(timer, action, now = Date.now(), settings = {}) {
   if (action === "pause" || action === "stop") {
     return { ...timer, valueMs, startedAt: null, phase: action === "pause" ? "paused" : "stopped" };
   }
-  if (action === "reset") return { ...timer, valueMs: timer.initialMs, startedAt: null, phase: "idle" };
+  if (action === "reset") {
+    // A second Reset at the starting time clears it to zero.
+    const target = timerAtStart(timer) ? 0 : timer.initialMs;
+    return { ...timer, initialMs: target, valueMs: target, startedAt: null, phase: "idle" };
+  }
+  if (action === "adjust") {
+    const next = Math.min(MAX_TIMER_SECONDS * 1000, Math.max(0, valueMs + (Number(settings.deltaMs) || 0)));
+    if (timer.phase === "running") return { ...timer, valueMs: next, startedAt: now };
+    if (timer.phase === "paused") return { ...timer, valueMs: next };
+    return { ...timer, initialMs: next, valueMs: next, startedAt: null, phase: "idle" };
+  }
   if (action === "configure") {
     const initialMs = settings.valueMs ?? valueMs;
     if (!Number.isFinite(initialMs) || initialMs < 0) return timer;

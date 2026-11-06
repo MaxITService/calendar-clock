@@ -221,6 +221,7 @@ try {
   editor.handlers.keydown({ key: "Enter", preventDefault() {} });
   assert.equal(state.timers[0].valueMs, 750000, "Enter saves the directly edited countdown");
   assert.equal(persisted.timers[0].initialMs, 750000);
+  assert.equal(state.timers[0].phase, "running", "Enter starts a valid countdown");
   display = root.querySelector(".cc-timer-display");
   display.click();
   editor = root.querySelector(".cc-timer-time-editor");
@@ -247,7 +248,7 @@ try {
   editor.value = "";
   editor.handlers.keydown({ key: "Enter", preventDefault() {} });
   assert.equal(state.timers[0].valueMs, 0, "Deleting everything means 00:00:00");
-  assert.equal(state.timers[0].phase, "idle");
+  assert.equal(state.timers[0].phase, "idle", "Enter cannot start an empty countdown");
   root.querySelector(".cc-timer-display").click();
   editor = root.querySelector(".cc-timer-time-editor");
   editor.value = "zzz";
@@ -266,7 +267,12 @@ try {
   editor.handlers.keydown({ key: "Enter", preventDefault() {} });
   assert.equal(state.timers[0].mode, "down");
   assert.equal(state.timers[0].initialMs, 300000);
-  assert.equal(state.timers[0].phase, "idle");
+  assert.equal(state.timers[0].phase, "running", "Enter saves and starts");
+  root.querySelector(".cc-timer-display").click();
+  root.querySelector(".cc-timer-time-editor").handlers.keydown({ key: "Enter", preventDefault() {} });
+  assert.equal(state.timers[0].phase, "running", "Enter on an unchanged running timer keeps it running");
+  root.querySelector(".cc-timer-play").click();
+  assert.equal(state.timers[0].phase, "paused");
   const upDisplay = root.querySelector(".cc-timer-list").children[1].querySelector(".cc-timer-display");
   assert.equal(upDisplay.tagName, "button", "Count-up time is editable too");
   assert.equal(root.querySelector(".cc-timer-list").children[1].querySelector(".cc-timer-adjust").hidden, true);

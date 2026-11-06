@@ -117,7 +117,7 @@ export async function install({ root, getState, saveState, onContextInvalidated 
     editor.spellcheck = false;
     editor.placeholder = "00:00:00";
     editor.setAttribute("aria-label", "Timer time");
-    const hint = element("small", "cc-timer-hint", "5:00 · 25m · 1h30m · 500 = 5:00 · empty = 0. Enter saves, Esc cancels.");
+    const hint = element("small", "cc-timer-hint", "5:00 · 25m · 1h30m · 500 = 5:00 · empty = 0. Enter starts, Esc cancels.");
     hint.hidden = true;
     let editing = false;
     let originalTime = "";
@@ -140,14 +140,16 @@ export async function install({ root, getState, saveState, onContextInvalidated 
       display.hidden = false;
       display.focus();
     }
-    function saveEdit() {
+    function saveEdit(start = false) {
       if (!editing) return;
-      if (editor.value.trim() === originalTime) { cancelEdit(); return; }
-      const valueMs = parseTimerTime(editor.value);
-      editor.setCustomValidity(valueMs === null ? "Try 5:00, 25m, 1h30m or 1:30:00." : "");
+      const unchanged = editor.value.trim() === originalTime;
+      const valueMs = unchanged ? null : parseTimerTime(editor.value);
+      editor.setCustomValidity(!unchanged && valueMs === null ? "Try 5:00, 25m, 1h30m or 1:30:00." : "");
       if (!editor.reportValidity()) return;
       cancelEdit();
-      commit(timer.id, "configure", { mode: timer.mode, valueMs }, ".cc-timer-display");
+      if (!unchanged) commit(timer.id, "configure", { mode: timer.mode, valueMs }, ".cc-timer-display");
+      // Enter also starts; "start" is a no-op for running timers and empty countdowns.
+      if (start) commit(timer.id, "start", {}, ".cc-timer-play");
     }
     editor.addEventListener("input", () => editor.setCustomValidity(""));
     editor.addEventListener("blur", () => {
@@ -156,7 +158,7 @@ export async function install({ root, getState, saveState, onContextInvalidated 
       else saveEdit();
     });
     editor.addEventListener("keydown", event => {
-      if (event.key === "Enter") { event.preventDefault(); saveEdit(); }
+      if (event.key === "Enter") { event.preventDefault(); saveEdit(true); }
       if (event.key === "Escape") { event.preventDefault(); cancelEdit(); }
     });
     const status = element("span", "cc-timer-status");

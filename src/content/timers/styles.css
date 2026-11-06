@@ -87,6 +87,8 @@
 #calendar-clock-root .cc-timer-adjust button { flex: 1; min-width: 0; height: 24px; padding: 0 4px; font-size: 11px; }
 #calendar-clock-root .cc-timer-card[data-finished="true"] .cc-timer-display,
 #calendar-clock-root .cc-timer-card[data-finished="true"] .cc-timer-status { color: #c0392b; opacity: 1; font-weight: 600; }
+#calendar-clock-root.cc-menu-theme-dark .cc-timer-card[data-finished="true"] .cc-timer-display,
+#calendar-clock-root.cc-menu-theme-dark .cc-timer-card[data-finished="true"] .cc-timer-status { color: #ff8a7a; }
 #calendar-clock-root .cc-timer-card[data-finished="true"] .cc-timer-display { animation: cc-timer-done 1s ease-in-out infinite; }
 @keyframes cc-timer-done { 50% { opacity: .35; } }
 @media (prefers-reduced-motion: reduce) {

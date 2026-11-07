@@ -1,6 +1,9 @@
 # Hidden directories
 **/.*/
 
+# Local development tool settings
+/t3.json
+
 # Local agent notes
 .agent.md
 .agents.md
